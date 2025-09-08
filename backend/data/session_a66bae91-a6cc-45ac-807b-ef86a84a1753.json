@@ -1,0 +1,4473 @@
+{
+  "id": "a66bae91-a6cc-45ac-807b-ef86a84a1753",
+  "created_at": "2025-09-08T12:44:00.003430",
+  "updated_at": "2025-09-08T12:44:37.745812",
+  "messages": [
+    {
+      "id": "1e8ebc57-0a5c-4cf2-ac9f-8b4ce32bbde3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.003852",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e287e5d9-3555-4888-be90-f0c64fb65219",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.003876",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f690c84e-03dd-4cfe-976c-b04419b248fd",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.064722",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5669b4d0-9644-41e6-b39c-72cfb17d05d7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.064767",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2dccdf7b-6bdf-4adc-87de-16a7e330ab7e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.112435",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f5218d4f-74aa-42dc-8a5f-f4e5745ea15b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.112476",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3c001319-e28d-48c7-9ef9-e6856c0fe3a3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.161045",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c5be1676-f244-4d0a-b302-9544b8c42459",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.161067",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9ed7200d-e314-45c6-9f0d-31ab0af188e7",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.197580",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e46bcbc1-6ca0-44f6-ab1f-88c069bf7869",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.197653",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "862aee1e-05cd-4774-b712-f2e24efe0a32",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.237567",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "10c702dd-9aef-4d96-8dd1-43f1292e3857",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.237616",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "112e1d47-d19a-4ba5-8dc6-3b27f3e5a5d9",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.279270",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ca835ffb-0b6e-4695-8929-31c01a2c5e1b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.279327",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "61709d74-2209-40fb-beea-524a76e87973",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.320731",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "02a12251-afcf-42fa-984e-7eac8005f9c7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.320762",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0689ddb1-d188-41dd-9f97-09ba5f411c8b",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.360960",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5b51c238-3359-48c8-8495-1fa94fb3fb86",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.360983",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "af03d906-daf0-4bb4-a1cb-8e4bbb87a01b",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.402216",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ad73c224-77e4-4ea0-aabd-f730e8dbc33f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.402268",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "47d085f4-1ca9-4382-b0bc-69cc60d62109",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.442472",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4ef9178d-43bb-4b2c-b357-e3236d9531a4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.442530",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5e8b7b88-dfdb-4e62-8cc4-6afaa8ac596a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.486949",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6d2735f5-770d-470e-be40-022d2fa702e1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.486975",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "050c6461-2ed3-403d-8012-8d06d5c4fd6d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.525293",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bb4f6a91-3299-4731-838d-ecf0e78e9711",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.525357",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "31553047-0ca5-42dd-a406-322e53f3cc32",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.569997",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "54bb8d81-7d9b-47a9-a671-1010a230fb0f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.570056",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9b119c18-6b65-4d3e-bdaf-31a5e37dda2e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.619872",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fac1e2be-ceeb-4188-9779-59596efdab8d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.619926",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c437009e-f8a0-410c-9bb7-3511242dba17",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.670473",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "25ff04e9-aceb-4135-ae06-c9dfa3912d32",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.670608",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9588de9d-ecff-4369-aaa8-6babcca54d3c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.718721",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a66c67e8-7753-4bfe-8c8a-35a47b671188",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.718747",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f2b6f148-ac1c-4b79-8bba-27d6f6015d8e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.762880",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "848c9d4f-ec50-4cc6-ab87-4cea2f50282b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.762916",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d907f2e1-9511-450e-94c9-1c3fbe9b32a6",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.873510",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "daa6d150-c74e-48c4-8dec-681a3512f7b7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.873535",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ea00e08a-ed29-46ed-9568-db474df2e913",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.914762",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c337bf94-f21b-445a-8a76-5f7b4597e57c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.914785",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b954af4d-a96f-4440-adcd-8649cfca1d9a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.953044",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "17375664-7b3d-4efa-b1c5-4628010300bc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.953069",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "248302a8-281b-430c-83c9-506cafea2ed3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.989921",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "843a3543-2080-4f39-b252-8ff32706124c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:00.989940",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "550576ff-73b2-4da8-b487-67c80597bf76",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.026597",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a3b8063c-2ed2-45a8-b285-2467f2eee2a5",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.026620",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "32dc42fa-adae-4ea1-bfa9-e57252e4079a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.066190",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "462de05f-bc09-4f03-8a8c-931a4085b19b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.066214",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2a0480fe-edc0-4514-a279-8292f0938750",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.102331",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6dd31d42-55e5-4f36-ac77-bf5d9047fe19",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.102358",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d7fa1a1e-90ee-417a-8ecd-d4038941fca1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.146339",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c990c368-5451-40ef-8ed9-8cd4c2b962ec",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.146362",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5a3b3544-3c04-4d8a-947d-093f1e2e7890",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.184885",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9f51484c-3cc7-4959-bee3-065ed6157b8c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.184912",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c242d5c1-f581-47b8-95e2-fe7d3b784839",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.227657",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1c1cf254-c0f2-4ab6-aa3c-e84d0793e4e5",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.227691",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bfde1106-93f8-4b0b-aada-a3d7e0d1db97",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.269379",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f730873c-b8e3-4b08-90b4-16f76ff8d1ef",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.269399",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d3276087-4a85-467f-a7fa-619a5373cfb1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.310312",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fc71e90d-cba3-4248-8a46-89268b2c7d82",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.310335",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f9119c71-509b-4995-a791-9379793dc006",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.352994",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ee6f6dc3-54b6-4341-b65c-6d3dd20e25b4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.353019",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2ba61e1f-24e7-4d12-b7b4-b4f73dab6eda",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.397089",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "29fe690f-248b-430e-9ce4-3bc96614a2f7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.397109",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "799d5344-69a1-448f-b203-2da1e5b627f5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.442071",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1de40c65-d8b3-47da-96a7-740253d4e657",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.442123",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "058ee0ac-f7ad-41cc-8b7a-52857da676af",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.556592",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f3378194-a16a-4d62-bd2c-1985adb01eee",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.556644",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6b6df663-b607-4381-993a-54a1bc192a5e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.604579",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8c29d563-60a3-4420-98f5-15f953492a0d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.604633",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a21b7596-fca5-4fbb-a072-987a56d0dacb",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.652822",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8d1b2db2-b3d6-4e62-8474-82953e361b3d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.652849",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3f2c93a5-56c3-45bd-a5ad-7697dd44f63f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.700027",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6f8b5b19-3213-4496-96ac-7b1ce7bfec13",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.700092",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ec71def6-0bf5-4358-b171-a343e4b8926d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.750677",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "876a082d-a172-4da9-b16d-4e6d301bfc37",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.750700",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8e20c8e0-2af2-4c29-92d6-0cd35b9032aa",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.813613",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1cca4596-1131-4539-a600-2aca1d955fd0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.813647",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bf889d0d-2a5d-43c2-b922-568d321f20c6",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.867501",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "37133b62-2427-4441-80dc-c94f72328de7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.867523",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b0acf3be-120a-4f81-93b0-217e8ac39b9d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.920008",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "de5a3c2c-c9f7-43e8-82f9-395e58b234ff",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.920032",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fbcbb860-f79f-4f51-8ec7-7c9e45f72a07",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.971719",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9e2d0e29-c634-4e9b-bef4-2569ea4174bc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:01.971749",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e1dc3083-950a-4cda-9bfc-63fe8b450dba",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.024379",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ce2d7364-e3b1-4ab8-a18b-216130c03e39",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.024401",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ed190933-c98e-4005-9c71-1cb0da1bca04",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.075758",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1bd4cad9-0e74-45e4-adc3-d74f67934231",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.075791",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ae666768-c06c-4608-8e37-30e52281e58f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.129515",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9760a6b3-f61b-4347-86bb-d605d5680622",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.129572",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f3a55b21-f9cc-402f-b8e8-935762d4e12a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.183569",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bb576101-7321-4e56-9d15-66ede563be85",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.183637",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "85f8e201-a691-49e0-a162-d8b9e0528bb8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.240559",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d5d0eab1-f64e-46e3-9a6d-df83fd4edf9a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.240609",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9fff0905-34a9-4577-96ab-64e0f24f28e4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.297443",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9a8c58e5-8e60-407a-8cb5-c4bb636eeac7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.297465",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "715210c2-c726-44a7-b36b-cd957bb6280f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.352797",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ce049e3e-1f41-4ebe-b690-810220629c46",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.352821",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "22274978-1a87-48f5-b115-499d89e8e762",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.411430",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8cfc9836-3502-499c-b555-07525dedff0c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.411481",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "98d4cc27-af74-4662-aaee-e2a1a1dfa274",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.466085",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "50513f3e-9bae-4543-8d24-06db1f3e69ae",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.466139",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4992e31f-c0a9-45fd-8300-bf10fbfa4ea5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.529954",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cad9844f-000b-4fe4-a444-a2a26b7f1ee7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.529978",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "00306243-7dc2-4d52-8720-1b755a70c495",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.586125",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2d02e111-25bb-4d09-b514-b8f669a5b93b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.586148",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4ff91c37-b1f8-4702-b00d-fc81949523bd",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.641805",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ee747e56-4cbe-403b-9cbb-ed7747b8eef0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.641833",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d589ea16-696b-4764-9284-f3369f3819d4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.699263",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "25896425-aa13-4a87-bae9-fad61151e477",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.699289",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "54cc37ce-d6b8-40d6-bc67-934a40764d85",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.756270",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "978c3db8-831d-43f7-9b2b-bbf3177131e8",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.756298",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "592dde35-0f2a-4982-8cd0-a7c1a7b4d463",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.813630",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ca5524ee-5840-4199-bd18-0d63d51525f6",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.813684",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2702e992-146e-4521-902e-ec91784c274c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.877516",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c75dc845-400b-435c-a862-75601bd0cb53",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.877567",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4afe173c-b799-4912-b7ee-cf2ad91b8bf5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.935854",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c02c147c-811b-43e5-a14f-6bbb13d79a3e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.935904",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "531edf44-c6f4-4760-81c6-1e8afe81f2b2",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.999717",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "990471cd-5683-4618-a203-f6d0f7f30c1a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:02.999766",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "68487f3b-15a6-4030-96e1-27a6719727bb",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.060882",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "dfcf2737-7b5c-42d5-9959-921ca016a14c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.060940",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "43d29e36-1b45-491f-9353-bcac69b3798e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.122036",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "76513114-e2ca-4816-80fc-589999e47416",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.122128",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fbc1f26d-51c0-4d50-84d6-0c5d01906913",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.182806",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3bce711d-f76b-49c3-b821-ff898eb1557a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.182850",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6fe08cb0-70e6-42f2-bd95-a33a89a880ac",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.244918",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "962f1e1f-8d3e-4679-953b-17e39d6c7d4a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.244975",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0dc2a614-3e8a-4047-b9f5-a0f12310b135",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.307718",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "eb2799f8-e8e5-40bd-80c4-f7651ec8fc08",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.307795",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "966ec576-d154-4d4b-bba7-95073d3ead4a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.375088",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ed8da25f-c527-4939-8436-d14090f0d6d6",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.375131",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8a47ee15-0798-41fb-9926-01b98ee41b32",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.441745",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "70e3e8e1-7788-452f-b23d-b443a98f8fcd",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.441796",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ebd74163-6710-414d-b469-e7b43dd2373b",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.509019",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "74b4fa66-07c4-4554-8446-2032080c69df",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.509072",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "56d9158d-5167-4af1-9b82-94252c127db4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.573229",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1bca43ee-0dd2-4b0e-8028-c3e2f3d11d63",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.573287",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3f9bbfa1-b594-4824-8de1-c8df6d062e4a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.641142",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "945364c0-00e0-4cc1-8154-48f7ef9ae0cd",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.641200",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ca439c33-ddea-4704-b944-8973be449b7e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.709803",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "33193e25-65af-4ca1-b4c4-29bbf94fd20e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.709867",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "71957104-167a-4614-8778-13765a8d5786",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.783203",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "be3fd3df-ab7d-4602-9680-8270efb9a005",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.783252",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4116fdba-eafb-4d3b-93a4-1d2c763fdc31",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.852882",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2d07ca3c-c193-42ca-84ae-17ee7acbdc8d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.852989",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "55650fd8-ff0f-4405-9973-905ed80a7635",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.924588",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "65df2c06-50fa-470b-9b2a-18934697a905",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.924640",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "244bd7c1-24c8-493a-8ef7-e3a91d73a683",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.991717",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bb187b3c-403d-489f-b219-cba60bccb22f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:03.991781",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "68c174ee-e3a7-4591-81d2-48dd1c07cbc2",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.063869",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a6faf8d1-f05a-4eb4-8e35-51c1ad0f089f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.063917",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9a06279a-d1fa-4eb8-ba3b-74b9925c7e8d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.130359",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3dca9911-75c4-43c1-9397-82adf25885c1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.130421",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5b0c558d-e59f-41ba-93d0-b66a09716413",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.200945",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "29c86c08-b24d-463b-a3c0-15fdd15772e0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.201000",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c2d2d18d-0997-45f8-932c-0c9fda18a704",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.272919",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a201f7ae-b8a6-46a1-b3b3-055e3fd6143f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.272982",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "dffe10a7-670e-4bb0-9e5f-e4201abc97ad",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.343218",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f5ea9d6f-8e9d-4667-ac40-656d6bfbb3f1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.343278",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b2c2b142-c6a5-4b77-9885-8915bf6dfb9e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.417645",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bf29adfc-e00c-41e4-adf9-cb8107f61fed",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.417695",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "052ba7fc-a3a7-4b05-86d9-42b4ca8f2f18",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.490162",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "17c8ae61-bc7a-4c8e-9b76-0d107c464394",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.490296",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "00644728-d659-4749-a53a-69d5799ba662",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.566250",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "18a0df2e-bd82-4b38-87e4-26ef03d3c6ff",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.566304",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5ec7e275-7822-4485-8b72-488deaf03844",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.641795",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7d63ab14-67f7-47bb-a7d6-895bfa48203b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.641856",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8b87359e-26fd-48e8-bbcd-ac133aec1add",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.715530",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f614ff13-e42d-43df-a823-bd4bd4b5abfd",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.715554",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7f4a13fe-ed90-4fd6-8626-41b2e00f72ff",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.785804",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9cce0745-c4ac-42bb-b8d0-6794ae76f95b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.785863",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f4436510-b27e-4636-bf4c-d2d6e87800f9",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.859527",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4a8af2ce-f3cc-4ede-8531-687b623da524",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.859581",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3f769481-4362-4bfd-a5ef-12ec43d60214",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.933756",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "666312b5-e54e-4902-a970-fb3010cc78ee",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:04.933804",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d27c24fa-9cc8-4aa5-9ec9-3e1d145bff08",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.007891",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "01f9ff9c-11d1-4271-90e0-b49758906b72",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.007942",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "03f6221d-0c3a-41aa-b8ac-78a5bb8b22c8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.080414",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ca72d1c3-f822-4925-ba0c-a85234f72c7e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.080468",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "939ea032-0aa1-48df-9dda-eff4f27b204d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.152977",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "35d7833e-961f-4c2e-ab9f-a5ea56bcb1be",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.153022",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f80cf171-162e-40e4-9eb3-564a8628dc4e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.227719",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9b65ee26-f738-4239-998b-ff9e4ba178d7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.227771",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "92d93991-39f1-4c27-9b39-1f7899efa62a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.305650",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "299e4e1e-a360-4193-9e86-306de6e8ce53",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.305693",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e28a05c8-b5a2-4502-ae57-b0ee68261ab4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.378767",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2d786fa6-e937-4d25-a416-0d328bc7dde8",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.378790",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c50da9e9-bc46-4563-9f5d-a7a0f36bc0de",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.454060",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a149606d-2ab9-42d9-83c4-516c05503a54",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.454120",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "973d1a48-68e4-4935-a787-5c57365377b3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.536078",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9633b05e-e3a4-4dbb-ad12-9bcef1ed22a3",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.536136",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2e8be80f-c12a-4e19-9633-9549594db3b4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.616413",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cc07167b-fe0b-4577-9d5b-24133c678a95",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.616533",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "942ddf57-a78f-4103-9392-b24735026fe2",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.698733",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0c299e02-0da6-487a-8958-0d711e603c77",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.698844",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3e0b7655-c4ce-454b-9310-090fef0080ba",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.782571",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2e4c259a-2f12-457f-81dc-850c92713a87",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.782628",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d2858741-fbaf-4da3-b8e5-e2a2eca3339f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.869719",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1a34afad-ab38-4f56-82c0-7f985463aeb9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.869787",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e7fd86e2-ee2e-43eb-a8b2-26ffa81aa5c7",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.952026",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7682f6ec-01c1-4d1c-8b51-a18e49bea2a1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:05.952047",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "92a4645b-2c73-47bb-96d1-9ed8a4eca87c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.034283",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "28accb0a-4718-4e85-80bb-5e75ed3fede6",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.034370",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d25e52be-0909-4aad-9760-2a56925d69bf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.120478",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e3075145-a11f-43dc-9446-9ba7ef3ee982",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.120524",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6dbce9b3-62e3-4cae-8135-1c4632cdebd3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.207133",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "37a35ff2-0a67-44a5-b09d-39bfdb497922",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.207268",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "88467f3a-79e1-4932-ad99-1121a346bb37",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.302982",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8454cda1-6de8-4a5c-9dc1-2a992cf68a61",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.303041",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d8ebd243-2d4f-459f-8daf-905239ee0ffc",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.386378",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c10d78da-3ee1-4b50-8181-6a6da169059a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.386427",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6ea26025-a089-4d29-89ed-54bc3568ad18",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.472390",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a9909637-fd97-4c39-8089-9e01fd840e0d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.472470",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9621cf8b-9dc6-4a58-bf92-0452d76caa10",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.568002",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "08ef98b3-09a1-46b9-bc37-af2df8a05b49",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.568090",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e60f395c-08e1-4e6d-8d14-b85423641aaf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.650394",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5c0bb8a5-11d2-45f0-ac09-3be3ee2ac489",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.650452",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "071b26b9-71db-4cac-9aa7-eb0c28325f01",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.737273",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "73d20e77-e5e1-4015-92ec-1cba075a6fa2",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.737318",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9e6bdc37-1775-409e-83df-f2452d419373",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.823259",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e3a294c7-ed8e-48b6-9b2f-9a72d7a92ebc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.823282",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5a79c107-997b-4f40-a038-ffc2fb16695f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.909414",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9a15c479-c84b-4505-b3b1-b936d21d4a8c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.909464",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9f2bbd79-5523-47c2-bae6-a2fb7ca6260e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.995914",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f3c45faa-607d-4fe9-9303-8e113ee53ed6",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:06.995982",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "26c35523-d243-4645-9a93-86e5a52c69c0",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.085133",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3bc3f841-b047-4ab2-b079-db87eb189b9c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.085199",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9ed9eea9-bebf-4bac-b4bf-05b9b29c7bbd",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.172725",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4c85d03b-3019-4803-9c4e-07d79738c5ac",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.172772",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "836c4a90-14c6-4ac9-8f5f-efcf102d9b48",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.262419",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9e50ef38-ee69-4a37-936d-1d8bec00e1e0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.262468",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6c03eccd-489d-4ba9-8293-73593d1e92f8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.349232",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "61639ec4-c2cc-4ea4-856d-0650d44c05cf",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.349291",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2fe08ad8-1b2a-4b7d-be70-950321c4486a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.436541",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "083711b2-f10c-4ce4-8c14-513e8086d6bc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.436609",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f30c7021-26b1-4cff-986b-0ad2377ed944",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.528880",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "32876db1-c4d7-450a-8bd5-19c3f76e3d69",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.528930",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a5a6c2ad-1523-4193-b4f9-73ea7a7a0c1a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.646909",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2b9c9e33-ca44-4af1-8a59-ca10ab4a93fc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.646991",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6a99282f-c304-4e0d-9cd9-20ceccf60b4a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.744879",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b3c25cff-d915-40b4-b325-d24cf0ddf713",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.744933",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "db62f5a7-295c-434b-be14-094d9b70de94",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.844495",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f284821b-3dc5-457f-b1c7-3e7c1b5d9415",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.844607",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "923000b0-d923-43b0-af3e-202f3bc4ec93",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.940176",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3c759ff9-b1e2-4b26-96fc-76954a186426",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:07.940257",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8c678dfe-d899-49e3-8c4f-fd7961610884",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.031677",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cdd003d6-b11f-47b9-83d2-af01e0328e99",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.031737",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fd7997c4-4d23-4744-8337-a6aef7a0ca66",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.160552",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d6fe8ba2-07d1-4559-99ea-88f8224bb38c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.160695",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3f561002-2019-4ea1-b791-8cab2c2064f1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.269245",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "92657157-eb03-4047-baf1-bead1762e4d9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.269302",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e07dc99f-8103-486c-b7bf-43bd5f4e8d30",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.372808",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "397f2970-6e8a-41e4-bc2f-5ade739d5d00",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.372839",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b47f45b1-d888-45ea-a648-85bb2ce555c5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.515994",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "aa1c2fe3-08ae-4f45-a6be-c0c9d181b2ad",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.516023",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1f43338a-4dc3-40e8-bfeb-3b8389395346",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.616215",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fc8789e7-d642-4994-b2bd-f6ef05e4b45e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.616242",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d2e17c8c-21eb-4350-be84-44c072473476",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.729685",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fdcd4fe9-329c-4d56-b747-f14b9e24c7b0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.729718",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f10e917a-1e63-4088-8289-f21233db1fd5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.836031",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a5ba81ab-f02c-484d-9891-5368ae288aef",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.836055",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e2b9e579-fa2b-417f-a9be-c10f9c5055b3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.936975",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "666ed837-0d20-4cf9-9f5c-1a22a5e9353e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:08.936997",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "35f208da-683d-4870-b4ba-4b3e6810d777",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.033202",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a0e1a167-8d8d-4c0c-bcbe-330d30d8462e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.033222",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "41932cf0-53ac-453c-8cb3-6f9797dc1f2d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.124981",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "397b3a77-36e3-4218-9481-b2308782be26",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.125005",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e1ef88ad-0235-43a1-98f7-149c4074c6a7",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.220453",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cbdedd1f-db4f-46ec-a9f4-5b465c9dda08",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.220476",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a39a26b6-696b-4bdd-b03e-eb487642d259",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.317494",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2bf681c6-bc3a-4833-80f6-c89bc77e0c72",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.317544",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fcf5f949-57e6-4e49-963c-f9ba8beeca25",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.419206",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "71091eaa-5c46-4f62-aab8-8f2be840a55d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.419293",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0a733aad-b660-4801-84d5-f7357eea7039",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.520526",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8e73fc8b-269a-4748-8aea-ce21122983a2",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.520608",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ebf0d7cf-09ad-4a35-8f57-202369cad799",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.639970",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8942f05a-724d-4833-b0c4-66c33c58d5ae",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.640073",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9d75f5fe-f30b-4edb-b3c3-d6dc1516edfd",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.786598",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "88407a89-b608-4a33-a06e-8a6567813151",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.786625",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "edbe8928-a66f-4d10-8ac6-1cea803b301e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.954974",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9c7e2cbf-5a65-4d39-b241-609db4f7a2dc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:09.955002",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "966b200b-de02-4e52-8423-3b1981156749",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.110996",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "72266182-b7fa-492f-912d-b7961e610c41",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.111024",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9e94ed1a-cd15-484c-a8d7-08bacad66b23",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.243398",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8855978d-2267-4169-b3a5-cf387a989c4f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.243495",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4991a6ab-ed5b-4bff-ac9b-0f9ff61f5c68",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.355118",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "24b2b364-0040-4656-9e15-304b23724740",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.355143",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e8623cef-bff3-4bce-82f1-48b53fef498d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.458011",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9fe3dc38-a23a-4504-9a63-e678e35ceb01",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.458043",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "112d5353-70a6-4267-9fa6-11792f1961fa",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.560136",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b3ca1089-4e2c-44b2-885d-1af486e28711",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.560160",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cbd73e45-3ef0-4b27-80be-e4422969a5b3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.660767",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "05ad359e-149e-41ef-b5bd-81c821114b5a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.660791",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "206b72b6-b7c8-40f5-8c05-64633c557119",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.760510",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c96f9df2-65f8-461f-b003-137d46cd8c95",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.760568",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "44076c43-a16f-44f1-a2b4-95a055954932",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.868425",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "09f88853-8f3b-4164-92dd-14ef4220174e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.868477",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "709933b5-a301-46da-a0e4-2c85e1f309c7",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.979348",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6cafbd54-aae8-4273-aa78-17d9ad236a23",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:10.979369",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "61743c5e-3e05-4d7d-85b7-036603a15752",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.083929",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9b6b230e-e364-4833-bf67-a3237ba506ab",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.083952",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7553393a-ca3e-4990-9f1d-bd748af9418b",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.183792",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a7498eff-a0e9-4c86-ae66-b0261c3247e9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.183818",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ac2cba3b-cf98-461c-93ac-6855557f4a39",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.307584",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ad8b180b-6d10-409b-88c2-2500d51aaf19",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.307613",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "77a51aa3-7f5c-48e2-9d50-12f27ee0d326",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.405444",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a068f1a6-ccb0-4217-a6a9-4f2d87ebca95",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.405474",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a2c4c8c8-2f6d-47d5-83d7-aec1c6b411ec",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.514229",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "63032f9f-bde1-48a4-963d-aed7bb537232",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.514257",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "69daa424-d8a3-40ca-8e8b-e08be19ced8e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.625042",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "931680e3-9430-4f1e-9e65-52f5755c0e28",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.625100",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5091e0a0-b2fc-4479-8a7e-b164896ae295",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.738934",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "98a7d71c-be70-43d2-9df1-597b7fd4cd99",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.738992",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cbeeba68-1998-4acf-829c-e8f17f6a8e97",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.860811",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d98a3deb-cd7e-4eb6-949b-b361ffa2d547",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.860859",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3fa7fec6-2896-4fa6-a8f8-2df5c7600b26",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.973411",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "067ecb3a-e563-4d21-ad4f-61b82fa4ae17",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:11.973487",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "72d201e1-7a3b-438f-9521-2c1c22585080",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.089282",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d03f34db-df87-4c84-a2c9-8920f3302c88",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.089356",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ad5f3329-6fb9-4983-840f-cfa4ab51e9ca",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.208311",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "39f20c3d-20de-4bdf-9c8f-0781040fe9b9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.208383",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "adecc37d-b873-498a-a37a-3cb973fec04d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.326189",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "620f1b0c-5fa5-4b17-8413-14559b0858bb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.326248",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8f6b29b6-656f-4f8e-a16b-16d6cb8f375d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.469218",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "79ee2bd2-b928-44fb-b8d7-1e06b372618b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.469240",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cdf6d244-e314-45e5-b1a0-3ea97291e3f3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.588892",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "20b86eaa-9068-4242-86b1-cb467f946bc0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.588959",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bfd56377-380d-45ad-ba53-95d59051be2c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.709177",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "158e8925-7c4d-4d17-8b9c-a3a7c213507f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.709199",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7bed37f4-00d8-41bf-870e-4c6c11cf5e6e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.824839",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8b4a5339-7046-4910-878e-f16e19770a1d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.824867",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6eb784fc-87d4-49eb-9842-8628a7aa3613",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.943652",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "877ae22a-0de5-4e66-aeea-19251c6dcec8",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:12.943699",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2f16a6a7-c396-47e5-9287-9d59d1c27845",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.063242",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "346dd048-ce25-4a2e-9850-6b16e4552565",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.063291",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5701b0a3-8436-4a3c-a479-29e8b9c7323d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.179501",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0609a2ee-d0c3-405c-add6-2c519628a0ce",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.179555",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d3ac08fb-bd9d-4582-b78d-f5a2eb50a120",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.304217",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4e83050f-bf06-45fd-ad1e-6e494f5cb60f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.304274",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3478c1df-aa8d-40c8-b11d-78f8cfd32ad1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.482240",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8cd3827a-bdb3-4925-960f-98cd2459f2eb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.482293",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c2ea5b7e-6f99-49b9-81c7-b009160a569f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.696005",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8f3c8856-52c7-49c5-8e64-fffa3b91080b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.696049",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "24d467ff-ac83-4649-9c4e-3860456bdb2d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.813496",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7b4b1a6c-3aa2-4747-aed1-2547e7be7a0d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.813549",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ac376e3c-4883-4fad-9600-fefb3673a10d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.935383",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "415840dd-ae21-4a06-a133-d224025d08ed",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:13.935436",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "080dfe3c-67f0-4609-b671-072d5c3b11b3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.054087",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "40b2763b-b804-4355-b68e-7bc28a9217fb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.054150",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "85087251-31de-4b02-bfde-4fd99526b130",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.175461",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "31e098e0-d552-486e-b245-297aa05889e8",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.175519",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d0ecbc74-2163-42d2-a666-299fa5a25c7f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.310724",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a19948bb-b5de-415a-a53c-806973f1c14a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.310788",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "452a203e-ba7b-4b70-ac94-ca677437197c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.432671",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "80748d90-b366-454b-8c70-1447b1f9d53e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.432726",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e1ba6bfd-5ab0-4895-bdf6-fe4004489ea1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.554932",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8f9a17b2-7571-49de-909e-bc5877c6c57a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.554983",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5fd6e54c-5237-4221-a965-fac718fc401c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.679181",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6a0d1e7f-0301-49d0-92b6-ff94f339472a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.679228",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7f723a55-7f7b-4a26-8bd0-ea86cf7da779",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.804121",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "10dfccd9-8a4e-43f2-b6c9-1c38fe450557",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.804178",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "eda6fa96-37e5-4a69-bba1-17bc9f97f515",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.929417",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cb2d9e80-6c98-467f-a0d1-e3f43166b1ee",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:14.929471",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1bedbac1-659d-4128-839d-8633da6b44a5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.054831",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "faf9cb10-fc22-416c-b43d-578a3ab46f9a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.054896",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "347b51be-8d7e-441a-89b1-180c9c7aea93",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.177874",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "26b54a9b-2180-467f-b4cc-23d5f4cc95b9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.177924",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c0afab68-71d5-4464-bd46-67e54afa3477",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.300043",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cfea5f1d-fb6b-4f7b-b483-b7167e00d58d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.300092",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5f3fbfdf-d705-4130-8228-d33382624db5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.425060",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "367ed60c-98c2-4111-8d85-f2ccccca44bf",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.425110",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8cae5d25-f762-4e33-b812-0dc43e7b7004",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.549759",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ab765ce9-8e8e-4854-b9fd-ce7d4ec32217",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.549816",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e1f268d3-5b15-46d1-9c3f-564008ea0746",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.678317",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1d1aac80-9157-442b-a5d2-612983c90861",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.678342",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "05c113d4-bbfb-42c7-bf68-41d11e41c17a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.814353",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "28896d55-5786-427c-a69d-2ff2eb2a1a40",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.814381",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "670086dd-2101-4057-b70d-e8e530066ef3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.948472",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "70334a8f-45e1-4875-a31e-424f3db83d72",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:15.948497",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fe7e03e1-9cb1-48cb-81e2-144b19dd3ceb",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.074482",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "03efbba2-cdb1-498f-953e-b93c3244c843",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.074506",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "115a7954-1e95-4dd2-b8e4-9e61d3f89a96",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.222620",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "64e16523-7aeb-4e11-96c4-28d58d2db55f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.222644",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b768b1d7-049c-4996-b9d8-537d7b7efe15",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.348924",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0c573853-b5c5-4222-ba44-da80a8419668",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.348944",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1e2eabae-0419-427a-9fd1-e3ff3b7be13e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.474700",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0ee2e5d8-751f-4e5b-a623-591e7fc81028",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.474779",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "128162ea-f19d-4628-ac23-83247fb975b1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.606635",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "43ef848e-5abe-4e20-97db-f66630cac07e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.606686",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e0f79dba-ba31-4784-91c2-3006e2f9303a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.741521",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6d55ff75-963c-4f74-b7ad-1f8f0df3a4d3",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.741580",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "41e75f6a-4308-4cf8-b6cf-28cb69e3823c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.874348",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f9832744-0479-465a-9b91-528300f7a01b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:16.874410",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2da948e5-b9ad-4ab3-adb4-2622bc646e5f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.015933",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "98d32c83-f469-4eda-b57d-429e84f8e5b7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.015985",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "305950d2-f3ac-475e-867d-02c45ceec420",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.148608",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c825828a-3806-4fd8-9a4a-54beec27209a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.148659",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fd869684-d544-465b-b487-aa4107f5803e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.280170",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "234b8453-3797-4cd7-97be-0e5fa0a624d7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.280226",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "dc5e460d-92f2-472a-b602-300dc5d122f3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.451871",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "203c9f1c-6cfa-4bb0-875a-84ec1ed56926",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.451899",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "03072694-d85c-4f52-a00c-26354c900b1c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.669085",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4757e2ef-d81b-4638-bf7e-e61c2336046c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.669110",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "02f84040-df5b-4cf5-b366-eaa194ef4775",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.801051",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b4e1d041-2d61-4502-a3c5-0111e3feb1e8",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.801083",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cdff6911-6c03-4d32-a8a7-00c80f5f4e8c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.935702",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c9abefce-5b6b-48e4-9416-1a6abdaad132",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:17.935754",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d749b803-6aa6-46d3-87d3-a915813c9a3d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.069634",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a3f1d753-de7f-4651-8acc-b8c50e0c4c31",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.069681",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "44f2c8d4-04b0-4cc7-b7dc-a16e56b728a4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.205368",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9ac9e5c9-0204-4bd5-8e08-d76f4d62045a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.205419",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "208de166-547d-4afc-ad99-36cde45f31a4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.344728",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ac359393-9686-47de-b1fa-02cf8efa744c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.344776",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "47ed8499-1f9c-4b6b-b223-92971f0e0069",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.483498",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "94dcf1f7-71e1-4e32-bdb6-137b70928a3c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.483549",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f4c2c7eb-adde-4b01-b97e-3679568ace75",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.619982",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e2f01916-2038-4f68-b630-7376f9e9a17d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.620042",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1333b6ae-cf50-4976-a9c0-d61ab5cd7382",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.770266",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "18ae5a9c-acdf-4f69-8954-bac3accb5700",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.770323",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a14cda00-2bb0-4fd3-8736-b7e920365a9c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.914461",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1dcffd77-cd58-4804-bc4e-e46303182c6c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:18.914513",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fcd02164-b213-4a19-9b28-c5dd53df1e12",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.057893",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7faf4c59-e652-45c0-9b37-6cb6f4e4e648",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.057944",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "59718ddd-4e96-4be0-bf67-ce3ce03ded90",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.200341",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "aecc0648-820a-4215-beae-5cacd55003ea",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.200394",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "510472d5-c375-4d5e-bf7b-3b730603f3f3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.344324",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c855793f-989b-46b0-a960-de2232728cf0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.344378",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e0db3c85-ed67-4414-84f9-d49ea75ba464",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.485294",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b251e687-0598-40b9-844f-8be7cecb23cf",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.485346",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b9f10796-8606-46ef-9847-554f49574a0e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.624280",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "df1720b9-95bd-4d27-b4f9-dfb9eb83e4fe",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.624325",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ad19ad87-58ac-4816-bbfb-617ff9b432ec",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.765929",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "189610e2-d4a5-4c68-a0f9-6ebeac4f551d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.765980",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "252ddf59-8b07-4495-9f37-469d3ee7d426",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.910968",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c9d1912b-8018-4c0e-9c52-0aa334253333",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:19.911367",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c0bc7e84-1490-4124-b7e1-cbacf6bae0cf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.054596",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "22d80c7c-447c-47a4-a249-f7fd2bc368eb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.054663",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6bf6be95-4387-42cd-ba24-33ea1ac6e622",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.196281",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2235798f-4ec6-45e9-8769-46e001a862e4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.196332",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5b9d45ed-09ae-4322-9697-4b8e443a15c1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.349188",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c21b2bc6-83d4-41c5-9316-cdd5e438ef63",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.349290",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1d3c0e4c-3f69-4367-9a7c-f24bc875c444",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.495174",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bbc71c14-12bd-4aa2-9b2a-8e9f20a50302",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.495223",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d60844b4-8f6f-485c-b9e5-7d7d51c968f7",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.640750",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f993325e-6cdf-43e7-a770-00692499b232",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.640845",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "72101b0b-492b-4668-a158-f9971c58737e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.788163",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ee7a8797-0079-4a58-9eaa-5428cb9c02a3",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.788219",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5c4fc514-d25a-48f0-81f8-468e79e20736",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.933850",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a2251e15-88a0-4565-9a4a-106d2897ff98",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:20.933899",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4dee7c7a-4494-4263-b9f8-31ee9ce3bf32",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.081396",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d5fe45ed-5e06-4fd5-897d-62ecb129fff1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.081458",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e96ab200-9d26-43ba-a419-ff117fb78ac5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.227916",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9d90bfe9-2516-494d-8712-dfb28d4696bb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.227984",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7dac2b5b-5bf8-4aee-b3b7-00e4c76aecc0",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.378361",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4fd2a150-d283-49ce-9394-cd1b20ee055a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.378416",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "040bb4d3-0625-4f5e-bd32-94da2cf0d9b6",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.519869",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7ca8fe7d-4b14-4fb7-8f0a-d31d99c4df8a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.519937",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "beebe218-4e0e-40cc-9f10-8a3d6a5af988",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.666582",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6af7c47c-8f90-45bc-89e3-4404cc178bf9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.666641",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0178f318-8ee9-4f8b-ba3b-daece4545106",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.830547",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ae70b5ae-64d7-4027-bdb3-3d8729c29c14",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.830616",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ce47db8b-cc51-43d6-8da6-0de08385cd74",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.983045",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "acf9fbf9-7957-4554-b804-da54a94da1cb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:21.983095",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "12512dd5-2369-451f-8993-4a477ed0b585",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.135846",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7142c4f1-6fe7-4fb9-bef8-512e6f8c2fae",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.135902",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "14aba7c8-03a0-436e-a401-bb3d14686b05",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.288064",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9838ce91-7149-465e-b2f3-7fb9cecbcd37",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.288102",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ac11decb-a1a2-4fbd-8f19-056d7098ceec",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.447914",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1d468c16-2ea7-45ac-a929-1fce39c51bc4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.447965",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f211071d-1c59-4361-a0db-794d13a37bbc",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.597813",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "64ab5ad0-4fa3-4501-a54a-967bc5c7d0f4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.597878",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "591595c5-1e53-4303-a027-ef4023341da3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.757033",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6df12d73-0522-46c7-b6d7-925e7a3b3845",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.757087",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f19cbefa-8e29-41a4-b473-c6b19908f4a6",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.918278",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7001fa89-afc1-4246-b412-20af2a064689",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:22.918324",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0220a514-985b-4313-ae94-81cd1977f6a5",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.103510",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "639c3225-2ea0-49ef-98c2-38a341c54c32",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.103680",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "67529054-306d-43e5-ba36-3bfb50b52cb4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.305454",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5c4d083c-86ad-4b3d-a453-78c183738baf",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.305540",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e1fdd23f-0790-4791-8cf0-98660316728c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.463388",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a8d86505-1e2c-47d4-90e5-7f647f63a609",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.463450",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "43e169f8-0e8a-4e68-85d4-0cc3cf30d0a8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.618369",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "518144e3-a885-44d8-a4a6-7472d4d75af0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.618430",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "43898933-33ed-438c-8ae0-eb155b5f8fbf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.781046",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cbbc3cfc-084d-4cbf-bdc0-c280b4dcb9cb",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.781108",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "75d1f87f-a8e8-4ff7-92cd-3485af58711c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.943458",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8edce369-a2d7-48fc-a4e6-cd58012ff03f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:23.943534",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3520ae7b-0f66-4b51-b12a-28178428de31",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.111045",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0055c7b0-2f8d-49b7-a3dc-64ff2eabd56f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.111106",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8cb81792-d4a1-48a4-a3b5-0edf6a559d97",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.274236",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f0930485-edf3-4c67-ba76-f94e8ce3411c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.274282",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3e4c13f9-f7dc-49c4-bfa8-a250259fd857",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.435790",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "78d98d57-3afa-420b-8645-82ad6ee99419",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.435858",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "304437df-dea2-4229-93ad-d5496cd8e2ce",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.610435",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8fa229d6-6290-4da0-b177-340c91f5ef10",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.610491",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f9f93183-2294-4d42-8e2d-9eba35b1d9c2",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.771512",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ea966bee-2ad5-404e-a539-c7a59b8eaec1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.771580",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "315467ed-671c-4cac-96ee-c69e4f579b6e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.940869",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "064d5258-62d0-44c8-8fcb-0953eeee459f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:24.940921",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f71d650c-d685-46e9-ba65-140e5e700b81",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.107148",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "72dd5442-00c6-4a0a-b9a7-43d549d9444c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.107176",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7ba10606-72b9-4a2e-9d52-3d83826b33c0",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.268200",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4d280f86-24f2-4fb4-889b-ca840446e364",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.268254",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "78b2fb84-7b8b-4820-bfc4-9eb65aa97cd8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.426907",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "47f6a669-1c2c-452b-bf0c-70c9eaee0bec",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.426958",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e53c665f-5f93-474a-85ef-a74912c4d37a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.584973",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b17fdfee-644a-4b3c-a40c-ff60e01ea10b",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.585029",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6343f39d-672b-4eef-b95d-a33030b17387",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.739245",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "eb30ac8e-fe26-48aa-a13a-731b3464b33d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.739307",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f3327073-9298-46f4-a256-133580d98322",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.901278",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3698588a-a2f6-4692-a391-c4e154f90ca1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:25.901347",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a66da30b-a14d-44d0-80ea-3f29eae8a68c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.063349",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "91c6ff52-eeb9-451b-bf9e-18d1b0b8721a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.063404",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "42f4db9c-64a6-4357-9490-eb2a45f08c5f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.225429",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "00b6fe42-ef1a-48e5-8c9b-1497a7e4c5c6",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.225492",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1f49a87a-ef3b-42a2-a947-505e917cb9cf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.388919",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "416ccaff-3789-49da-a814-d288ef39e804",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.388995",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "868e0cb0-5d1e-4f69-8955-46c9bb4ba2c9",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.553857",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a77bb2aa-f3bd-43d5-9c88-fb26ee0b0ba3",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.553909",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5d1a871e-fd9f-42f0-9ca7-3a7cb6fd40d6",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.731708",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f56948c5-89f0-4998-8e6e-684c4ccb7b4d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.731783",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e95c2f72-a625-482e-b449-f32fb77de293",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.908114",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "53aade94-8df4-4ff8-823a-7b3d67c1edb2",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:26.908238",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3cc232a5-de41-4aa1-8ebd-c8475d23c106",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.159271",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a11b65fc-1235-477c-9be1-686749d3b500",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.159327",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "45f38dd1-255a-4292-a1fe-a59626b49699",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.334780",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5e68cdf8-21c6-4be7-ae5e-8b9ffa151b26",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.334839",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "010f5f28-1e84-483f-b616-d380d12974fd",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.525747",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cea185bd-5634-4e99-bc1b-63dd35970de9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.525771",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e80354ef-f5e3-4401-b4c6-3d4dbddb35b0",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.726310",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d39f43bb-c7fa-4a6b-ab8c-359827f7cc1f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.726337",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0aecbfed-7f1d-4786-a5d4-f99b966b487d",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.977120",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "df1660ad-196b-4d66-8dae-2879647c7e5e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:27.977149",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2461f05f-3c0a-400f-8319-a19f45889351",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.223455",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1a668348-5bcf-4b13-988a-3e049898e3d0",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.223487",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7cca4483-ff2e-4610-be38-71647e5ef3cf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.403236",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3eff1702-978a-4cc8-9fbb-88e523c9eebe",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.403262",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0aad61e4-6fc3-4c10-ac4a-62297d4a2118",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.614822",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f7306d7c-7a44-4144-8639-18241d198666",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.614881",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2307ac51-32f7-41a8-97c2-31d542acfa34",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.787888",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f49015f6-72f1-47ea-9b5b-48baa4e13613",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.787949",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "86696663-2c13-4aad-9463-b7bd04cd6865",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.958088",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4806dee2-9a12-4d3f-bb44-7888746ce32c",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:28.958140",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "777531cb-5e46-4fa5-b4bd-20c4b81a527f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.129252",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "84c6155d-6693-4499-92cf-227f478df587",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.129305",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b023e050-1b6b-4e22-b3f2-4ab8bb372e6a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.309702",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a7252170-cdb4-48f1-b567-672951a981f1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.309726",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1b70f0c0-3f5a-4814-8aad-dd72d2825a77",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.480982",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "64b789b0-15a9-46ee-9b9d-0b9281ab7db9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.481046",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d4c7c841-79b2-4741-86eb-66ddb79427a1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.662504",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "66744e98-5013-4212-9f23-27610a561bef",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.662557",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "3535d68f-79de-4f23-8703-3d49f16b6894",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.842829",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cd5a2d93-a5df-424c-ba53-27df3581cfea",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:29.842890",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "eec2a848-a950-4cdd-9fe2-e4cf0b3c2018",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.017860",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1bef8bfa-e3ef-4196-9c6a-a93157a64942",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.017907",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "82dc24a6-b9d9-4204-93d7-74551c956974",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.199637",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "984464c4-083c-4bed-91c5-4c1c58c5d3fc",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.199684",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d098198d-3d2e-4c46-8e7b-8cf0c6542bf3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.379412",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ef23c442-1e0d-4b85-b457-a3d0efd85add",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.379462",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1f6ba6a9-93f5-4267-8a06-74da083ceccd",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.554317",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f8615b2e-e166-41f0-bc59-75016d34ad09",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.554376",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "81bd4776-2687-4bde-aedc-9d4e83cff56b",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.739542",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "f6374d63-6aff-4b43-a264-197ccd6326a4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.739594",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fbd40390-2a12-45d1-902d-250c09b87fa8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.918533",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d6aa01fa-de03-419a-87c6-dd9dc05c44e3",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:30.918592",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "32ff2339-1e15-4afb-b261-6a9316f55ad8",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.095276",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "17132343-632e-41a2-8501-5edb98caa575",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.095347",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "eea95e2a-df5e-41b9-b61c-48a7d54ea447",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.273262",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9f97829a-2da0-459f-b1e5-8f175affcfb9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.273321",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7a6852c7-dbae-4669-a9d4-4ca5d2302bb3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.468342",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cc4ead77-28b8-4619-ab1f-3b3483a812db",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.468475",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "cd6953a0-e362-4cea-bb52-36e09ccaa3eb",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.732295",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8647e75f-ff6b-4161-a539-6d73b3822919",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.732348",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "93e5753d-1cc1-4456-b32c-5974700b9c3f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.919527",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6b3c783f-1fe2-4c1c-94d2-de683c7d6f51",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:31.919583",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4e87e61b-d2ea-4610-bf7c-c183dff39d5e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.102007",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "50727bdf-46de-42f7-8d95-0c3e5a69c473",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.102062",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5f7a573b-72a8-4b0f-8ee5-57cc3b0b9a7b",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.279228",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7279377e-dcfe-4a52-b6ff-3d9135995225",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.279274",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "a6614956-86dc-401a-951b-4c8a162e49e9",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.502111",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0c95c6e2-e06b-4cc4-b439-83dbb91f59b4",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.502161",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1be83c33-c24a-4158-9aca-f41e762efc13",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.676078",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6a20b4c6-7bd6-4c0b-8148-63486a009c48",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.676129",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8719ff93-550a-4eb6-b346-a217753d82c3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.852434",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7a3ee076-3107-45c3-8640-5493a02d3e3a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:32.852490",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "88b756d4-426a-4eae-b74c-fd007659181c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.039072",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4c291105-afdf-45fc-8550-5326a34e7a8a",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.039128",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "38c5311e-bd4e-43f7-bd6b-c62510db1cb1",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.222230",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "826d2f8a-b720-44ba-b81c-8c680a2c627f",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.222288",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "b5e2cf80-f638-4d90-8dd9-7c650a409b01",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.401302",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "2d092b12-ca14-4b84-8b18-f7188f120b17",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.401359",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4022a86e-7b36-456c-a248-13105c38b594",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.581483",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7e93eb0c-ee44-4099-b57e-7f1a77626208",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.581559",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "73a794cb-5055-4969-8075-2f43c0a3f336",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.811456",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "64b599ba-4660-47f1-94f7-5c6a038b83bd",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:33.811506",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "9eeb1e08-aee9-4f58-a3c6-599d29a2e753",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.004773",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0796d802-403b-4255-b921-6edb57203245",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.004828",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6170f982-33a0-4e13-b0fe-e551662744be",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.186598",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c46716d1-dc1e-462d-bf10-29be9becd7a9",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.186659",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "e7984f1d-898c-4a34-9069-988768581ba4",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.374825",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d07b8c75-cd86-4e5f-8814-f3f65ab3e523",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.374881",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "df5975a0-f906-47e0-bfbc-e1bd06538788",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.556707",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "eee94017-de22-43cf-b9cd-f14ea1e21a31",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.556758",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "fe883c22-e7cd-41a1-8a58-506184b2d54f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.740112",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "8e360f44-d3c5-4f38-9045-260e63801c8d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.740169",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "166377f0-f0b0-4c7a-9573-8650da3e7533",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.925349",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "909981f4-4421-4c3b-824f-5532ad7faa84",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:34.925468",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1f28fe1f-1cea-4937-a34a-3ba9b2a29e82",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.105215",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6b5ef7cd-c33a-4bf9-ae02-c224495a1833",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.105263",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c9dd68aa-02fb-40da-8b76-5f27d7bf9b8a",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.287707",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "51d79154-774a-4404-a87d-bd08be2c02bd",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.287764",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "49055f10-a100-4b38-a3de-460ee325accf",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.473425",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "bd1a3e8e-d436-4233-910e-98c4efe5efb6",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.473485",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d7013dbe-3cae-491c-98f4-a461ce5128be",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.656870",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d446bf53-2eaf-47ac-b09c-cac7df1e48a7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.656928",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "67748025-7c3b-4ae1-9346-599221de8b15",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.841983",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "69140741-950c-44c3-a2b7-5a77b35a918d",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:35.842038",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "747649d1-74e5-452f-9b10-1035d00477b3",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.030713",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "0a0a7463-b709-4794-bd92-4ceb5febd2c1",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.030760",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "c17d5741-ce71-4569-928d-611025b670c7",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.216208",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "4b1ee4cf-0236-43b0-b42a-99678842d546",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.216262",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "364502e5-17fb-42cf-86a4-c2e97bcba4f6",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.418865",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "79eaaecd-ee9a-48b8-954f-c2a0762341c7",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.418922",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "497f4518-e0a8-4ddc-ad15-a1a82d1b46cb",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.614310",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "acc1a195-cabf-49a5-ab18-e4fa54deb7c5",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.614332",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "03d9fb42-bc04-4217-82fa-24d7a8a1121e",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.797527",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "40288c86-08db-46e6-8c6a-dbd064cb5908",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.797549",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7ef5c907-6e45-4c69-b2de-63f3c8b80d67",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.985491",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "5abeff79-b24e-498f-a0f9-b0f6c8801c56",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:36.985565",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "ffc38a95-46e9-4ea9-a1fb-5ce622c06f45",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.176238",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "23760e96-f66c-459e-ac2e-a3c26931f41e",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.176289",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "7b58d3d6-df2f-45db-856a-042e26e2b74c",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.368200",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "6920c711-279e-428b-862f-bb10074f91f2",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.368264",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "d687830b-3d4e-453b-a758-9b8a0f14869f",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.557105",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "06bf947a-a121-4b0b-bda1-a6e115c03c28",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.557155",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "be4d785d-7632-4f3b-b70f-cc96fcf60076",
+      "role": "user",
+      "content": "너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.745761",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    },
+    {
+      "id": "1f1a0615-2fa4-4c89-9583-d8105caa8d88",
+      "role": "assistant",
+      "content": "안녕하세요! Exaone 3.5 2.4 모델을 사용한 응답입니다. 질문: 너의 이름은 ?",
+      "timestamp": "2025-09-08T12:44:37.745809",
+      "session_id": "a66bae91-a6cc-45ac-807b-ef86a84a1753"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+# Backend dependencies
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.4.2
+requests==2.31.0
+python-multipart==0.0.6
+
+# Database dependencies (PostgreSQL + pgvector)
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+greenlet==3.0.3
+sqlalchemy==2.0.23
+alembic==1.13.1
+
+# Vector database and embeddings
+pgvector==0.2.4
+sentence-transformers==2.2.2
+numpy<2.0,>=1.26.4
+
+# LangChain dependencies
+langchain==0.2.0
+langchain-community==0.2.0
+langchain-core==0.2.0
+langchain-ollama==0.1.0
+
+# Ollama integration
+ollama==0.1.7
+httpx==0.25.2
+
+# Async processing
+asyncio-throttle==1.0.2
+aiofiles==23.2.1
+
+# Logging and monitoring
+structlog==23.2.0
+prometheus-client==0.19.0
+
+# Google Search API
+google-api-python-client==2.108.0
+google-search-results==2.4.2
+
+# Configuration and environment
+python-dotenv==1.0.0
+pydantic-settings==2.1.0
+
+# File processing
+PyPDF2==3.0.1
+python-docx==1.1.0
+pandas>=2.1.4
+
+# Streaming and real-time communication
+sse-starlette==1.6.5
+websockets==12.0
+
+# For Exaone model integration (add specific packages as needed)
+# torch>=2.0.0
+# transformers>=4.30.0
+# accelerate>=0.20.0
+
+# Development
+pytest==7.4.3
+black==23.9.1
+flake8==6.0.0

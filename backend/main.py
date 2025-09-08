@@ -103,7 +103,7 @@ chat_controller = ChatController()
 class MessageRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
-    use_rag: bool = True
+    use_rag: bool = True  # RAG is enabled by default
     use_search: bool = False
 
 class SessionRequest(BaseModel):
@@ -184,16 +184,40 @@ async def create_session():
 
 @app.post("/api/chat/message")
 async def send_message(request: MessageRequest):
-    """Send a message and get AI response"""
+    """Send a message and get AI response using RAG by default"""
     session_id = request.session_id or "default"
     
     try:
+        # Always use RAG service for enhanced responses (unless explicitly disabled)
         if request.use_rag:
-            # Use RAG service for enhanced responses
             result = await rag_service.rag_query(request.message, session_id)
             
             if not result["success"]:
-                raise HTTPException(status_code=400, detail=result["error"])
+                # If RAG fails, fallback to basic chat
+                logger.warning(f"RAG failed: {result.get('error', 'Unknown error')}, falling back to basic chat")
+                from backend.services.prompt_service import prompt_service
+                enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
+                response = await ollama_service.generate(enhanced_prompt)
+                
+                return {
+                    "success": True,
+                    "user_message": {
+                        "id": str(uuid.uuid4()),
+                        "content": request.message,
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    "assistant_message": {
+                        "id": str(uuid.uuid4()),
+                        "content": response,
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    "context": [],
+                    "metadata": {
+                        "context_count": 0,
+                        "fallback_mode": True,
+                        "rag_enabled": False
+                    }
+                }
             
             # Format response for frontend
             return {
@@ -212,7 +236,7 @@ async def send_message(request: MessageRequest):
                 "metadata": result.get("metadata", {})
             }
         else:
-            # Use basic Ollama service with enhanced prompting
+            # Use basic Ollama service with enhanced prompting (when RAG is explicitly disabled)
             from backend.services.prompt_service import prompt_service
             enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
             response = await ollama_service.generate(enhanced_prompt)
@@ -228,6 +252,11 @@ async def send_message(request: MessageRequest):
                     "id": str(uuid.uuid4()),
                     "content": response,
                     "timestamp": datetime.now().isoformat()
+                },
+                "context": [],
+                "metadata": {
+                    "context_count": 0,
+                    "rag_enabled": False
                 }
             }
         
@@ -612,7 +641,7 @@ async def search(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Vector search endpoints
-@app.post("/api/vector/search")
+@app.get("/api/vector/search")
 async def vector_search(query: str, top_k: Optional[int] = None, similarity_threshold: Optional[float] = None):
     """Search for similar documents using vector similarity"""
     try:

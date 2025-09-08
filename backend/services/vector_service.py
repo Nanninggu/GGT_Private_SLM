@@ -106,7 +106,8 @@ class VectorService:
                 # Try to initialize database service
                 await db_service.initialize()
                 if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
-                    raise Exception("Database not initialized. Please ensure database service is running.")
+                    logger.warning("Database not available, returning empty results")
+                    return []
             
             async with db_service.get_session() as session:
                 result = await session.execute(

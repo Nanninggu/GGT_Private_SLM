@@ -153,7 +153,7 @@ async def test_configuration():
         
         # Test Ollama settings
         assert settings.OLLAMA_BASE_URL == "http://localhost:11435"
-        assert settings.OLLAMA_CHAT_TEMPERATURE == 0.1
+        assert settings.OLLAMA_CHAT_TEMPERATURE == 0.3
         logger.info("✅ Ollama configuration test passed")
         
         # Test RAG settings

@@ -2,12 +2,17 @@
 Chat service layer for business logic
 """
 import uuid
+import asyncio
+import logging
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResponse
 from backend.repositories.chat_repository import ChatRepository
 from backend.services.llm_service import ExaoneLLMService
+from backend.services.rag_service import rag_service
 from backend.config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 class ChatService:
     """Service layer for chat functionality"""
@@ -15,6 +20,8 @@ class ChatService:
     def __init__(self):
         self.repository = ChatRepository()
         self.llm_service = ExaoneLLMService()
+        self.rag_service = rag_service
+        self._initialized = False
 
     def create_session(self) -> ChatSession:
         """Create a new chat session"""
@@ -32,8 +39,23 @@ class ChatService:
         """Get existing chat session"""
         return self.repository.load_session(session_id)
 
-    def send_message(self, session_id: str, user_message: str) -> tuple[ChatMessage, ChatMessage]:
-        """Send a message and get AI response"""
+    async def initialize(self):
+        """Initialize RAG service"""
+        if not self._initialized:
+            try:
+                await self.rag_service.initialize()
+                self._initialized = True
+                logger.info("ChatService initialized with RAG")
+            except Exception as e:
+                logger.error(f"Failed to initialize RAG service: {e}")
+                raise
+
+    async def send_message(self, session_id: str, user_message: str) -> tuple[ChatMessage, ChatMessage]:
+        """Send a message and get AI response using RAG"""
+        # Initialize RAG service if not already done
+        if not self._initialized:
+            await self.initialize()
+
         # Load or create session
         session = self.get_session(session_id)
         if not session:
@@ -55,14 +77,37 @@ class ChatService:
         # Get recent messages for context (limit to MAX_HISTORY)
         recent_messages = session.messages[-settings.MAX_HISTORY:]
 
-        # Generate AI response
-        model_response = self.llm_service.generate_response(recent_messages)
+        try:
+            # Use RAG service to generate response
+            logger.info(f"Processing RAG query: {user_message[:100]}...")
+            rag_result = await self.rag_service.rag_query(user_message, session_id)
+            
+            if rag_result["success"]:
+                # RAG-based response
+                response_content = rag_result["response"]
+                context_count = rag_result["metadata"].get("context_count", 0)
+                context_files = rag_result["metadata"].get("context_files", [])
+                
+                logger.info(f"RAG response generated with {context_count} context documents")
+                if context_files:
+                    logger.info(f"Context files: {context_files}")
+            else:
+                # Fallback to basic LLM response
+                logger.warning("RAG failed, falling back to basic LLM response")
+                model_response = self.llm_service.generate_response(recent_messages)
+                response_content = model_response.content
+                
+        except Exception as e:
+            logger.error(f"RAG processing failed: {e}, falling back to basic LLM")
+            # Fallback to basic LLM response
+            model_response = self.llm_service.generate_response(recent_messages)
+            response_content = model_response.content
 
         # Create assistant message
         assistant_msg = ChatMessage(
             id=str(uuid.uuid4()),
             role=MessageRole.ASSISTANT,
-            content=model_response.content,
+            content=response_content,
             timestamp=datetime.now(),
             session_id=session_id
         )

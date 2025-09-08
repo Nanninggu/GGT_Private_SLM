@@ -1,6 +1,7 @@
 """
 Chat controller for handling API requests
 """
+import asyncio
 from typing import Dict, Any
 
 from backend.services.chat_service import ChatService
@@ -28,7 +29,7 @@ class ChatController:
                 "error": str(e)
             }
 
-    def send_message(self, session_id: str, message: str) -> Dict[str, Any]:
+    async def send_message(self, session_id: str, message: str) -> Dict[str, Any]:
         """Send a message and get response"""
         try:
             if not message.strip():
@@ -37,7 +38,7 @@ class ChatController:
                     "error": "Message cannot be empty"
                 }
 
-            user_msg, assistant_msg = self.chat_service.send_message(session_id, message)
+            user_msg, assistant_msg = await self.chat_service.send_message(session_id, message)
 
             return {
                 "success": True,

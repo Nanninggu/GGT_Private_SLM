@@ -1,0 +1,197 @@
+"""
+File Upload Page for Streamlit
+"""
+import streamlit as st
+import sys
+import os
+
+# Add parent directories to Python path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+grandparent_dir = os.path.dirname(parent_dir)
+sys.path.append(parent_dir)
+sys.path.append(grandparent_dir)
+
+from services.api_service import APIService
+from components.chat_components import FileUploadComponents, StatusComponents
+
+def main():
+    """Main file upload page"""
+    st.set_page_config(
+        page_title="파일 업로드",
+        page_icon="📁",
+        layout="wide"
+    )
+    
+    st.title("📁 파일 업로드")
+    st.markdown("문서를 업로드하여 RAG 시스템에 추가하고 벡터화합니다.")
+    
+    # Navigation buttons
+    col1, col2, col3 = st.columns([1, 1, 4])
+    with col1:
+        if st.button("🏠 홈으로", use_container_width=True):
+            st.switch_page("main.py")
+    with col2:
+        if st.button("🔄 새로고침", use_container_width=True):
+            st.rerun()
+    
+    # Initialize API service
+    api_service = APIService()
+    
+    # Check backend connection
+    if not api_service.health_check():
+        StatusComponents.show_connection_status(False)
+        st.stop()
+    
+    StatusComponents.show_connection_status(True)
+    
+    # RAG mode selector
+    st.sidebar.title("⚙️ 설정")
+    rag_mode = FileUploadComponents.render_rag_mode_selector()
+    
+    # Upload mode selector
+    upload_mode = st.sidebar.radio(
+        "업로드 모드",
+        ["단일 파일", "여러 파일"],
+        help="단일 파일: 하나씩 업로드\n여러 파일: 여러 개를 한 번에 업로드"
+    )
+    
+    # Main content area
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        if upload_mode == "단일 파일":
+            # Single file uploader
+            uploaded_file = FileUploadComponents.render_file_uploader(rag_mode, multiple=False)
+            
+            if uploaded_file is not None:
+                # Upload button
+                if FileUploadComponents.render_upload_button():
+                    # Process file upload
+                    with StatusComponents.show_loading():
+                        try:
+                            # Read file content
+                            file_content = uploaded_file.getvalue()
+                            filename = uploaded_file.name
+                            content_type = uploaded_file.type
+                            
+                            # Upload to appropriate RAG system
+                            if rag_mode == "기본 RAG":
+                                result = api_service.upload_file(file_content, filename, content_type)
+                            else:  # LangChain RAG
+                                result = api_service.upload_file_langchain(file_content, filename, content_type)
+                            
+                            if result.get("success", False):
+                                # Show success message
+                                if rag_mode == "기본 RAG":
+                                    FileUploadComponents.show_upload_success(
+                                        filename, 
+                                        doc_id=result.get("document_id")
+                                    )
+                                else:
+                                    FileUploadComponents.show_upload_success(
+                                        filename, 
+                                        doc_ids=result.get("document_ids")
+                                    )
+                                
+                                # Show additional info
+                                st.info(f"📊 파일 크기: {result.get('size', 0)} bytes")
+                                st.info(f"📝 추출된 텍스트 길이: {result.get('extracted_text_length', 0)} 문자")
+                                st.info(f"🔧 추출 방법: {result.get('extraction_method', 'unknown')}")
+                                st.info(f"🎯 RAG 모드: {rag_mode}")
+                                
+                            else:
+                                FileUploadComponents.show_upload_error(result.get("error", "알 수 없는 오류"))
+                                
+                        except Exception as e:
+                            FileUploadComponents.show_upload_error(str(e))
+        
+        else:  # Multiple files
+            # Multiple files uploader
+            uploaded_files = FileUploadComponents.render_file_uploader(rag_mode, multiple=True)
+            
+            if uploaded_files:
+                # Upload button
+                if FileUploadComponents.render_upload_button():
+                    # Process multiple files upload
+                    with StatusComponents.show_loading():
+                        try:
+                            # Prepare file list
+                            file_list = []
+                            for uploaded_file in uploaded_files:
+                                file_list.append({
+                                    'filename': uploaded_file.name,
+                                    'content': uploaded_file.getvalue(),
+                                    'content_type': uploaded_file.type
+                                })
+                            
+                            # Upload to appropriate RAG system
+                            if rag_mode == "기본 RAG":
+                                result = api_service.upload_multiple_files(file_list)
+                            else:  # LangChain RAG
+                                result = api_service.upload_multiple_files_langchain(file_list)
+                            
+                            if result.get("success", False):
+                                # Show success message
+                                st.success(f"✅ {result.get('message', '파일 업로드 완료')}")
+                                
+                                # Show detailed results
+                                st.write("**업로드 결과:**")
+                                col1, col2, col3 = st.columns(3)
+                                with col1:
+                                    st.metric("전체 파일", result.get('total_files', 0))
+                                with col2:
+                                    st.metric("성공", result.get('successful_uploads', 0))
+                                with col3:
+                                    st.metric("실패", result.get('failed_uploads', 0))
+                                
+                                # Show individual file results
+                                st.write("**파일별 상세 결과:**")
+                                for file_result in result.get('results', []):
+                                    if file_result['success']:
+                                        st.success(f"✅ {file_result['filename']} - 성공")
+                                        if 'document_id' in file_result:
+                                            st.caption(f"문서 ID: {file_result['document_id']}")
+                                        if 'document_ids' in file_result:
+                                            st.caption(f"문서 ID: {', '.join(file_result['document_ids'])}")
+                                        st.caption(f"추출 방법: {file_result.get('extraction_method', 'unknown')}")
+                                    else:
+                                        st.error(f"❌ {file_result['filename']} - 실패: {file_result.get('error', '알 수 없는 오류')}")
+                                
+                            else:
+                                FileUploadComponents.show_upload_error(result.get("error", "알 수 없는 오류"))
+                                
+                        except Exception as e:
+                            FileUploadComponents.show_upload_error(str(e))
+    
+    with col2:
+        # Information panel
+        st.subheader("ℹ️ 업로드 정보")
+        
+        st.markdown("""
+        **지원되는 파일 형식:**
+        - 📄 텍스트 파일 (.txt, .md)
+        - 📊 데이터 파일 (.csv, .json)
+        - 📋 문서 파일 (.pdf, .docx)
+        """)
+        
+        st.markdown("""
+        **RAG 모드 설명:**
+        - **기본 RAG**: 단순한 벡터 검색
+        - **LangChain RAG**: 고급 체인 처리 및 메모리
+        """)
+        
+        st.markdown("""
+        **처리 과정:**
+        1. 파일 업로드
+        2. 텍스트 추출
+        3. 벡터 임베딩 생성
+        4. documents 테이블에 저장
+        5. RAG 시스템에서 활용 가능
+        """)
+        
+        # Show current RAG mode
+        st.info(f"현재 선택된 모드: **{rag_mode}**")
+
+if __name__ == "__main__":
+    main()

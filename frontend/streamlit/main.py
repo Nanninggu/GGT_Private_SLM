@@ -56,11 +56,14 @@ def main():
     st.markdown("로컬 SLM 모델을 사용한 AI 챗봇과 대화해보세요!")
     
     # Navigation buttons
-    col1, col2, col3 = st.columns([1, 1, 4])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 3])
     with col1:
         if st.button("📁 파일 업로드", use_container_width=True):
             st.switch_page("pages/file_upload.py")
     with col2:
+        if st.button("🗂️ 컬렉션 관리", use_container_width=True):
+            st.switch_page("pages/collection_management.py")
+    with col3:
         if st.button("🔄 새로고침", use_container_width=True):
             st.rerun()
 
@@ -69,10 +72,7 @@ def main():
 
     # Display chat history
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-            if message.get("timestamp"):
-                st.caption(f"📅 {message['timestamp']}")
+        ChatComponents.render_message(message)
 
     # Chat input
     if prompt := st.chat_input("메시지를 입력하세요..."):
@@ -107,17 +107,32 @@ def main():
                             response = chat_controller.send_message(prompt)
                 
                 if response:
+                    # Handle different response types
+                    if isinstance(response, dict):
+                        # Response with context information
+                        assistant_message = {
+                            "role": "assistant",
+                            "content": response.get("content", ""),
+                            "context": response.get("context", []),
+                            "metadata": response.get("metadata", {}),
+                            "timestamp": datetime.now().strftime("%H:%M:%S")
+                        }
+                    else:
+                        # Simple string response
+                        assistant_message = {
+                            "role": "assistant",
+                            "content": response,
+                            "context": [],
+                            "metadata": {},
+                            "timestamp": datetime.now().strftime("%H:%M:%S")
+                        }
+                    
                     # Add assistant response to chat history
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": response,
-                        "timestamp": datetime.now().strftime("%H:%M:%S")
-                    })
+                    st.session_state.messages.append(assistant_message)
                     
                     # Display assistant response (only for non-streaming)
                     if not streaming_enabled:
-                        with st.chat_message("assistant"):
-                            st.write(response)
+                        ChatComponents.render_message(assistant_message)
                         
                         # Show RAG mode indicator
                         if rag_mode == "LangChain RAG":

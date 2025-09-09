@@ -15,6 +15,8 @@ class ChatComponents:
         role = message["role"]
         content = message["content"]
         timestamp = message.get("timestamp", "")
+        context = message.get("context", [])
+        metadata = message.get("metadata", {})
 
         if role == "user":
             with st.chat_message("user"):
@@ -24,6 +26,34 @@ class ChatComponents:
         else:
             with st.chat_message("assistant"):
                 st.write(content)
+                
+                # Display source information if available
+                if context and len(context) > 0:
+                    st.markdown("---")
+                    st.markdown("📚 **참조 출처:**")
+                    
+                    for i, source in enumerate(context, 1):
+                        filename = source.get("filename", "Unknown")
+                        page = source.get("page_number", 1)
+                        collection = source.get("collection", "documents")
+                        similarity = source.get("similarity", 0)
+                        
+                        with st.expander(f"{i}. {filename} (페이지 {page}, 컬렉션: {collection})", expanded=False):
+                            st.write(f"**파일명:** {filename}")
+                            st.write(f"**페이지:** {page}")
+                            st.write(f"**컬렉션:** {collection}")
+                            st.write(f"**유사도:** {similarity:.2f}")
+                            if source.get("source_url"):
+                                st.write(f"**URL:** {source['source_url']}")
+                            if source.get("upload_date"):
+                                st.write(f"**업로드 날짜:** {source['upload_date']}")
+                            
+                            # Show content preview
+                            content_preview = source.get("content", "")[:200]
+                            if len(source.get("content", "")) > 200:
+                                content_preview += "..."
+                            st.write(f"**내용 미리보기:** {content_preview}")
+                
                 if timestamp:
                     st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
 
@@ -93,6 +123,96 @@ class ChatComponents:
                 st.info("🧠 LangChain 기반 RAG\n- 대화 메모리 지원\n- 고급 문서 검색\n- 체인 기반 처리")
             else:
                 st.info("⚡ 기본 RAG\n- 빠른 응답\n- 간단한 검색")
+            
+            # Collection Selection (only for LangChain RAG)
+            if rag_mode == "LangChain RAG":
+                st.markdown("---")
+                st.subheader("📚 Vector DB 컬렉션")
+                
+                # Import here to avoid circular imports
+                from controllers.chat_controller import ChatController
+                chat_controller = ChatController()
+                
+                # Get collections
+                collections = chat_controller.get_collections()
+                current_collection = chat_controller.get_current_collection()
+                
+                # Debug: Show collections info
+                st.write(f"🔍 Debug - Collections: {collections}")
+                st.write(f"🔍 Debug - Current Collection: {current_collection}")
+                
+                # If no collections returned, create default collection
+                if not collections:
+                    collections = [{
+                        "id": "default",
+                        "name": "documents",
+                        "metadata": {},
+                        "created_at": None,
+                        "document_count": 0
+                    }]
+                
+                # Always show collection selection UI
+                if collections:
+                    # Create collection options
+                    collection_options = [f"{col['name']} ({col.get('document_count', 0)}개 문서)" for col in collections]
+                    
+                    # Find current collection index
+                    current_collection_index = 0
+                    for i, col in enumerate(collections):
+                        if col['name'] == current_collection:
+                            current_collection_index = i
+                            break
+                    
+                    # Collection selector
+                    selected_index = st.selectbox(
+                        "사용할 컬렉션 선택",
+                        range(len(collection_options)),
+                        format_func=lambda x: collection_options[x],
+                        index=current_collection_index,
+                        key="collection_select"
+                    )
+                    
+                    if selected_index is not None:
+                        selected_collection = collections[selected_index]['name']
+                        
+                        # Show collection info
+                        if st.button("ℹ️ 컬렉션 정보 보기", key="show_collection_info"):
+                            collection_info = chat_controller.get_collection_info(selected_collection)
+                            if collection_info:
+                                st.json(collection_info)
+                        
+                        # Switch collection if different
+                        if selected_collection != current_collection:
+                            if st.button("🔄 컬렉션 전환", key="switch_collection"):
+                                if chat_controller.switch_collection(selected_collection):
+                                    st.rerun()
+                    
+                    # Show current collection info
+                    if current_collection:
+                        st.info(f"현재 활성 컬렉션: **{current_collection}**")
+                else:
+                    # Show default collection when no collections are available
+                    st.info("기본 컬렉션을 사용합니다.")
+                    
+                    # Show current collection info
+                    if current_collection:
+                        st.info(f"현재 활성 컬렉션: **{current_collection}**")
+                    
+                    # Refresh button
+                    if st.button("🔄 컬렉션 목록 새로고침", key="refresh_collections"):
+                        st.rerun()
+                    
+                    # Collection management button
+                    if st.button("🗂️ 컬렉션 관리", key="collection_management", use_container_width=True):
+                        st.switch_page("pages/collection_management.py")
+                    
+                    # Show message about creating collections
+                    st.markdown("""
+                    **컬렉션 생성 방법:**
+                    1. 컬렉션 관리 페이지에서 직접 생성
+                    2. 파일 업로드 페이지에서 문서를 업로드
+                    3. LangChain RAG 모드로 업로드
+                    """)
 
             # Session management
             st.subheader("세션 관리")

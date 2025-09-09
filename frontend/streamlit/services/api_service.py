@@ -299,3 +299,130 @@ class APIService:
                             
         except requests.exceptions.RequestException as e:
             yield {"error": str(e), "finished": True}
+    
+    # Collection Management Methods
+    def get_collections(self) -> Dict[str, Any]:
+        """Get list of available vector database collections"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/collections",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_current_collection(self) -> Dict[str, Any]:
+        """Get the currently active collection"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/collections/active",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def switch_collection(self, collection_name: str) -> Dict[str, Any]:
+        """Switch the active collection for RAG queries"""
+        try:
+            payload = {"collection_name": collection_name}
+            response = requests.post(
+                f"{self.base_url}/api/collections/switch",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
+        """Get detailed information about a specific collection"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/collections/info/{collection_name}",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
+        """Create a new collection"""
+        try:
+            payload = {
+                "collection_name": collection_name,
+                "description": description
+            }
+            response = requests.post(
+                f"{self.base_url}/api/collections/create",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            # Get detailed error information
+            try:
+                error_detail = response.json()
+                return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
+            except:
+                return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def switch_collection(self, collection_name: str) -> Dict[str, Any]:
+        """Switch active collection"""
+        try:
+            payload = {
+                "collection_name": collection_name
+            }
+            response = requests.post(
+                f"{self.base_url}/api/collections/switch",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            # Get detailed error information
+            try:
+                error_detail = response.json()
+                return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
+            except:
+                return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def delete_collection(self, collection_name: str) -> Dict[str, Any]:
+        """Delete a collection and all its documents"""
+        try:
+            response = requests.delete(
+                f"{self.base_url}/api/collections/{collection_name}",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
+        """Rename a collection"""
+        try:
+            payload = {
+                "old_name": old_name,
+                "new_name": new_name
+            }
+            response = requests.put(
+                f"{self.base_url}/api/collections/rename",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}

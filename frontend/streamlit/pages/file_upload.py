@@ -49,6 +49,77 @@ def main():
     st.sidebar.title("⚙️ 설정")
     rag_mode = FileUploadComponents.render_rag_mode_selector()
     
+    # Collection Selection (only for LangChain RAG)
+    if rag_mode == "LangChain RAG":
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("📚 Vector DB 컬렉션")
+        
+        # Import here to avoid circular imports
+        from controllers.chat_controller import ChatController
+        chat_controller = ChatController()
+        
+        # Get collections
+        collections = chat_controller.get_collections()
+        current_collection = chat_controller.get_current_collection()
+        
+        # If no collections returned, create default collection
+        if not collections:
+            collections = [{
+                "id": "default",
+                "name": "documents",
+                "metadata": {},
+                "created_at": None,
+                "document_count": 0
+            }]
+        
+        if collections:
+            # Create collection options
+            collection_options = [f"{col['name']} ({col.get('document_count', 0)}개 문서)" for col in collections]
+            
+            # Find current collection index
+            current_collection_index = 0
+            for i, col in enumerate(collections):
+                if col['name'] == current_collection:
+                    current_collection_index = i
+                    break
+            
+            # Collection selector
+            selected_index = st.sidebar.selectbox(
+                "업로드할 컬렉션 선택",
+                range(len(collection_options)),
+                format_func=lambda x: collection_options[x],
+                index=current_collection_index,
+                key="upload_collection_select"
+            )
+            
+            if selected_index is not None:
+                selected_collection = collections[selected_index]['name']
+                st.sidebar.info(f"선택된 컬렉션: **{selected_collection}**")
+                
+                # Show collection info
+                if st.sidebar.button("ℹ️ 컬렉션 정보", key="show_upload_collection_info"):
+                    collection_info = chat_controller.get_collection_info(selected_collection)
+                    if collection_info:
+                        st.sidebar.json(collection_info)
+        else:
+            # Show default collection when no collections are available
+            st.sidebar.info("기본 컬렉션을 사용합니다.")
+            
+            # Show current collection info
+            if current_collection:
+                st.sidebar.info(f"현재 활성 컬렉션: **{current_collection}**")
+            
+            # Refresh button
+            if st.sidebar.button("🔄 새로고침", key="refresh_upload_collections"):
+                st.rerun()
+            
+            # Show message about creating collections
+            st.sidebar.markdown("""
+            **컬렉션 생성 방법:**
+            1. 파일을 업로드하면 자동으로 컬렉션이 생성됩니다
+            2. LangChain RAG 모드로 업로드하세요
+            """)
+    
     # Upload mode selector
     upload_mode = st.sidebar.radio(
         "업로드 모드",

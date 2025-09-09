@@ -14,9 +14,9 @@ from langchain_ollama import ChatOllama
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.chains import ConversationalRetrievalChain
 
-from backend.config.settings import settings
-from backend.services.langchain_vector_service import langchain_vector_service
-from backend.services.prompt_service import prompt_service
+from config.settings import settings
+from services.langchain_vector_service import langchain_vector_service
+from services.prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ class LangChainRagService:
         self.documents = None
         self.memory = None
         self.qa_chain = None
+        self.current_collection = "documents"  # Default collection
         
     async def initialize(self):
         """Initialize LangChain RAG service"""
@@ -75,6 +76,104 @@ class LangChainRagService:
             logger.error(f"Failed to initialize LangChain RAG service: {e}")
             raise
     
+    async def set_collection(self, collection_name: str) -> bool:
+        """Change the active collection for RAG queries"""
+        try:
+            # Check if collection exists
+            collections = await self.get_available_collections()
+            collection_exists = any(c["name"] == collection_name for c in collections)
+            
+            if not collection_exists:
+                logger.error(f"Collection '{collection_name}' does not exist")
+                return False
+            
+            # Initialize vector store with new collection
+            connection_string = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
+            
+            self.documents = PGVector(
+                connection_string=connection_string,
+                embedding_function=self.embeddings,
+                collection_name=collection_name,
+                distance_strategy="cosine"
+            )
+            
+            self.current_collection = collection_name
+            
+            # Recreate QA chain with new collection
+            self.qa_chain = ConversationalRetrievalChain.from_llm(
+                llm=self.llm,
+                retriever=self.documents.as_retriever(
+                    search_kwargs={
+                        "k": settings.RAG_VECTOR_SEARCH_TOP_K,
+                        "score_threshold": settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD
+                    }
+                ),
+                memory=self.memory,
+                return_source_documents=True,
+                verbose=True
+            )
+            
+            logger.info(f"Switched to collection: {collection_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to set collection '{collection_name}': {e}")
+            return False
+    
+    async def get_available_collections(self) -> List[Dict[str, Any]]:
+        """Get list of available collections"""
+        try:
+            return await langchain_vector_service.get_collections()
+        except Exception as e:
+            logger.error(f"Failed to get collections: {e}")
+            return []
+    
+    async def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
+        """Get information about a specific collection"""
+        try:
+            return await langchain_vector_service.get_collection_info(collection_name)
+        except Exception as e:
+            logger.error(f"Failed to get collection info: {e}")
+            return {}
+    
+    async def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
+        """Create a new collection"""
+        try:
+            return await langchain_vector_service.create_collection(collection_name, description)
+        except Exception as e:
+            logger.error(f"Failed to create collection: {e}")
+            raise
+    
+    async def delete_collection(self, collection_name: str) -> Dict[str, Any]:
+        """Delete a collection and all its documents"""
+        try:
+            result = await langchain_vector_service.delete_collection(collection_name)
+            
+            # If we're deleting the current collection, switch to default
+            if self.current_collection == collection_name:
+                await self.set_collection("documents")
+                logger.info(f"Switched to default collection after deleting {collection_name}")
+            
+            return result
+        except Exception as e:
+            logger.error(f"Failed to delete collection: {e}")
+            raise
+    
+    async def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
+        """Rename a collection"""
+        try:
+            result = await langchain_vector_service.rename_collection(old_name, new_name)
+            
+            # If we're renaming the current collection, update the current collection
+            if self.current_collection == old_name:
+                self.current_collection = new_name
+                logger.info(f"Updated current collection to {new_name}")
+            
+            return result
+        except Exception as e:
+            logger.error(f"Failed to rename collection: {e}")
+            raise
+    
     async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """Add document to knowledge base"""
         try:
@@ -101,29 +200,55 @@ class LangChainRagService:
             response_text = result.get("answer", "")
             source_docs = result.get("source_documents", [])
             
-            # Format context documents
+            # Format context documents with detailed source information
             context_docs = []
-            for doc in source_docs:
-                context_docs.append({
-                    "id": doc.metadata.get("id", ""),
+            for i, doc in enumerate(source_docs):
+                # Extract source information
+                source_info = {
+                    "id": doc.metadata.get("id", f"doc_{i}"),
                     "content": doc.page_content,
                     "metadata": doc.metadata,
-                    "similarity": 1.0  # LangChain doesn't provide similarity scores directly
-                })
+                    "similarity": 1.0,  # LangChain doesn't provide similarity scores directly
+                    "source_type": "vector_db",
+                    "collection": self.current_collection,
+                    "filename": doc.metadata.get("filename", "Unknown"),
+                    "page_number": doc.metadata.get("page", 1),
+                    "chunk_index": doc.metadata.get("chunk_index", i),
+                    "source_url": doc.metadata.get("source_url", ""),
+                    "upload_date": doc.metadata.get("upload_date", ""),
+                    "file_size": doc.metadata.get("file_size", 0)
+                }
+                context_docs.append(source_info)
             
-            # Add metadata
+            # Add metadata with source information
             metadata = {
                 "context_count": len(context_docs),
                 "context_sources": [doc.get("id") for doc in context_docs],
-                "context_files": [doc.get("metadata", {}).get("filename", "") for doc in context_docs],
+                "context_files": [doc.get("filename", "Unknown") for doc in context_docs],
                 "similarity_scores": [doc.get("similarity", 0) for doc in context_docs],
                 "langchain_mode": True,
-                "memory_enabled": True
+                "memory_enabled": True,
+                "source_collection": self.current_collection,
+                "has_sources": len(context_docs) > 0
             }
+            
+            # Format response with source information
+            formatted_response = response_text
+            
+            # Add source information to response if sources exist
+            if context_docs:
+                source_info = "\n\n📚 **참조 출처:**\n"
+                for i, doc in enumerate(context_docs, 1):
+                    filename = doc.get("filename", "Unknown")
+                    page = doc.get("page_number", 1)
+                    collection = doc.get("collection", "documents")
+                    source_info += f"{i}. **{filename}** (페이지 {page}, 컬렉션: {collection})\n"
+                
+                formatted_response += source_info
             
             return {
                 "success": True,
-                "response": response_text,
+                "response": formatted_response,
                 "context": context_docs,
                 "metadata": metadata,
                 "model_info": {
@@ -133,47 +258,19 @@ class LangChainRagService:
             }
             
         except Exception as e:
-            logger.error(f"RAG query failed: {e}")
-            
-            # Fallback to basic chat
-            try:
-                logger.info("Falling back to basic chat")
-                enhanced_prompt = prompt_service.build_basic_chat_prompt(query)
-                
-                # Use LangChain LLM for fallback
-                response = await self.llm.ainvoke(enhanced_prompt)
-                response_text = response.content if hasattr(response, 'content') else str(response)
-                
-                return {
-                    "success": True,
-                    "response": response_text,
-                    "context": [],
-                    "metadata": {
-                        "context_count": 0,
-                        "context_files": [],
-                        "fallback_mode": True,
-                        "langchain_mode": True,
-                        "enhanced_prompting": True
-                    },
-                    "model_info": {
-                        "model": settings.MODEL_NAME,
-                        "langchain": True
-                    }
+            logger.error(f"LangChain RAG query failed: {e}")
+            return {
+                "success": False,
+                "error": f"LangChain RAG query failed: {e}",
+                "response": None,
+                "context": [],
+                "metadata": {
+                    "context_count": 0,
+                    "context_files": [],
+                    "error_mode": True,
+                    "langchain_mode": True
                 }
-                
-            except Exception as fallback_error:
-                logger.error(f"Fallback also failed: {fallback_error}")
-                return {
-                    "success": False,
-                    "error": f"RAG query failed: {e}. Fallback also failed: {fallback_error}",
-                    "response": None,
-                    "context": [],
-                    "metadata": {
-                        "context_count": 0,
-                        "context_files": [],
-                        "error_mode": True
-                    }
-                }
+            }
     
     async def search_context(self, query: str, max_docs: int = None) -> List[Dict[str, Any]]:
         """Search for relevant context using LangChain"""
@@ -242,6 +339,26 @@ class LangChainRagService:
             logger.info("LangChain RAG service closed")
         except Exception as e:
             logger.error(f"Failed to close RAG service: {e}")
+    
+    # Collection Management Methods
+    async def get_collections(self) -> List[Dict[str, Any]]:
+        """Get list of available collections"""
+        try:
+            return await langchain_vector_service.get_collections()
+        except Exception as e:
+            logger.error(f"Failed to get collections: {e}")
+            return []
+    
+    async def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
+        """Get detailed information about a specific collection"""
+        try:
+            logger.info(f"Getting collection info for: {collection_name}")
+            result = await langchain_vector_service.get_collection_info(collection_name)
+            logger.info(f"Collection info result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get collection info: {e}")
+            return None
 
 # Global LangChain RAG service instance
 langchain_rag_service = LangChainRagService()

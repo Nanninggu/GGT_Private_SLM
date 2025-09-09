@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Any
 from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResponse
 from backend.repositories.chat_repository import ChatRepository
 from backend.services.llm_service import ExaoneLLMService
-from backend.services.rag_service import rag_service
+from backend.services.langchain_rag_service import langchain_rag_service
 from backend.config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class ChatService:
     def __init__(self):
         self.repository = ChatRepository()
         self.llm_service = ExaoneLLMService()
-        self.rag_service = rag_service
+        self.rag_service = langchain_rag_service
         self._initialized = False
 
     def create_session(self) -> ChatSession:
@@ -78,8 +78,8 @@ class ChatService:
         recent_messages = session.messages[-settings.MAX_HISTORY:]
 
         try:
-            # Use RAG service to generate response
-            logger.info(f"Processing RAG query: {user_message[:100]}...")
+            # Use LangChain RAG service to generate response
+            logger.info(f"Processing LangChain RAG query: {user_message[:100]}...")
             rag_result = await self.rag_service.rag_query(user_message, session_id)
             
             if rag_result["success"]:
@@ -88,20 +88,17 @@ class ChatService:
                 context_count = rag_result["metadata"].get("context_count", 0)
                 context_files = rag_result["metadata"].get("context_files", [])
                 
-                logger.info(f"RAG response generated with {context_count} context documents")
+                logger.info(f"LangChain RAG response generated with {context_count} context documents")
                 if context_files:
                     logger.info(f"Context files: {context_files}")
             else:
-                # Fallback to basic LLM response
-                logger.warning("RAG failed, falling back to basic LLM response")
-                model_response = self.llm_service.generate_response(recent_messages)
-                response_content = model_response.content
+                # If RAG fails, return error message instead of fallback
+                logger.error(f"LangChain RAG failed: {rag_result.get('error', 'Unknown error')}")
+                response_content = f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {rag_result.get('error', 'Unknown error')}"
                 
         except Exception as e:
-            logger.error(f"RAG processing failed: {e}, falling back to basic LLM")
-            # Fallback to basic LLM response
-            model_response = self.llm_service.generate_response(recent_messages)
-            response_content = model_response.content
+            logger.error(f"LangChain RAG processing failed: {e}")
+            response_content = f"죄송합니다. RAG 시스템에 오류가 발생했습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {str(e)}"
 
         # Create assistant message
         assistant_msg = ChatMessage(

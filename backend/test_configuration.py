@@ -158,12 +158,12 @@ async def test_configuration():
         
         # Test RAG settings
         assert settings.RAG_CONTEXT_MAX_DOCS == 15
-        assert settings.RAG_VECTOR_SEARCH_TOP_K == 8
+        assert settings.RAG_VECTOR_SEARCH_TOP_K == 15
         logger.info("✅ RAG configuration test passed")
         
         # Test vector DB settings
         assert settings.VECTOR_DB_DIMENSIONS == 1024
-        assert settings.VECTOR_DB_SIMILARITY_THRESHOLD == 0.7
+        assert settings.VECTOR_DB_SIMILARITY_THRESHOLD == 0.6
         logger.info("✅ Vector DB configuration test passed")
         
         logger.info("✅ All configuration tests passed")

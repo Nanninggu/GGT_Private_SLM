@@ -44,6 +44,23 @@ class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
 
+class CollectionRequest(BaseModel):
+    collection_name: str
+
+class CreateCollectionRequest(BaseModel):
+    collection_name: str
+    description: Optional[str] = ""
+
+class RenameCollectionRequest(BaseModel):
+    old_name: str
+    new_name: str
+
+class CollectionResponse(BaseModel):
+    success: bool
+    collections: Optional[List[Dict[str, Any]]] = None
+    current_collection: Optional[str] = None
+    error: Optional[str] = None
+
 # Global services
 services_initialized = False
 
@@ -184,81 +201,50 @@ async def create_session():
 
 @app.post("/api/chat/message")
 async def send_message(request: MessageRequest):
-    """Send a message and get AI response using RAG by default"""
+    """Send a message and get AI response using LangChain RAG"""
     session_id = request.session_id or "default"
     
     try:
-        # Always use RAG service for enhanced responses (unless explicitly disabled)
-        if request.use_rag:
-            result = await rag_service.rag_query(request.message, session_id)
-            
-            if not result["success"]:
-                # If RAG fails, fallback to basic chat
-                logger.warning(f"RAG failed: {result.get('error', 'Unknown error')}, falling back to basic chat")
-                from backend.services.prompt_service import prompt_service
-                enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
-                response = await ollama_service.generate(enhanced_prompt)
-                
-                return {
-                    "success": True,
-                    "user_message": {
-                        "id": str(uuid.uuid4()),
-                        "content": request.message,
-                        "timestamp": datetime.now().isoformat()
-                    },
-                    "assistant_message": {
-                        "id": str(uuid.uuid4()),
-                        "content": response,
-                        "timestamp": datetime.now().isoformat()
-                    },
-                    "context": [],
-                    "metadata": {
-                        "context_count": 0,
-                        "fallback_mode": True,
-                        "rag_enabled": False
-                    }
-                }
-            
-            # Format response for frontend
+        # Always use LangChain RAG service for vector DB-based responses
+        logger.info(f"Processing LangChain RAG query: {request.message[:100]}...")
+        result = await langchain_rag_service.rag_query(request.message, session_id)
+        
+        if not result["success"]:
+            # If RAG fails, return error message instead of fallback
+            logger.error(f"LangChain RAG failed: {result.get('error', 'Unknown error')}")
             return {
-                "success": True,
+                "success": False,
+                "error": f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {result.get('error', 'Unknown error')}",
                 "user_message": {
                     "id": str(uuid.uuid4()),
                     "content": request.message,
                     "timestamp": datetime.now().isoformat()
                 },
-                "assistant_message": {
-                    "id": str(uuid.uuid4()),
-                    "content": result["response"],
-                    "timestamp": datetime.now().isoformat()
-                },
-                "context": result.get("context", []),
-                "metadata": result.get("metadata", {})
-            }
-        else:
-            # Use basic Ollama service with enhanced prompting (when RAG is explicitly disabled)
-            from backend.services.prompt_service import prompt_service
-            enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
-            response = await ollama_service.generate(enhanced_prompt)
-            
-            return {
-                "success": True,
-                "user_message": {
-                    "id": str(uuid.uuid4()),
-                    "content": request.message,
-                    "timestamp": datetime.now().isoformat()
-                },
-                "assistant_message": {
-                    "id": str(uuid.uuid4()),
-                    "content": response,
-                    "timestamp": datetime.now().isoformat()
-                },
+                "assistant_message": None,
                 "context": [],
                 "metadata": {
                     "context_count": 0,
-                    "rag_enabled": False
+                    "vector_db_required": True,
+                    "langchain_mode": True
                 }
             }
+        
+        # Format response for frontend
+        return {
+            "success": True,
+            "user_message": {
+                "id": str(uuid.uuid4()),
+                "content": request.message,
+                "timestamp": datetime.now().isoformat()
+            },
+            "assistant_message": {
+                "id": str(uuid.uuid4()),
+                "content": result["response"],
+                "timestamp": datetime.now().isoformat()
+            },
+            "context": result.get("context", []),
+            "metadata": result.get("metadata", {})
+        }
         
     except Exception as e:
         logger.error(f"Failed to process message: {e}")
@@ -266,12 +252,13 @@ async def send_message(request: MessageRequest):
 
 @app.post("/api/chat/stream")
 async def stream_chat(request: ChatRequest):
-    """Stream chat response using Server-Sent Events"""
+    """Stream chat response using LangChain RAG with Server-Sent Events"""
     try:
         async def generate_response():
             try:
-                # Use RAG service for enhanced responses
-                result = await rag_service.rag_query(request.message)
+                # Use LangChain RAG service for vector DB-based responses
+                logger.info(f"Processing LangChain RAG stream query: {request.message[:100]}...")
+                result = await langchain_rag_service.rag_query(request.message, request.session_id)
                 
                 if result["success"] and result.get("response"):
                     # Stream the response
@@ -282,7 +269,10 @@ async def stream_chat(request: ChatRequest):
                         context_info = {
                             "type": "context",
                             "sources": [doc.get("filename", "Unknown") for doc in result["context"]],
-                            "context_files": result.get("context_files", [])
+                            "context_files": result.get("metadata", {}).get("context_files", []),
+                            "source_collection": result.get("metadata", {}).get("source_collection", "documents"),
+                            "context_count": len(result["context"]),
+                            "detailed_sources": result["context"]
                         }
                         yield {
                             "event": "context",
@@ -310,10 +300,11 @@ async def stream_chat(request: ChatRequest):
                         })
                     }
                 else:
-                    # Fallback to basic chat
-                    enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
+                    # If RAG fails, send error message
+                    error_message = f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {result.get('error', 'Unknown error')}"
                     
-                    async for chunk in ollama_service.generate_stream(enhanced_prompt):
+                    for i in range(0, len(error_message), 10):
+                        chunk = error_message[i:i+10]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -350,12 +341,13 @@ async def stream_chat(request: ChatRequest):
 
 @app.post("/api/chat/stream/langchain")
 async def stream_chat_langchain(request: ChatRequest):
-    """Stream chat response using LangChain with Server-Sent Events"""
+    """Stream chat response using LangChain RAG with Server-Sent Events"""
     try:
         async def generate_response():
             try:
-                # Use LangChain RAG service
-                result = await langchain_rag_service.rag_query(request.message)
+                # Use LangChain RAG service for vector DB-based responses
+                logger.info(f"Processing LangChain RAG stream query: {request.message[:100]}...")
+                result = await langchain_rag_service.rag_query(request.message, request.session_id)
                 
                 if result["success"] and result.get("response"):
                     response_text = result["response"]
@@ -364,8 +356,8 @@ async def stream_chat_langchain(request: ChatRequest):
                     if result.get("context"):
                         context_info = {
                             "type": "context",
-                            "sources": [doc.get("filename", "Unknown") for doc in result["context"]],
-                            "context_files": result.get("context_files", [])
+                            "sources": [doc.get("metadata", {}).get("filename", "Unknown") for doc in result["context"]],
+                            "context_files": result.get("metadata", {}).get("context_files", [])
                         }
                         yield {
                             "event": "context",
@@ -393,10 +385,11 @@ async def stream_chat_langchain(request: ChatRequest):
                         })
                     }
                 else:
-                    # Fallback to basic streaming
-                    enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
+                    # If RAG fails, send error message
+                    error_message = f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {result.get('error', 'Unknown error')}"
                     
-                    async for chunk in ollama_service.generate_stream(enhanced_prompt):
+                    for i in range(0, len(error_message), 10):
+                        chunk = error_message[i:i+10]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -503,35 +496,14 @@ async def langchain_chat_message(request: MessageRequest):
             "timestamp": datetime.now().isoformat()
         }
         
-        # Use LangChain RAG service
-        if request.use_rag:
-            rag_result = await langchain_rag_service.rag_query(request.message, request.session_id)
-            
-            if rag_result["success"]:
-                assistant_message = {
-                    "id": assistant_message_id,
-                    "content": rag_result["response"],
-                    "timestamp": datetime.now().isoformat()
-                }
-                
-                return {
-                    "success": True,
-                    "user_message": user_message,
-                    "assistant_message": assistant_message,
-                    "context": rag_result.get("context", []),
-                    "metadata": rag_result.get("metadata", {}),
-                    "langchain_mode": True
-                }
-            else:
-                raise HTTPException(status_code=500, detail=rag_result.get("error", "RAG query failed"))
-        else:
-            # Basic chat without RAG
-            enhanced_prompt = prompt_service.build_basic_chat_prompt(request.message)
-            response_text = await ollama_service.generate(enhanced_prompt)
-            
+        # Always use LangChain RAG service for vector DB-based responses
+        logger.info(f"Processing LangChain RAG query: {request.message[:100]}...")
+        rag_result = await langchain_rag_service.rag_query(request.message, request.session_id)
+        
+        if rag_result["success"]:
             assistant_message = {
                 "id": assistant_message_id,
-                "content": response_text,
+                "content": rag_result["response"],
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -539,11 +511,30 @@ async def langchain_chat_message(request: MessageRequest):
                 "success": True,
                 "user_message": user_message,
                 "assistant_message": assistant_message,
+                "context": rag_result.get("context", []),
+                "metadata": rag_result.get("metadata", {}),
+                "langchain_mode": True
+            }
+        else:
+            # If RAG fails, return error message
+            error_message = f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {rag_result.get('error', 'Unknown error')}"
+            
+            assistant_message = {
+                "id": assistant_message_id,
+                "content": error_message,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return {
+                "success": False,
+                "error": error_message,
+                "user_message": user_message,
+                "assistant_message": assistant_message,
                 "context": [],
                 "metadata": {
                     "context_count": 0,
-                    "fallback_mode": True,
-                    "langchain_mode": False
+                    "vector_db_required": True,
+                    "langchain_mode": True
                 }
             }
             
@@ -857,6 +848,191 @@ async def upload_multiple_files_langchain(files: List[UploadFile] = File(...)):
         
     except Exception as e:
         logger.error(f"LangChain multiple file upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Vector DB Collection Management endpoints
+@app.get("/api/collections")
+async def get_collections():
+    """Get list of available vector database collections"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        collections = await langchain_rag_service.get_available_collections()
+        current_collection = getattr(langchain_rag_service, 'current_collection', 'documents')
+        
+        return {
+            "success": True,
+            "collections": collections,
+            "current_collection": current_collection,
+            "total_collections": len(collections)
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get collections: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/collections/active")
+async def get_current_collection():
+    """Get the currently active collection"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        current_collection = getattr(langchain_rag_service, 'current_collection', 'documents')
+        
+        return {
+            "success": True,
+            "current_collection": current_collection
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get current collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/collections/switch")
+async def switch_collection(request: CollectionRequest):
+    """Switch the active collection for RAG queries"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        success = await langchain_rag_service.set_collection(request.collection_name)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Switched to collection: {request.collection_name}",
+                "current_collection": request.collection_name
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to switch to collection: {request.collection_name}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to switch collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/collections/info/{collection_name}")
+async def get_collection_info(collection_name: str):
+    """Get detailed information about a specific collection"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        collection_info = await langchain_rag_service.get_collection_info(collection_name)
+        
+        if not collection_info:
+            raise HTTPException(status_code=404, detail=f"Collection '{collection_name}' not found")
+        
+        return {
+            "success": True,
+            "collection": collection_info
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get collection info: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/collections/create")
+async def create_collection(request: CreateCollectionRequest):
+    """Create a new collection"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        result = await langchain_rag_service.create_collection(
+            request.collection_name, 
+            request.description
+        )
+        
+        return {
+            "success": True,
+            "message": f"Collection '{request.collection_name}' created successfully",
+            "collection": result
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to create collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/collections/{collection_name}")
+async def delete_collection(collection_name: str):
+    """Delete a collection and all its documents"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        result = await langchain_rag_service.delete_collection(collection_name)
+        
+        return {
+            "success": True,
+            "message": f"Collection '{collection_name}' deleted successfully",
+            "result": result
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to delete collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/collections/rename")
+async def rename_collection(request: RenameCollectionRequest):
+    """Rename a collection"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        result = await langchain_rag_service.rename_collection(
+            request.old_name, 
+            request.new_name
+        )
+        
+        return {
+            "success": True,
+            "message": f"Collection renamed from '{request.old_name}' to '{request.new_name}'",
+            "result": result
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to rename collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/collections/switch")
+async def switch_collection(request: dict):
+    """Switch active collection"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        collection_name = request.get("collection_name")
+        if not collection_name:
+            raise ValueError("collection_name is required")
+        
+        # Set the active collection in the RAG service
+        result = await langchain_rag_service.set_collection(collection_name)
+        
+        if not result:
+            raise ValueError(f"Failed to switch to collection: {collection_name}")
+        
+        return {
+            "success": True,
+            "message": f"Active collection switched to '{collection_name}'",
+            "active_collection": collection_name
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to switch collection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

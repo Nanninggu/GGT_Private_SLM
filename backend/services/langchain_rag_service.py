@@ -13,6 +13,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.chains import ConversationalRetrievalChain
+from langchain_community.vectorstores import PGVector
 
 from config.settings import settings
 from services.langchain_vector_service import langchain_vector_service
@@ -28,6 +29,7 @@ class LangChainRagService:
         self.documents = None
         self.memory = None
         self.qa_chain = None
+        self.embeddings = None
         self.current_collection = "documents"  # Default collection
         
     async def initialize(self):
@@ -47,6 +49,7 @@ class LangChainRagService:
             # Initialize vector store
             await langchain_vector_service.initialize()
             self.documents = langchain_vector_service.documents
+            self.embeddings = langchain_vector_service.embeddings
             
             # Initialize conversation memory
             self.memory = ConversationBufferWindowMemory(
@@ -87,16 +90,11 @@ class LangChainRagService:
                 logger.error(f"Collection '{collection_name}' does not exist")
                 return False
             
-            # Initialize vector store with new collection
-            connection_string = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
+            # Update the vector service to use the new collection
+            await langchain_vector_service.set_collection(collection_name)
             
-            self.documents = PGVector(
-                connection_string=connection_string,
-                embedding_function=self.embeddings,
-                collection_name=collection_name,
-                distance_strategy="cosine"
-            )
-            
+            # Update our documents reference
+            self.documents = langchain_vector_service.documents
             self.current_collection = collection_name
             
             # Recreate QA chain with new collection

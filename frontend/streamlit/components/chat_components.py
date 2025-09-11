@@ -11,7 +11,7 @@ class ChatComponents:
 
     @staticmethod
     def render_message(message: Dict[str, Any]):
-        """Render a single chat message"""
+        """Render a single chat message with HAI Portal styling"""
         role = message["role"]
         content = message["content"]
         timestamp = message.get("timestamp", "")
@@ -20,12 +20,22 @@ class ChatComponents:
 
         if role == "user":
             with st.chat_message("user"):
-                st.write(content)
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); 
+                            color: white; padding: 1rem; border-radius: 10px; margin: 0.5rem 0;">
+                    {content}
+                </div>
+                """, unsafe_allow_html=True)
                 if timestamp:
-                    st.caption(f"📤 {ChatComponents._format_timestamp(timestamp)}")
+                    st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
         else:
             with st.chat_message("assistant"):
-                st.write(content)
+                st.markdown(f"""
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; 
+                            border-left: 4px solid #8B5CF6; margin: 0.5rem 0;">
+                    {content}
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Display source information if available
                 if context and len(context) > 0:
@@ -69,21 +79,36 @@ class ChatComponents:
 
     @staticmethod
     def render_sidebar():
-        """Render sidebar with chat controls"""
+        """Render sidebar with HAI Portal navigation"""
         with st.sidebar:
-            st.title("🤖 Exaone 채팅봇")
+            # HAI Portal branding
+            st.markdown("""
+            <div style="text-align: center; padding: 1rem 0; border-bottom: 2px solid #8B5CF6;">
+                <h1 style="color: #8B5CF6; margin: 0; font-size: 1.8rem;">HAI Portal</h1>
+            </div>
+            """, unsafe_allow_html=True)
+            
             st.markdown("---")
-
-            # Model information
-            st.subheader("모델 정보")
-            st.info("**Exaone 3.5 2.4**\n\n로컬 SLM 모델을 사용합니다.")
-
+            
+            # HAI-Chat section (current)
+            st.markdown("### 💬 HAI-Chat")
+            st.markdown('<div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; margin: 0.5rem 0;">현재 선택된 서비스</div>', unsafe_allow_html=True)
+            
             st.markdown("---")
-
+            
+            # Settings and logout
+            st.markdown("### ⚙️ 설정")
+            if st.button("🔧 설정", key="nav_settings", use_container_width=True):
+                st.info("설정 페이지는 준비 중입니다.")
+            
+            if st.button("🚪 로그아웃", key="nav_logout", use_container_width=True):
+                st.info("로그아웃 기능은 준비 중입니다.")
+            
+            st.markdown("---")
+            
             # Chat controls
-            st.subheader("채팅 제어")
-
-            if st.button("🗑️ 채팅 초기화", key="clear_chat"):
+            st.markdown("### 💬 채팅 제어")
+            if st.button("🗑️ 채팅 초기화", key="clear_chat", use_container_width=True):
                 return "clear_chat"
             
             # Response Mode selection

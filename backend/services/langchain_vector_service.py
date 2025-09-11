@@ -512,6 +512,26 @@ class LangChainVectorService:
             logger.error(f"Failed to rename collection from '{old_name}' to '{new_name}': {e}")
             raise
     
+    async def set_collection(self, collection_name: str) -> bool:
+        """Switch to a different collection"""
+        try:
+            # Initialize PGVector store with new collection
+            connection_string = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
+            
+            self.documents = PGVector(
+                connection_string=connection_string,
+                embedding_function=self.embeddings,
+                collection_name=collection_name,
+                distance_strategy="cosine"
+            )
+            
+            logger.info(f"Switched to collection: {collection_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to set collection '{collection_name}': {e}")
+            return False
+
     async def close(self):
         """Close vector service"""
         try:

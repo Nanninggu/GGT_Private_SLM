@@ -210,19 +210,6 @@ class ChatController:
             st.error(f"현재 컬렉션을 가져올 수 없습니다: {response.get('error', '알 수 없는 오류')}")
             return None
     
-    def switch_collection(self, collection_name: str) -> bool:
-        """Switch to a different collection"""
-        if not self.check_backend_connection():
-            st.error("백엔드 서버에 연결할 수 없습니다.")
-            return False
-        
-        response = self.api_service.switch_collection(collection_name)
-        if response.get("success", False):
-            st.success(f"컬렉션을 '{collection_name}'으로 전환했습니다.")
-            return True
-        else:
-            st.error(f"컬렉션 전환에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
-            return False
     
     def get_collection_info(self, collection_name: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a collection"""
@@ -237,55 +224,27 @@ class ChatController:
             st.error(f"컬렉션 정보를 가져올 수 없습니다: {response.get('error', '알 수 없는 오류')}")
             return None
     
-    def create_collection(self, collection_name: str, description: str = "") -> bool:
+    def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
         """Create a new collection"""
         if not self.check_backend_connection():
-            st.error("백엔드 서버에 연결할 수 없습니다.")
-            return False
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
         
         if not collection_name or collection_name.strip() == "":
-            st.error("컬렉션 이름을 입력해주세요.")
-            return False
-        
-        # Debug: Show request details
-        st.write(f"🔍 Debug - API Request: collection_name={collection_name}, description={description}")
+            return {"success": False, "error": "컬렉션 이름을 입력해주세요."}
         
         response = self.api_service.create_collection(collection_name, description)
-        
-        # Debug: Show response details
-        st.write(f"🔍 Debug - API Response: {response}")
-        
-        if response.get("success", False):
-            st.success(f"컬렉션 '{collection_name}'이 생성되었습니다.")
-            return True
-        else:
-            st.error(f"컬렉션 생성에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
-            return False
+        return response
     
-    def switch_collection(self, collection_name: str) -> bool:
+    def switch_collection(self, collection_name: str) -> Dict[str, Any]:
         """Switch active collection"""
         if not self.check_backend_connection():
-            st.error("백엔드 서버에 연결할 수 없습니다.")
-            return False
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
         
         if not collection_name or collection_name.strip() == "":
-            st.error("컬렉션 이름을 선택해주세요.")
-            return False
-        
-        # Debug: Show request details
-        st.write(f"🔍 Debug - Switching to collection: {collection_name}")
+            return {"success": False, "error": "컬렉션 이름을 선택해주세요."}
         
         response = self.api_service.switch_collection(collection_name)
-        
-        # Debug: Show response details
-        st.write(f"🔍 Debug - Switch Response: {response}")
-        
-        if response.get("success", False):
-            st.success(f"활성 컬렉션이 '{collection_name}'로 변경되었습니다.")
-            return True
-        else:
-            st.error(f"컬렉션 전환에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
-            return False
+        return response
     
     def delete_collection(self, collection_name: str) -> bool:
         """Delete a collection and all its documents"""
@@ -297,35 +256,24 @@ class ChatController:
             st.error("기본 'documents' 컬렉션은 삭제할 수 없습니다.")
             return False
         
-        # Confirmation dialog
-        if st.button(f"'{collection_name}' 컬렉션 삭제 확인", key=f"delete_confirm_{collection_name}"):
-            response = self.api_service.delete_collection(collection_name)
-            if response.get("success", False):
-                st.success(f"컬렉션 '{collection_name}'이 삭제되었습니다.")
-                return True
-            else:
-                st.error(f"컬렉션 삭제에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
-                return False
-        return False
-    
-    def rename_collection(self, old_name: str, new_name: str) -> bool:
-        """Rename a collection"""
-        if not self.check_backend_connection():
-            st.error("백엔드 서버에 연결할 수 없습니다.")
-            return False
-        
-        if old_name == "documents":
-            st.error("기본 'documents' 컬렉션은 이름을 변경할 수 없습니다.")
-            return False
-        
-        if not new_name or new_name.strip() == "":
-            st.error("새 컬렉션 이름을 입력해주세요.")
-            return False
-        
-        response = self.api_service.rename_collection(old_name, new_name)
+        response = self.api_service.delete_collection(collection_name)
         if response.get("success", False):
-            st.success(f"컬렉션 이름이 '{old_name}'에서 '{new_name}'으로 변경되었습니다.")
+            st.success(f"컬렉션 '{collection_name}'이 삭제되었습니다.")
             return True
         else:
-            st.error(f"컬렉션 이름 변경에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
+            st.error(f"컬렉션 삭제에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
             return False
+    
+    def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
+        """Rename a collection"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+        
+        if old_name == "documents":
+            return {"success": False, "error": "기본 'documents' 컬렉션은 이름을 변경할 수 없습니다."}
+        
+        if not new_name or new_name.strip() == "":
+            return {"success": False, "error": "새 컬렉션 이름을 입력해주세요."}
+        
+        response = self.api_service.rename_collection(old_name, new_name)
+        return response

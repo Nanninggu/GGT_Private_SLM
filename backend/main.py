@@ -646,9 +646,9 @@ async def vector_search(query: str, top_k: Optional[int] = None, similarity_thre
         logger.error(f"Vector search failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# File upload endpoint
+# File upload endpoint with collection support
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), collection_name: str = Form("documents")):
     """Upload and process file"""
     try:
         # Read file content
@@ -665,6 +665,10 @@ async def upload_file(file: UploadFile = File(...)):
                 detail=f"Failed to extract text from {file.filename}: {extraction_result['metadata'].get('error', 'Unknown error')}"
             )
         
+        # Switch to specified collection if different from current
+        if collection_name != "documents":
+            await langchain_rag_service.set_collection(collection_name)
+        
         # Add to knowledge base
         doc_id = await rag_service.add_document(
             extraction_result["text"],
@@ -678,15 +682,16 @@ async def upload_file(file: UploadFile = File(...)):
             "size": len(content),
             "extracted_text_length": len(extraction_result["text"]),
             "extraction_method": extraction_result["metadata"].get("extraction_method", "unknown"),
+            "collection": collection_name,
             "message": "File uploaded and processed successfully"
         }
     except Exception as e:
         logger.error(f"File upload failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# LangChain file upload endpoint
+# LangChain file upload endpoint with collection support
 @app.post("/api/langchain/upload")
-async def upload_file_langchain(file: UploadFile = File(...)):
+async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("documents")):
     """Upload and process file using LangChain"""
     try:
         # Read file content
@@ -703,6 +708,10 @@ async def upload_file_langchain(file: UploadFile = File(...)):
                 detail=f"Failed to extract text from {file.filename}: {extraction_result['metadata'].get('error', 'Unknown error')}"
             )
         
+        # Switch to specified collection if different from current
+        if collection_name != "documents":
+            await langchain_rag_service.set_collection(collection_name)
+        
         # Add to LangChain knowledge base
         doc_ids = await langchain_rag_service.add_document(
             extraction_result["text"],
@@ -716,17 +725,22 @@ async def upload_file_langchain(file: UploadFile = File(...)):
             "size": len(content),
             "extracted_text_length": len(extraction_result["text"]),
             "extraction_method": extraction_result["metadata"].get("extraction_method", "unknown"),
+            "collection": collection_name,
             "message": "File uploaded and processed successfully with LangChain"
         }
     except Exception as e:
         logger.error(f"LangChain file upload failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Multiple files upload endpoint
+# Multiple files upload endpoint with collection support
 @app.post("/api/upload/multiple")
-async def upload_multiple_files(files: List[UploadFile] = File(...)):
+async def upload_multiple_files(files: List[UploadFile] = File(...), collection_name: str = Form("documents")):
     """Upload and process multiple files"""
     try:
+        # Switch to specified collection if different from current
+        if collection_name != "documents":
+            await langchain_rag_service.set_collection(collection_name)
+        
         results = []
         
         for file in files:
@@ -779,6 +793,7 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
             "successful_uploads": successful_uploads,
             "failed_uploads": len(files) - successful_uploads,
             "results": results,
+            "collection": collection_name,
             "message": f"Processed {len(files)} files: {successful_uploads} successful, {len(files) - successful_uploads} failed"
         }
         
@@ -786,11 +801,15 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
         logger.error(f"Multiple file upload failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# LangChain multiple files upload endpoint
+# LangChain multiple files upload endpoint with collection support
 @app.post("/api/langchain/upload/multiple")
-async def upload_multiple_files_langchain(files: List[UploadFile] = File(...)):
+async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), collection_name: str = Form("documents")):
     """Upload and process multiple files using LangChain"""
     try:
+        # Switch to specified collection if different from current
+        if collection_name != "documents":
+            await langchain_rag_service.set_collection(collection_name)
+        
         results = []
         
         for file in files:
@@ -843,6 +862,7 @@ async def upload_multiple_files_langchain(files: List[UploadFile] = File(...)):
             "successful_uploads": successful_uploads,
             "failed_uploads": len(files) - successful_uploads,
             "results": results,
+            "collection": collection_name,
             "message": f"Processed {len(files)} files with LangChain: {successful_uploads} successful, {len(files) - successful_uploads} failed"
         }
         
@@ -913,6 +933,7 @@ async def switch_collection(request: CollectionRequest):
     except Exception as e:
         logger.error(f"Failed to switch collection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/collections/info/{collection_name}")
 async def get_collection_info(collection_name: str):
@@ -1006,34 +1027,6 @@ async def rename_collection(request: RenameCollectionRequest):
         logger.error(f"Failed to rename collection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/collections/switch")
-async def switch_collection(request: dict):
-    """Switch active collection"""
-    try:
-        if not services_initialized:
-            raise HTTPException(status_code=503, detail="Services not initialized")
-        
-        collection_name = request.get("collection_name")
-        if not collection_name:
-            raise ValueError("collection_name is required")
-        
-        # Set the active collection in the RAG service
-        result = await langchain_rag_service.set_collection(collection_name)
-        
-        if not result:
-            raise ValueError(f"Failed to switch to collection: {collection_name}")
-        
-        return {
-            "success": True,
-            "message": f"Active collection switched to '{collection_name}'",
-            "active_collection": collection_name
-        }
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Failed to switch collection: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

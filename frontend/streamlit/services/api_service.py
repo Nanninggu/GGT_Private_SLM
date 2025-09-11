@@ -160,16 +160,20 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
-    def upload_file(self, file_content: bytes, filename: str, content_type: str = "text/plain") -> Dict[str, Any]:
+    def upload_file(self, file_content: bytes, filename: str, content_type: str = "text/plain", collection_name: str = "documents") -> Dict[str, Any]:
         """Upload file to backend for vectorization"""
         try:
             files = {
                 'file': (filename, io.BytesIO(file_content), content_type)
             }
+            data = {
+                'collection_name': collection_name
+            }
             
             response = requests.post(
                 f"{self.base_url}/api/upload",
                 files=files,
+                data=data,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -177,16 +181,20 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
-    def upload_file_langchain(self, file_content: bytes, filename: str, content_type: str = "text/plain") -> Dict[str, Any]:
+    def upload_file_langchain(self, file_content: bytes, filename: str, content_type: str = "text/plain", collection_name: str = "documents") -> Dict[str, Any]:
         """Upload file to LangChain backend for vectorization"""
         try:
             files = {
                 'file': (filename, io.BytesIO(file_content), content_type)
             }
+            data = {
+                'collection_name': collection_name
+            }
             
             response = requests.post(
                 f"{self.base_url}/api/langchain/upload",
                 files=files,
+                data=data,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -194,7 +202,7 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
-    def upload_multiple_files(self, file_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def upload_multiple_files(self, file_list: List[Dict[str, Any]], collection_name: str = "documents") -> Dict[str, Any]:
         """Upload multiple files to backend for vectorization"""
         try:
             files = []
@@ -205,9 +213,14 @@ class APIService:
                     file_info['content_type']
                 )))
             
+            data = {
+                'collection_name': collection_name
+            }
+            
             response = requests.post(
                 f"{self.base_url}/api/upload/multiple",
                 files=files,
+                data=data,
                 timeout=self.timeout * 2  # Longer timeout for multiple files
             )
             response.raise_for_status()
@@ -215,7 +228,7 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
-    def upload_multiple_files_langchain(self, file_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def upload_multiple_files_langchain(self, file_list: List[Dict[str, Any]], collection_name: str = "documents") -> Dict[str, Any]:
         """Upload multiple files to LangChain backend for vectorization"""
         try:
             files = []
@@ -226,9 +239,14 @@ class APIService:
                     file_info['content_type']
                 )))
             
+            data = {
+                'collection_name': collection_name
+            }
+            
             response = requests.post(
                 f"{self.base_url}/api/langchain/upload/multiple",
                 files=files,
+                data=data,
                 timeout=self.timeout * 2  # Longer timeout for multiple files
             )
             response.raise_for_status()
@@ -363,10 +381,19 @@ class APIService:
                 json=payload,
                 timeout=self.timeout
             )
+            
+            # Handle HTTP 400 (Bad Request) as a normal response, not an exception
+            if response.status_code == 400:
+                try:
+                    error_detail = response.json()
+                    return {"success": False, "error": error_detail.get('detail', 'Bad Request')}
+                except:
+                    return {"success": False, "error": "Bad Request"}
+            
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as e:
-            # Get detailed error information
+            # Get detailed error information for other HTTP errors
             try:
                 error_detail = response.json()
                 return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
@@ -386,10 +413,19 @@ class APIService:
                 json=payload,
                 timeout=self.timeout
             )
+            
+            # Handle HTTP 400 (Bad Request) as a normal response, not an exception
+            if response.status_code == 400:
+                try:
+                    error_detail = response.json()
+                    return {"success": False, "error": error_detail.get('detail', 'Bad Request')}
+                except:
+                    return {"success": False, "error": "Bad Request"}
+            
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as e:
-            # Get detailed error information
+            # Get detailed error information for other HTTP errors
             try:
                 error_detail = response.json()
                 return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
@@ -422,7 +458,23 @@ class APIService:
                 json=payload,
                 timeout=self.timeout
             )
+            
+            # Handle HTTP 400 (Bad Request) as a normal response, not an exception
+            if response.status_code == 400:
+                try:
+                    error_detail = response.json()
+                    return {"success": False, "error": error_detail.get('detail', 'Bad Request')}
+                except:
+                    return {"success": False, "error": "Bad Request"}
+            
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            # Get detailed error information for other HTTP errors
+            try:
+                error_detail = response.json()
+                return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
+            except:
+                return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}

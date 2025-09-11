@@ -14,7 +14,7 @@ from components.chat_components import ChatComponents, StatusComponents
 
 # Page configuration
 st.set_page_config(
-    page_title="Exaone 챗봇",
+    page_title="HAI Portal",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -51,31 +51,175 @@ def main():
         else:
             StatusComponents.show_error("백엔드 서버에 연결할 수 없습니다.")
 
-    # Main chat interface
-    st.title("🤖 Exaone 3.5 2.4 챗봇")
-    st.markdown("로컬 SLM 모델을 사용한 AI 챗봇과 대화해보세요!")
+    # Custom CSS for HAI Portal styling
+    st.markdown("""
+    <style>
+    /* Hide Streamlit default UI elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    .stDecoration {display:none;}
+    .stApp > header {display:none;}
+    .stApp > div[data-testid="stToolbar"] {display:none;}
+    .stApp > div[data-testid="stDecoration"] {display:none;}
+    .stApp > div[data-testid="stStatusWidget"] {display:none;}
     
-    # Navigation buttons
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 3])
+    /* Hide the hamburger menu */
+    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    
+    /* Hide the top bar completely */
+    .stApp > div[data-testid="stHeader"] {display:none;}
+    
+    /* Adjust main content padding */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .main-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+    }
+    
+    .main-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .main-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+    
+    .service-card {
+        background: white;
+        padding: 3rem;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        text-align: center;
+        margin: 2rem auto;
+        max-width: 500px;
+    }
+    
+    .service-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #8B5CF6;
+    }
+    
+    .service-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .service-description {
+        font-size: 1.1rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .status-online {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-offline {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .nav-button {
+        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0.25rem;
+    }
+    
+    .nav-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Main header
+    st.markdown("""
+    <div class="main-header">
+        <div class="main-title">HAI Portal</div>
+        <div class="main-subtitle">AI 기반 지능형 서비스 플랫폼</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Service status and navigation
+    col1, col2 = st.columns([2, 1])
+    
     with col1:
+        # Service card
+        st.markdown("""
+        <div class="service-card">
+            <div class="service-icon">💬</div>
+            <div class="service-title">HAI-Chat</div>
+            <div class="service-description">AI 챗봇과 대화하고 문서를 분석해보세요</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        # Status and navigation
+        st.markdown("### 🔧 서비스 관리")
+        
+        # Connection status
+        if st.session_state.backend_connected:
+            st.markdown('<div class="status-indicator status-online">🟢 서비스 온라인</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="status-indicator status-offline">🔴 서비스 오프라인</div>', unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Navigation buttons
         if st.button("📁 파일 업로드", use_container_width=True):
             st.switch_page("pages/file_upload.py")
-    with col2:
         if st.button("🗂️ 컬렉션 관리", use_container_width=True):
             st.switch_page("pages/collection_management.py")
-    with col3:
         if st.button("🔄 새로고침", use_container_width=True):
             st.rerun()
 
-    # Show connection status
-    StatusComponents.show_connection_status(st.session_state.backend_connected)
-
+    # Chat interface section
+    st.markdown("---")
+    st.markdown("### 💬 HAI-Chat 대화")
+    
     # Display chat history
     for message in st.session_state.messages:
         ChatComponents.render_message(message)
 
     # Chat input
-    if prompt := st.chat_input("메시지를 입력하세요..."):
+    if prompt := st.chat_input("HAI-Chat에게 메시지를 입력하세요..."):
         # Add user message to chat history
         st.session_state.messages.append({
             "role": "user",

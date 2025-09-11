@@ -18,13 +18,87 @@ from components.chat_components import FileUploadComponents, StatusComponents
 def main():
     """Main file upload page"""
     st.set_page_config(
-        page_title="파일 업로드",
+        page_title="HAI Portal - 파일 업로드",
         page_icon="📁",
         layout="wide"
     )
     
-    st.title("📁 파일 업로드")
-    st.markdown("문서를 업로드하여 RAG 시스템에 추가하고 벡터화합니다.")
+    # HAI Portal styling
+    st.markdown("""
+    <style>
+    /* Hide Streamlit default UI elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    .stDecoration {display:none;}
+    .stApp > header {display:none;}
+    .stApp > div[data-testid="stToolbar"] {display:none;}
+    .stApp > div[data-testid="stDecoration"] {display:none;}
+    .stApp > div[data-testid="stStatusWidget"] {display:none;}
+    
+    /* Hide the hamburger menu */
+    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    
+    /* Hide the top bar completely */
+    .stApp > div[data-testid="stHeader"] {display:none;}
+    
+    /* Adjust main content padding */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .breadcrumb {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .breadcrumb a {
+        color: #8B5CF6;
+        text-decoration: none;
+    }
+    
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Breadcrumb navigation
+    st.markdown("""
+    <div class="breadcrumb">
+        <a href="/">대시보드</a> > <strong>파일 업로드</strong>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Page header
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-title">📁 파일 업로드</div>
+        <div class="page-subtitle">문서를 업로드하여 RAG 시스템에 추가하고 벡터화합니다</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 4])
@@ -72,6 +146,9 @@ def main():
                 "document_count": 0
             }]
         
+        # Initialize selected_collection
+        selected_collection = "documents"
+        
         if collections:
             # Create collection options
             collection_options = [f"{col['name']} ({col.get('document_count', 0)}개 문서)" for col in collections]
@@ -104,10 +181,12 @@ def main():
         else:
             # Show default collection when no collections are available
             st.sidebar.info("기본 컬렉션을 사용합니다.")
+            selected_collection = "documents"
             
             # Show current collection info
             if current_collection:
                 st.sidebar.info(f"현재 활성 컬렉션: **{current_collection}**")
+                selected_collection = current_collection
             
             # Refresh button
             if st.sidebar.button("🔄 새로고침", key="refresh_upload_collections"):
@@ -148,9 +227,9 @@ def main():
                             
                             # Upload to appropriate RAG system
                             if rag_mode == "기본 RAG":
-                                result = api_service.upload_file(file_content, filename, content_type)
+                                result = api_service.upload_file(file_content, filename, content_type, selected_collection)
                             else:  # LangChain RAG
-                                result = api_service.upload_file_langchain(file_content, filename, content_type)
+                                result = api_service.upload_file_langchain(file_content, filename, content_type, selected_collection)
                             
                             if result.get("success", False):
                                 # Show success message
@@ -198,9 +277,9 @@ def main():
                             
                             # Upload to appropriate RAG system
                             if rag_mode == "기본 RAG":
-                                result = api_service.upload_multiple_files(file_list)
+                                result = api_service.upload_multiple_files(file_list, selected_collection)
                             else:  # LangChain RAG
-                                result = api_service.upload_multiple_files_langchain(file_list)
+                                result = api_service.upload_multiple_files_langchain(file_list, selected_collection)
                             
                             if result.get("success", False):
                                 # Show success message

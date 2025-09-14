@@ -91,6 +91,11 @@ class RagService:
             # Generate response using the enhanced prompt
             response = await self.ollama_service.generate(enhanced_prompt)
             
+            # Force Korean response if the response is in English
+            if self._is_english_response(response):
+                logger.warning("Detected English response in RAG, forcing Korean response")
+                response = self._force_korean_response(response, query)
+            
             # Format response with metadata
             formatted_response = {
                 "response": response,
@@ -248,29 +253,29 @@ class RagService:
         return messages
     
     def _build_system_message(self) -> str:
-        """Build system message for RAG"""
-        return """You are a helpful AI assistant that answers questions based on the provided context. 
-        
-Instructions:
-1. Use the provided context to answer questions accurately
-2. If the context doesn't contain enough information, say so clearly
-3. Cite relevant parts of the context when possible
-4. Be concise but comprehensive in your responses
-5. If asked about something not in the context, explain that you need more information
+        """Build system message for RAG with Korean response enforcement"""
+        return settings.KOREAN_SYSTEM_PROMPT + """
 
-Context will be provided in the user message."""
+📚 **RAG 시스템 지침**:
+1. 제공된 컨텍스트를 바탕으로 질문에 정확하게 답변하세요
+2. 컨텍스트에 충분한 정보가 없다면 명확히 말씀해 주세요
+3. 가능한 경우 컨텍스트의 관련 부분을 인용하세요
+4. 간결하면서도 포괄적인 응답을 제공하세요
+5. 컨텍스트에 없는 내용에 대해 질문받으면 더 많은 정보가 필요하다고 설명하세요
+
+컨텍스트는 사용자 메시지에서 제공됩니다."""
     
     def _build_user_message(self, query: str, context: str) -> str:
-        """Build user message with context"""
+        """Build user message with context in Korean"""
         if context:
-            return f"""Context:
+            return f"""컨텍스트:
 {context}
 
-Question: {query}
+질문: {query}
 
-Please answer the question based on the provided context."""
+제공된 컨텍스트를 바탕으로 질문에 답변해 주세요."""
         else:
-            return f"Question: {query}"
+            return f"질문: {query}"
     
     def _format_response(self, response: Dict[str, Any], context: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Format response based on settings"""
@@ -291,6 +296,47 @@ Please answer the question based on the provided context."""
             }
         
         return formatted
+    
+    def _is_english_response(self, text: str) -> bool:
+        """Check if the response is primarily in English"""
+        if not text or len(text.strip()) < 10:
+            return False
+        
+        # Count Korean characters vs English characters
+        korean_chars = sum(1 for char in text if '\uac00' <= char <= '\ud7af')
+        english_chars = sum(1 for char in text if char.isalpha() and ord(char) < 128)
+        
+        # If there are more English characters than Korean, consider it English
+        return english_chars > korean_chars
+    
+    def _force_korean_response(self, english_text: str, original_query: str) -> str:
+        """Force a Korean response by re-querying with Korean enforcement"""
+        try:
+            # Create a Korean enforcement prompt
+            korean_prompt = f"""다음 영어 응답을 한국어로 번역하고, 한국어로 다시 답변해 주세요.
+
+원래 질문: {original_query}
+
+영어 응답:
+{english_text}
+
+🚨 **중요**: 반드시 한국어로만 답변하세요. 영어나 다른 언어 사용 금지!
+
+한국어 답변:"""
+            
+            # Use the LLM directly to get Korean response
+            import asyncio
+            loop = asyncio.get_event_loop()
+            korean_response = loop.run_until_complete(
+                self.ollama_service.generate(korean_prompt)
+            )
+            
+            return korean_response
+            
+        except Exception as e:
+            logger.error(f"Failed to force Korean response: {e}")
+            # Fallback: return a simple Korean message
+            return f"죄송합니다. 질문에 대한 답변을 한국어로 제공하려고 했지만 오류가 발생했습니다. 원래 질문: {original_query}"
     
     async def close(self):
         """Close RAG service"""

@@ -26,9 +26,15 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "session_id" not in st.session_state:
-        st.session_state.session_id = "default_session"
+        st.session_state.session_id = "default"
     if "backend_connected" not in st.session_state:
         st.session_state.backend_connected = False
+    if "last_loaded_session" not in st.session_state:
+        st.session_state.last_loaded_session = None
+    if "force_refresh" not in st.session_state:
+        st.session_state.force_refresh = False
+    if "is_new_session" not in st.session_state:
+        st.session_state.is_new_session = False
 
     # Initialize controller
     chat_controller = ChatController()
@@ -36,6 +42,31 @@ def main():
     # Check backend connection only once
     if not st.session_state.backend_connected:
         st.session_state.backend_connected = chat_controller.check_backend_connection()
+    
+    # Handle force refresh after session deletion
+    if st.session_state.get("force_refresh", False):
+        st.session_state.force_refresh = False
+        st.session_state.last_loaded_session = None  # Reset to force reload
+        st.rerun()
+    
+    # Load chat history if session changed (but not for new sessions)
+    current_session = st.session_state.session_id
+    if (current_session != st.session_state.last_loaded_session and 
+        st.session_state.backend_connected):
+        
+        # Skip existence check for new sessions to avoid unnecessary API calls
+        if st.session_state.get("is_new_session", False):
+            # New session - just update last_loaded_session without checking existence
+            st.session_state.last_loaded_session = current_session
+            # Don't reset flag here - let sidebar handle it to avoid re-fetching sessions
+        else:
+            # Existing session - check if it exists and load history if it does
+            if current_session == "default" or chat_controller.check_session_exists(current_session):
+                chat_controller.load_session_history(current_session)
+                st.session_state.last_loaded_session = current_session
+            else:
+                # Session doesn't exist - just update last_loaded_session
+                st.session_state.last_loaded_session = current_session
 
     # Render sidebar
     sidebar_action = ChatComponents.render_sidebar()

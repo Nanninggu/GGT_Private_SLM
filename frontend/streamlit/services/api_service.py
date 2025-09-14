@@ -75,11 +75,35 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
 
+    def check_session_exists(self, session_id: str) -> Dict[str, Any]:
+        """Check if a session exists without loading all sessions"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/chat/session/{session_id}/exists",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+
     def clear_session(self, session_id: str) -> Dict[str, Any]:
         """Clear a chat session"""
         try:
             response = requests.delete(
                 f"{self.base_url}/api/chat/session/{session_id}",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+
+    def clear_all_sessions(self) -> Dict[str, Any]:
+        """Clear all sessions except default"""
+        try:
+            response = requests.delete(
+                f"{self.base_url}/api/chat/sessions/all",
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -256,36 +280,60 @@ class APIService:
     
     def send_message_stream(self, message: str, session_id: Optional[str] = None, use_rag: bool = True) -> Generator[Dict[str, Any], None, None]:
         """Send a message to the chatbot with streaming response"""
-        try:
-            url = f"{self.base_url}/api/chat/stream"
-            if use_rag:
-                url = f"{self.base_url}/api/chat/stream/langchain"
-            
-            payload = {
-                "message": message,
-                "session_id": session_id
-            }
-            
-            response = requests.post(
-                url,
-                json=payload,
-                stream=True,
-                timeout=self.timeout
-            )
-            response.raise_for_status()
-            
-            for line in response.iter_lines():
-                if line:
-                    line_str = line.decode('utf-8')
-                    if line_str.startswith('data: '):
-                        try:
-                            data = json.loads(line_str[6:])  # Remove 'data: ' prefix
-                            yield data
-                        except json.JSONDecodeError:
-                            continue
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                url = f"{self.base_url}/api/chat/stream"
+                if use_rag:
+                    url = f"{self.base_url}/api/chat/stream/langchain"
+                
+                payload = {
+                    "message": message,
+                    "session_id": session_id
+                }
+                
+                response = requests.post(
+                    url,
+                    json=payload,
+                    stream=True,
+                    timeout=self.timeout
+                )
+                response.raise_for_status()
+                
+                for line in response.iter_lines():
+                    if line:
+                        line_str = line.decode('utf-8')
+                        if line_str.startswith('data: '):
+                            try:
+                                data = json.loads(line_str[6:])  # Remove 'data: ' prefix
+                                yield data
+                            except json.JSONDecodeError:
+                                continue
+                
+                # If we get here, streaming completed successfully
+                break
                             
-        except requests.exceptions.RequestException as e:
-            yield {"error": str(e), "finished": True}
+            except requests.exceptions.ConnectionError as e:
+                retry_count += 1
+                if retry_count < max_retries:
+                    yield {"error": f"연결 오류 (재시도 {retry_count}/{max_retries}): {str(e)}", "retrying": True, "finished": False}
+                    import time
+                    time.sleep(2)  # Wait 2 seconds before retry
+                else:
+                    yield {"error": f"연결 실패: {str(e)}", "finished": True}
+            except requests.exceptions.Timeout as e:
+                retry_count += 1
+                if retry_count < max_retries:
+                    yield {"error": f"시간 초과 (재시도 {retry_count}/{max_retries}): {str(e)}", "retrying": True, "finished": False}
+                    import time
+                    time.sleep(1)
+                else:
+                    yield {"error": f"시간 초과: {str(e)}", "finished": True}
+            except requests.exceptions.RequestException as e:
+                yield {"error": f"요청 오류: {str(e)}", "finished": True}
+                break
     
     def send_message_stream_basic(self, message: str, session_id: Optional[str] = None) -> Generator[Dict[str, Any], None, None]:
         """Send a message to the chatbot with basic streaming response"""

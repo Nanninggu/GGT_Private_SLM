@@ -114,7 +114,7 @@ class ChatComponents:
             # Response Mode selection
             st.subheader("응답 모드")
             
-            # Streaming option
+            # Streaming option with enhanced UI
             streaming_enabled = st.checkbox(
                 "🚀 실시간 스트리밍",
                 value=st.session_state.get("streaming_enabled", True),
@@ -124,9 +124,21 @@ class ChatComponents:
             st.session_state.streaming_enabled = streaming_enabled
             
             if streaming_enabled:
-                st.success("✨ 실시간 스트리밍 활성화")
+                st.markdown("""
+                <div style="background: #e8f5e8; padding: 0.5rem; border-radius: 5px; 
+                            border-left: 3px solid #10B981; margin: 0.5rem 0;">
+                    ✨ <strong>실시간 스트리밍 활성화</strong><br>
+                    <small>ChatGPT 스타일의 부드러운 타이핑 효과</small>
+                </div>
+                """, unsafe_allow_html=True)
             else:
-                st.info("📝 일반 응답 모드")
+                st.markdown("""
+                <div style="background: #f0f0f0; padding: 0.5rem; border-radius: 5px; 
+                            border-left: 3px solid #6B7280; margin: 0.5rem 0;">
+                    📝 <strong>일반 응답 모드</strong><br>
+                    <small>전체 응답을 한 번에 표시</small>
+                </div>
+                """, unsafe_allow_html=True)
             
             # RAG Mode selection
             st.subheader("RAG 모드")
@@ -241,7 +253,336 @@ class ChatComponents:
 
             # Session management
             st.subheader("세션 관리")
-            st.text_input("현재 세션 ID", value=st.session_state.get("session_id", ""), disabled=True)
+            
+            # Current session display
+            current_session = st.session_state.get("session_id", "default")
+            st.text_input("현재 세션 ID", value=current_session, disabled=True)
+            
+            # Session list
+            st.markdown("### 📋 채팅 히스토리")
+            
+            # Import here to avoid circular imports
+            from services.api_service import APIService
+            api_service = APIService()
+            
+            # Get all sessions (skip if we just created a new session)
+            if not st.session_state.get("is_new_session", False):
+                sessions_response = api_service.get_sessions()
+                if sessions_response.get("success"):
+                    sessions = sessions_response.get("sessions", [])
+                    # Cache the sessions for future use
+                    st.session_state.cached_sessions = sessions
+                else:
+                    sessions = []
+            else:
+                # For new sessions, use cached sessions or empty list
+                sessions = st.session_state.get("cached_sessions", [])
+                # Reset the new session flag after using cached sessions
+                st.session_state.is_new_session = False
+                
+                if sessions:
+                    # Session selector
+                    session_options = []
+                    session_map = {}
+                    
+                    for session_id in sessions:
+                        # Create display name for session
+                        if session_id == "default":
+                            display_name = f"기본 세션 ({session_id})"
+                        else:
+                            # Check if session has a custom name
+                            session_name = st.session_state.get(f"session_name_{session_id}", "")
+                            if session_name:
+                                # Try to get session info to show message count
+                                history_response = api_service.get_chat_history(session_id, limit=1)
+                                if history_response.get("success"):
+                                    message_count = len(history_response.get("messages", []))
+                                    display_name = f"{session_name} ({message_count}개 메시지)"
+                                else:
+                                    display_name = f"{session_name} (메시지 없음)"
+                            else:
+                                # Try to get session info to show message count
+                                history_response = api_service.get_chat_history(session_id, limit=1)
+                                if history_response.get("success"):
+                                    message_count = len(history_response.get("messages", []))
+                                    display_name = f"세션 {session_id[:8]}... ({message_count}개 메시지)"
+                                else:
+                                    display_name = f"세션 {session_id[:8]}..."
+                        
+                        session_options.append(display_name)
+                        session_map[display_name] = session_id
+                    
+                    # Add current session if not in list
+                    if current_session not in sessions:
+                        session_options.insert(0, f"현재 세션 ({current_session})")
+                        session_map[f"현재 세션 ({current_session})"] = current_session
+                    
+                    # Find current session index
+                    current_index = 0
+                    for i, option in enumerate(session_options):
+                        if session_map[option] == current_session:
+                            current_index = i
+                            break
+                    
+                    # Session selector
+                    selected_display = st.selectbox(
+                        "세션 선택",
+                        session_options,
+                        index=current_index,
+                        key="session_selector"
+                    )
+                    
+                    if selected_display and session_map[selected_display] != current_session:
+                        if st.button("🔄 세션 전환", key="switch_session"):
+                            # Use ChatController to switch session and load history
+                            from controllers.chat_controller import ChatController
+                            chat_controller = ChatController()
+                            chat_controller.switch_to_session(session_map[selected_display])
+                    
+                    # Session name editing
+                    st.markdown("#### ✏️ 세션 이름 편집")
+                    current_session_name = st.session_state.get(f"session_name_{current_session}", "")
+                    new_session_name = st.text_input(
+                        "세션 이름",
+                        value=current_session_name,
+                        placeholder="세션 이름을 입력하세요...",
+                        key=f"session_name_input_{current_session}"
+                    )
+                    
+                    if new_session_name != current_session_name:
+                        if st.button("💾 이름 저장", key="save_session_name"):
+                            st.session_state[f"session_name_{current_session}"] = new_session_name
+                            st.success("세션 이름이 저장되었습니다.")
+                            st.rerun()
+                    
+                    # Session actions
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        if st.button("➕ 새 세션", key="new_session"):
+                            import uuid
+                            new_session_id = str(uuid.uuid4())
+                            
+                            # Set all session state at once to avoid infinite loop
+                            st.session_state.session_id = new_session_id
+                            st.session_state.messages = []  # Clear messages for new session
+                            st.session_state.last_loaded_session = new_session_id  # Update last loaded session
+                            st.session_state.is_new_session = True  # Mark as new session to skip existence check
+                            
+                            # Add new session to cached sessions to avoid re-fetching
+                            if "cached_sessions" not in st.session_state:
+                                st.session_state.cached_sessions = []
+                            if new_session_id not in st.session_state.cached_sessions:
+                                st.session_state.cached_sessions.append(new_session_id)
+                            
+                            st.success("새 세션이 생성되었습니다.")
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("🗑️ 세션 삭제", key="delete_session"):
+                            if current_session != "default":  # Don't allow deleting default session
+                                delete_response = api_service.clear_session(current_session)
+                                if delete_response.get("success"):
+                                    # Also remove session name from session state
+                                    if f"session_name_{current_session}" in st.session_state:
+                                        del st.session_state[f"session_name_{current_session}"]
+                                    st.success("세션이 삭제되었습니다.")
+                                    st.session_state.session_id = "default"
+                                    st.rerun()
+                                else:
+                                    st.error("세션 삭제에 실패했습니다.")
+                            else:
+                                st.warning("기본 세션은 삭제할 수 없습니다.")
+                    
+                    with col3:
+                        if st.button("🔄 새로고침", key="refresh_session_list"):
+                            st.rerun()
+                    
+                    # All sessions delete section
+                    st.markdown("---")
+                    st.markdown("#### ⚠️ 위험한 작업")
+                    
+                    # Check if deletion is in progress
+                    if st.session_state.get("deleting_all_sessions", False):
+                        st.info("🔄 모든 세션을 삭제하는 중입니다...")
+                        return None
+                    
+                    # Check if sessions were just deleted
+                    if st.session_state.get("sessions_deleted", False):
+                        st.success("✅ 모든 세션이 성공적으로 삭제되었습니다!")
+                        st.session_state.sessions_deleted = False  # Clear the flag
+                        return None
+                    
+                    # Show session count
+                    non_default_sessions = [s for s in sessions if s != "default"]
+                    if non_default_sessions:
+                        st.warning(f"⚠️ **{len(non_default_sessions)}개의 세션**이 삭제 대상입니다.")
+                        
+                        # Confirmation checkbox
+                        confirm_delete = st.checkbox(
+                            "모든 세션 삭제를 확인합니다 (기본 세션 제외)",
+                            key="confirm_delete_all",
+                            help="이 작업은 되돌릴 수 없습니다!"
+                        )
+                        
+                        if confirm_delete:
+                            # Additional confirmation with session list
+                            st.markdown("**삭제될 세션 목록:**")
+                            for session_id in non_default_sessions:
+                                session_name = st.session_state.get(f"session_name_{session_id}", "")
+                                if session_name:
+                                    st.write(f"• {session_name} ({session_id[:8]}...)")
+                                else:
+                                    st.write(f"• 세션 {session_id[:8]}...")
+                            
+                            # Final delete button
+                            if st.button("💥 모든 세션 삭제", key="delete_all_sessions", type="primary"):
+                                # Set deletion in progress flag
+                                st.session_state.deleting_all_sessions = True
+                                
+                                # Use ChatController to delete all sessions
+                                from controllers.chat_controller import ChatController
+                                chat_controller = ChatController()
+                                
+                                with st.spinner("모든 세션을 삭제하는 중..."):
+                                    result = chat_controller.clear_all_sessions()
+                                
+                                if result.get("success"):
+                                    cleared_count = len(result.get("cleared_sessions", []))
+                                    
+                                    # Clear session names from session state
+                                    for session_id in result.get("cleared_sessions", []):
+                                        if f"session_name_{session_id}" in st.session_state:
+                                            del st.session_state[f"session_name_{session_id}"]
+                                    
+                                    # Switch to default session and clear messages
+                                    st.session_state.session_id = "default"
+                                    st.session_state.messages = []
+                                    st.session_state.last_loaded_session = "default"
+                                    
+                                    # Clear deletion flag
+                                    st.session_state.deleting_all_sessions = False
+                                    
+                                    # Show success message
+                                    st.success(f"✅ {cleared_count}개의 세션이 삭제되었습니다.")
+                                    
+                                    # Force a complete page refresh to avoid infinite loop
+                                    st.session_state.force_refresh = True
+                                    st.rerun()
+                                else:
+                                    st.session_state.deleting_all_sessions = False
+                                    st.error(f"❌ 세션 삭제에 실패했습니다: {result.get('error', '알 수 없는 오류')}")
+                    else:
+                        st.info("삭제할 세션이 없습니다. (기본 세션만 존재)")
+                    
+                    # Show session info
+                    if current_session:
+                        history_response = api_service.get_chat_history(current_session)
+                        if history_response.get("success"):
+                            message_count = len(history_response.get("messages", []))
+                            st.info(f"📊 현재 세션: {message_count}개 메시지")
+                            
+                            # History search and filter
+                            if message_count > 0:
+                                st.markdown("#### 🔍 히스토리 검색")
+                                search_term = st.text_input(
+                                    "메시지 검색",
+                                    placeholder="검색어를 입력하세요...",
+                                    key="history_search"
+                                )
+                                
+                                # Filter messages by search term
+                                messages = history_response.get("messages", [])
+                                if search_term:
+                                    filtered_messages = [
+                                        msg for msg in messages 
+                                        if search_term.lower() in msg.get("content", "").lower()
+                                    ]
+                                    st.info(f"'{search_term}' 검색 결과: {len(filtered_messages)}개 메시지")
+                                else:
+                                    filtered_messages = messages
+                                
+                                # Show recent messages preview
+                                if filtered_messages:
+                                    st.markdown("#### 📝 최근 메시지 미리보기")
+                                    preview_count = min(3, len(filtered_messages))
+                                    for i, msg in enumerate(filtered_messages[-preview_count:]):
+                                        role = msg.get("role", "unknown")
+                                        content = msg.get("content", "")
+                                        timestamp = msg.get("timestamp", "")
+                                        
+                                        # Truncate content for preview
+                                        preview_content = content[:100] + "..." if len(content) > 100 else content
+                                        
+                                        if role == "user":
+                                            st.markdown(f"**👤 사용자:** {preview_content}")
+                                        else:
+                                            st.markdown(f"**🤖 AI:** {preview_content}")
+                                        
+                                        if timestamp:
+                                            try:
+                                                from datetime import datetime
+                                                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                                                st.caption(f"시간: {dt.strftime('%H:%M:%S')}")
+                                            except:
+                                                st.caption(f"시간: {timestamp}")
+                                        
+                                        if i < preview_count - 1:
+                                            st.markdown("---")
+                                
+                                # History actions
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    if st.button("📖 전체 히스토리 보기", key="show_full_history"):
+                                        st.session_state.show_full_history = not st.session_state.get("show_full_history", False)
+                                        st.rerun()
+                                
+                                with col2:
+                                    if st.button("💾 히스토리 내보내기", key="export_history"):
+                                        # Create export data
+                                        export_data = {
+                                            "session_id": current_session,
+                                            "session_name": st.session_state.get(f"session_name_{current_session}", ""),
+                                            "exported_at": datetime.now().isoformat(),
+                                            "message_count": len(filtered_messages),
+                                            "messages": filtered_messages
+                                        }
+                                        
+                                        # Convert to JSON
+                                        import json
+                                        json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
+                                        
+                                        # Create download button
+                                        st.download_button(
+                                            label="📥 JSON 파일로 다운로드",
+                                            data=json_data,
+                                            file_name=f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                                            mime="application/json"
+                                        )
+                                
+                                # Show full history if requested
+                                if st.session_state.get("show_full_history", False):
+                                    st.markdown("#### 📚 전체 채팅 히스토리")
+                                    for msg in reversed(filtered_messages):  # Show newest first
+                                        ChatComponents.render_message({
+                                            "role": msg.get("role", "unknown"),
+                                            "content": msg.get("content", ""),
+                                            "timestamp": msg.get("timestamp", ""),
+                                            "context": [],
+                                            "metadata": {}
+                                        })
+                        else:
+                            st.info("📊 현재 세션: 메시지 없음")
+                    else:
+                        st.info("저장된 세션이 없습니다.")
+                        if st.button("➕ 새 세션 생성", key="create_first_session"):
+                            import uuid
+                            new_session_id = str(uuid.uuid4())
+                            st.session_state.session_id = new_session_id
+                            st.rerun()
+                else:
+                    st.error("세션 목록을 불러올 수 없습니다.")
+                    if st.button("🔄 새로고침", key="refresh_sessions"):
+                        st.rerun()
 
             # Connection status
             st.subheader("연결 상태")

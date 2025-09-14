@@ -133,6 +133,10 @@ class ChatService:
         """Get all session IDs"""
         return self.repository.get_all_sessions()
 
+    def session_exists(self, session_id: str) -> bool:
+        """Check if a session exists without loading all sessions"""
+        return self.repository.session_exists(session_id)
+
     def clear_session(self, session_id: str) -> bool:
         """Clear a chat session"""
         session = self.get_session(session_id)

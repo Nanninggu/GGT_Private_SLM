@@ -140,14 +140,22 @@ class OllamaService:
             return False
     
     def _messages_to_prompt(self, messages: List[Dict[str, str]]) -> str:
-        """Convert messages to prompt format"""
+        """Convert messages to prompt format with Korean response enforcement"""
         prompt_parts = []
+        
+        # Add Korean response enforcement at the beginning
+        korean_system_prompt = settings.KOREAN_SYSTEM_PROMPT
+        
+        prompt_parts.append(f"System: {korean_system_prompt}")
+        
         for message in messages:
             role = message.get("role", "user")
             content = message.get("content", "")
             
             if role == "system":
-                prompt_parts.append(f"System: {content}")
+                # Skip if it's already the Korean system prompt
+                if "중요한 언어 규칙" not in content:
+                    prompt_parts.append(f"System: {content}")
             elif role == "user":
                 prompt_parts.append(f"Human: {content}")
             elif role == "assistant":

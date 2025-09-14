@@ -96,6 +96,20 @@ class ChatController:
                 "error": str(e)
             }
 
+    def check_session_exists(self, session_id: str) -> Dict[str, Any]:
+        """Check if a session exists without loading all sessions"""
+        try:
+            exists = self.chat_service.session_exists(session_id)
+            return {
+                "success": True,
+                "exists": exists
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
     def clear_session(self, session_id: str) -> Dict[str, Any]:
         """Clear a chat session"""
         try:
@@ -103,6 +117,33 @@ class ChatController:
             return {
                 "success": success,
                 "message": "Session cleared successfully" if success else "Failed to clear session"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    def clear_all_sessions(self) -> Dict[str, Any]:
+        """Clear all sessions except default"""
+        try:
+            sessions = self.chat_service.get_all_sessions()
+            cleared_sessions = []
+            failed_sessions = []
+            
+            for session_id in sessions:
+                if session_id != "default":  # Don't delete default session
+                    success = self.chat_service.clear_session(session_id)
+                    if success:
+                        cleared_sessions.append(session_id)
+                    else:
+                        failed_sessions.append(session_id)
+            
+            return {
+                "success": len(failed_sessions) == 0,
+                "cleared_sessions": cleared_sessions,
+                "failed_sessions": failed_sessions,
+                "message": f"Cleared {len(cleared_sessions)} sessions successfully"
             }
         except Exception as e:
             return {

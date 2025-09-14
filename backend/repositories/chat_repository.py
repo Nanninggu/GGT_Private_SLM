@@ -79,3 +79,11 @@ class ChatRepository:
             return [f.replace("session_", "").replace(".json", "") for f in session_files]
         except Exception:
             return []
+
+    def session_exists(self, session_id: str) -> bool:
+        """Check if a session exists without loading all sessions"""
+        try:
+            session_file = os.path.join(self.data_dir, f"session_{session_id}.json")
+            return os.path.exists(session_file)
+        except Exception:
+            return False

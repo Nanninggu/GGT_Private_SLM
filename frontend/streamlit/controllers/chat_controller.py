@@ -23,7 +23,7 @@ class ChatController:
     def _initialize_session_state(self):
         """Initialize Streamlit session state"""
         if "session_id" not in st.session_state:
-            st.session_state.session_id = str(uuid.uuid4())
+            st.session_state.session_id = "default"  # Use "default" as initial session
         if "messages" not in st.session_state:
             st.session_state.messages = []
         if "backend_connected" not in st.session_state:
@@ -81,11 +81,33 @@ class ChatController:
 
         response = self.api_service.get_chat_history(session_id)
         if response["success"]:
-            st.session_state.messages = response["messages"]
+            # Convert backend messages to frontend format
+            messages = []
+            for msg in response["messages"]:
+                messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"],
+                    "timestamp": msg["timestamp"],
+                    "context": [],
+                    "metadata": {}
+                })
+            
+            st.session_state.messages = messages
             st.session_state.session_id = session_id
-            st.success("채팅 기록을 불러왔습니다.")
+            # Don't show success message for automatic loading
+            if session_id != st.session_state.get("last_loaded_session", ""):
+                st.success(f"채팅 기록을 불러왔습니다. ({len(messages)}개 메시지)")
         else:
             st.error(f"채팅 기록을 불러올 수 없습니다: {response.get('error', '알 수 없는 오류')}")
+    
+    def switch_to_session(self, session_id: str):
+        """Switch to a different session and load its history"""
+        if session_id != st.session_state.get("session_id", ""):
+            # Clear new session flag when switching to existing session
+            st.session_state.is_new_session = False
+            self.load_session_history(session_id)
+            st.session_state.last_loaded_session = session_id  # Update last loaded session
+            st.rerun()
 
     def get_available_sessions(self) -> List[str]:
         """Get list of available sessions"""
@@ -96,6 +118,32 @@ class ChatController:
         if response["success"]:
             return response["sessions"]
         return []
+
+    def check_session_exists(self, session_id: str) -> bool:
+        """Check if a specific session exists without loading all sessions"""
+        if not self.check_backend_connection():
+            return False
+
+        response = self.api_service.check_session_exists(session_id)
+        if response["success"]:
+            return response["exists"]
+        return False
+
+    def clear_all_sessions(self) -> Dict[str, Any]:
+        """Clear all sessions except default"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+
+        response = self.api_service.clear_all_sessions()
+        if response["success"]:
+            # Clear current session if it was deleted
+            current_session = st.session_state.get("session_id", "")
+            if current_session != "default" and current_session in response.get("cleared_sessions", []):
+                st.session_state.session_id = "default"
+                st.session_state.messages = []
+                st.session_state.last_loaded_session = "default"
+        
+        return response
     
     def send_message_langchain(self, message: str, use_rag: bool = True) -> Optional[Dict[str, Any]]:
         """Send a message using LangChain RAG"""
@@ -134,6 +182,8 @@ class ChatController:
 
         # Create message container for streaming
         message_container = st.empty()
+        context_container = st.empty()
+        status_container = st.empty()
         full_response = ""
         context_sources = []
         
@@ -142,33 +192,105 @@ class ChatController:
             rag_mode = st.session_state.get("rag_mode", "기본 RAG")
             use_langchain = (rag_mode == "LangChain RAG")
             
+            # Show initial status with enhanced styling
+            with status_container.container():
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); 
+                            color: white; padding: 0.75rem; border-radius: 8px; 
+                            text-align: center; margin: 0.5rem 0;">
+                    🤖 AI가 응답을 생성하고 있습니다...
+                </div>
+                """, unsafe_allow_html=True)
+            
             for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain):
                 if "error" in chunk:
-                    st.error(f"스트리밍 오류: {chunk['error']}")
-                    return None
+                    if chunk.get("retrying", False):
+                        # Show retry status
+                        with status_container.container():
+                            st.warning(f"🔄 {chunk['error']}")
+                    else:
+                        # Show final error
+                        with status_container.container():
+                            st.error(f"❌ {chunk['error']}")
+                        return None
                 
                 if chunk.get("type") == "context":
                     context_sources = chunk.get("sources", [])
+                    similarity_scores = chunk.get("similarity_scores", [])
+                    context_count = chunk.get("context_count", 0)
+                    
                     if context_sources:
-                        with message_container.container():
-                            st.info(f"📚 참고 문서: {', '.join(context_sources)}")
+                        with context_container.container():
+                            # Enhanced context display with similarity scores
+                            st.markdown("### 📚 참고 문서")
+                            
+                            # Create a more detailed context display
+                            for i, (source, similarity) in enumerate(zip(context_sources, similarity_scores), 1):
+                                similarity_percent = similarity * 100 if similarity else 0
+                                st.markdown(f"""
+                                <div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; 
+                                            margin: 0.25rem 0; border-left: 3px solid #2196F3;">
+                                    <strong>{i}. {source}</strong> 
+                                    <span style="color: #666; font-size: 0.9em;">(유사도: {similarity_percent:.1f}%)</span>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            
+                            if context_count > 0:
+                                st.caption(f"총 {context_count}개의 관련 문서를 참조했습니다.")
+                        
+                        # Clear status when context is received
+                        status_container.empty()
                 
                 if chunk.get("content"):
                     full_response += chunk["content"]
                     with message_container.container():
-                        st.markdown(full_response + "▌")  # Cursor effect
+                        # Enhanced typing effect with better styling
+                        st.markdown(f"""
+                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; 
+                                    border-left: 4px solid #8B5CF6; margin: 0.5rem 0; 
+                                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                    line-height: 1.6;">
+                            {full_response}<span style="animation: blink 1s infinite;">▌</span>
+                        </div>
+                        <style>
+                        @keyframes blink {{
+                            0%, 50% {{ opacity: 1; }}
+                            51%, 100% {{ opacity: 0; }}
+                        }}
+                        </style>
+                        """, unsafe_allow_html=True)
                 
                 if chunk.get("finished", False):
+                    # Clear status and show completion
+                    status_container.empty()
                     break
             
-            # Final response without cursor
+            # Final response without cursor and with enhanced styling
             with message_container.container():
-                st.markdown(full_response)
+                st.markdown(f"""
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; 
+                            border-left: 4px solid #8B5CF6; margin: 0.5rem 0; 
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            line-height: 1.6;">
+                    {full_response}
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Show completion status with enhanced styling
+            with status_container.container():
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
+                            color: white; padding: 0.75rem; border-radius: 8px; 
+                            text-align: center; margin: 0.5rem 0;">
+                    ✅ 응답이 완료되었습니다.
+                </div>
+                """, unsafe_allow_html=True)
             
             return full_response
             
         except Exception as e:
-            st.error(f"스트리밍 메시지 전송 중 오류가 발생했습니다: {str(e)}")
+            with status_container.container():
+                st.error(f"❌ 스트리밍 메시지 전송 중 오류가 발생했습니다: {str(e)}")
             return None
     
     # Collection Management Methods

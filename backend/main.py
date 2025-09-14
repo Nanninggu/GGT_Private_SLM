@@ -272,16 +272,18 @@ async def stream_chat(request: ChatRequest):
                             "context_files": result.get("metadata", {}).get("context_files", []),
                             "source_collection": result.get("metadata", {}).get("source_collection", "documents"),
                             "context_count": len(result["context"]),
-                            "detailed_sources": result["context"]
+                            "detailed_sources": result["context"],
+                            "similarity_scores": [doc.get("similarity", 0) for doc in result["context"]]
                         }
                         yield {
                             "event": "context",
                             "data": json.dumps(context_info)
                         }
                     
-                    # Stream the response text
-                    for i in range(0, len(response_text), 10):  # Send in chunks of 10 characters
-                        chunk = response_text[i:i+10]
+                    # Stream the response text with improved chunking
+                    chunk_size = 5  # Smaller chunks for smoother effect
+                    for i in range(0, len(response_text), chunk_size):
+                        chunk = response_text[i:i+chunk_size]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -289,7 +291,7 @@ async def stream_chat(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.02)  # Smooth streaming effect
+                        await asyncio.sleep(0.03)  # Slightly slower for better readability
                     
                     # Send completion signal
                     yield {
@@ -303,8 +305,10 @@ async def stream_chat(request: ChatRequest):
                     # If RAG fails, send error message
                     error_message = f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {result.get('error', 'Unknown error')}"
                     
-                    for i in range(0, len(error_message), 10):
-                        chunk = error_message[i:i+10]
+                    # Stream error message with same chunking as regular response
+                    chunk_size = 5
+                    for i in range(0, len(error_message), chunk_size):
+                        chunk = error_message[i:i+chunk_size]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -312,7 +316,7 @@ async def stream_chat(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.02)
+                        await asyncio.sleep(0.03)
                     
                     # Send completion signal
                     yield {
@@ -357,16 +361,19 @@ async def stream_chat_langchain(request: ChatRequest):
                         context_info = {
                             "type": "context",
                             "sources": [doc.get("metadata", {}).get("filename", "Unknown") for doc in result["context"]],
-                            "context_files": result.get("metadata", {}).get("context_files", [])
+                            "context_files": result.get("metadata", {}).get("context_files", []),
+                            "similarity_scores": [doc.get("similarity", 0) for doc in result["context"]],
+                            "context_count": len(result["context"])
                         }
                         yield {
                             "event": "context",
                             "data": json.dumps(context_info)
                         }
                     
-                    # Stream the response text
-                    for i in range(0, len(response_text), 10):
-                        chunk = response_text[i:i+10]
+                    # Stream the response text with improved chunking
+                    chunk_size = 5  # Smaller chunks for smoother effect
+                    for i in range(0, len(response_text), chunk_size):
+                        chunk = response_text[i:i+chunk_size]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -374,7 +381,7 @@ async def stream_chat_langchain(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.02)
+                        await asyncio.sleep(0.03)  # Slightly slower for better readability
                     
                     # Send completion signal
                     yield {
@@ -388,8 +395,10 @@ async def stream_chat_langchain(request: ChatRequest):
                     # If RAG fails, send error message
                     error_message = f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {result.get('error', 'Unknown error')}"
                     
-                    for i in range(0, len(error_message), 10):
-                        chunk = error_message[i:i+10]
+                    # Stream error message with same chunking as regular response
+                    chunk_size = 5
+                    for i in range(0, len(error_message), chunk_size):
+                        chunk = error_message[i:i+chunk_size]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -397,7 +406,7 @@ async def stream_chat_langchain(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.02)
+                        await asyncio.sleep(0.03)
                     
                     # Send completion signal
                     yield {
@@ -440,10 +449,26 @@ async def get_sessions():
         raise HTTPException(status_code=500, detail=result["error"])
     return result
 
+@app.get("/api/chat/session/{session_id}/exists")
+async def check_session_exists(session_id: str):
+    """Check if a session exists without loading all sessions"""
+    result = chat_controller.check_session_exists(session_id)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
 @app.delete("/api/chat/session/{session_id}")
 async def clear_session(session_id: str):
     """Clear a chat session"""
     result = chat_controller.clear_session(session_id)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@app.delete("/api/chat/sessions/all")
+async def clear_all_sessions():
+    """Clear all sessions except default"""
+    result = chat_controller.clear_all_sessions()
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result

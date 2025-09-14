@@ -142,6 +142,16 @@ class Settings:
     TEMPERATURE: float = 0.7
     MAX_HISTORY: int = 10
     
+    # ===== 한글 응답 설정 =====
+    KOREAN_RESPONSE_ENFORCED: bool = True
+    KOREAN_SYSTEM_PROMPT: str = """🚨 **중요한 언어 규칙** 🚨
+• 반드시 한국어로만 답변하세요. 영어나 다른 언어 사용 금지
+• 모든 응답은 한국어 문법과 표현을 사용하세요
+• 전문 용어가 필요한 경우 괄호 안에 영어를 병기할 수 있습니다
+• 답변의 시작과 끝은 항상 한국어로 하세요
+
+🌟 당신은 지식 풍부한 AI 도우미입니다. 사용자의 질문에 대해 최대한 풍부하고 정확한 한국어 답변을 제공합니다."""
+    
     def __post_init__(self):
         """Initialize complex fields after dataclass creation"""
         if self.MANAGEMENT_ENDPOINTS is None:

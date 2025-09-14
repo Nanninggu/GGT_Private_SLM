@@ -35,7 +35,7 @@ class LangChainRagService:
     async def initialize(self):
         """Initialize LangChain RAG service"""
         try:
-            # Initialize Ollama LLM
+            # Initialize Ollama LLM with Korean response enforcement
             self.llm = ChatOllama(
                 model=settings.MODEL_NAME,
                 base_url=settings.OLLAMA_BASE_URL,
@@ -43,7 +43,9 @@ class LangChainRagService:
                 top_p=settings.OLLAMA_CHAT_TOP_P,
                 top_k=settings.OLLAMA_CHAT_TOP_K,
                 repeat_penalty=settings.OLLAMA_CHAT_REPEAT_PENALTY,
-                num_predict=settings.OLLAMA_CHAT_NUM_PREDICT
+                num_predict=settings.OLLAMA_CHAT_NUM_PREDICT,
+                # Add system message for Korean response enforcement
+                system=settings.KOREAN_SYSTEM_PROMPT
             )
             
             # Initialize vector store
@@ -188,6 +190,47 @@ class LangChainRagService:
             logger.error(f"Failed to add document: {e}")
             raise
     
+    def _is_english_response(self, text: str) -> bool:
+        """Check if the response is primarily in English"""
+        if not text or len(text.strip()) < 10:
+            return False
+        
+        # Count Korean characters vs English characters
+        korean_chars = sum(1 for char in text if '\uac00' <= char <= '\ud7af')
+        english_chars = sum(1 for char in text if char.isalpha() and ord(char) < 128)
+        
+        # If there are more English characters than Korean, consider it English
+        return english_chars > korean_chars
+    
+    def _force_korean_response(self, english_text: str, original_query: str) -> str:
+        """Force a Korean response by re-querying with Korean enforcement"""
+        try:
+            # Create a Korean enforcement prompt
+            korean_prompt = f"""다음 영어 응답을 한국어로 번역하고, 한국어로 다시 답변해 주세요.
+
+원래 질문: {original_query}
+
+영어 응답:
+{english_text}
+
+🚨 **중요**: 반드시 한국어로만 답변하세요. 영어나 다른 언어 사용 금지!
+
+한국어 답변:"""
+            
+            # Use the LLM directly to get Korean response
+            import asyncio
+            loop = asyncio.get_event_loop()
+            korean_response = loop.run_until_complete(
+                self.llm.ainvoke([{"role": "user", "content": korean_prompt}])
+            )
+            
+            return korean_response.content if hasattr(korean_response, 'content') else str(korean_response)
+            
+        except Exception as e:
+            logger.error(f"Failed to force Korean response: {e}")
+            # Fallback: return a simple Korean message
+            return f"죄송합니다. 질문에 대한 답변을 한국어로 제공하려고 했지만 오류가 발생했습니다. 원래 질문: {original_query}"
+    
     async def rag_query(self, query: str, session_id: str = None) -> Dict[str, Any]:
         """Main RAG query method using LangChain"""
         try:
@@ -197,6 +240,11 @@ class LangChainRagService:
             # Extract response and source documents
             response_text = result.get("answer", "")
             source_docs = result.get("source_documents", [])
+            
+            # Force Korean response if the response is in English
+            if self._is_english_response(response_text):
+                logger.warning("Detected English response, forcing Korean response")
+                response_text = self._force_korean_response(response_text, query)
             
             # Format context documents with detailed source information
             context_docs = []

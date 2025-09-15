@@ -107,6 +107,10 @@ cp backend/env.example backend/.env
 - **Deep Search**: 향상된 검색 결과 처리
 - **문서 관리**: 지식 베이스 문서 추가/삭제/검색
 - **세션 관리**: 채팅 기록 저장 및 관리
+- **PDF 내보내기**: 채팅 대화를 PDF로 저장하는 기능
+  - 전체 채팅 기록 PDF
+  - 요약 보고서 PDF
+  - 개별 메시지 PDF
 - **RESTful API**: FastAPI 기반 백엔드 API
 - **직관적 UI**: Streamlit 기반 사용자 인터페이스
 
@@ -123,6 +127,8 @@ cp backend/env.example backend/.env
 ### 프론트엔드
 - **Streamlit**: 웹 애플리케이션 프레임워크
 - **Requests**: HTTP 클라이언트
+- **ReportLab**: PDF 생성 라이브러리
+- **WeasyPrint**: HTML to PDF 변환
 
 ### AI/ML
 - **Ollama**: 로컬 LLM 서버
@@ -163,6 +169,38 @@ TEMPERATURE = 0.7                       # 생성 온도
 - `GET /api/chat/history/{session_id}`: 채팅 기록 조회
 - `GET /api/chat/sessions`: 모든 세션 목록
 - `DELETE /api/chat/session/{session_id}`: 세션 삭제
+
+## 📄 PDF 내보내기 기능
+
+HAI Portal은 채팅 대화를 PDF로 저장하는 다양한 옵션을 제공합니다:
+
+### 1. 전체 채팅 기록 PDF
+- 모든 메시지를 시간순으로 정렬
+- 사용자와 AI 메시지를 구분하여 표시
+- 메타데이터 포함 (신뢰도 점수, 참조 문서 등)
+- 세션 정보 및 생성 일시 포함
+
+### 2. 요약 보고서 PDF
+- 채팅 통계 (총 메시지 수, 사용자/AI 메시지 수)
+- 주요 토픽 키워드 추출
+- 최근 메시지 미리보기
+- 세션 정보 요약
+
+### 3. 개별 메시지 PDF
+- 특정 메시지만을 PDF로 저장
+- 메타데이터 및 컨텍스트 정보 포함
+- 사용자 메시지와 AI 응답 모두 지원
+
+### 사용 방법
+1. **사이드바에서 PDF 내보내기**: 전체 대화 또는 요약 보고서 생성
+2. **개별 메시지 PDF**: 각 메시지 옆의 "📄 PDF" 버튼 클릭
+3. **메인 화면에서**: "📄 전체 대화 PDF로 저장" 버튼 사용
+
+### PDF 특징
+- 한국어 텍스트 지원
+- 깔끔한 레이아웃과 색상 구분
+- 메타데이터 및 참조 문서 정보 포함
+- 자동 파일명 생성 (세션 ID 및 타임스탬프 포함)
 
 ## 🔍 트러블슈팅
 

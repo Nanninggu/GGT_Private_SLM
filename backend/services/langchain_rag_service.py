@@ -202,8 +202,8 @@ class LangChainRagService:
         # If there are more English characters than Korean, consider it English
         return english_chars > korean_chars
     
-    def _force_korean_response(self, english_text: str, original_query: str) -> str:
-        """Force a Korean response by re-querying with Korean enforcement"""
+    async def _force_korean_response_async(self, english_text: str, original_query: str) -> str:
+        """Force a Korean response by re-querying with Korean enforcement (async version)"""
         try:
             # Create a Korean enforcement prompt
             korean_prompt = f"""다음 영어 응답을 한국어로 번역하고, 한국어로 다시 답변해 주세요.
@@ -218,14 +218,20 @@ class LangChainRagService:
 한국어 답변:"""
             
             # Use the LLM directly to get Korean response
-            import asyncio
-            loop = asyncio.get_event_loop()
-            korean_response = loop.run_until_complete(
-                self.llm.ainvoke([{"role": "user", "content": korean_prompt}])
-            )
-            
+            korean_response = await self.llm.ainvoke([{"role": "user", "content": korean_prompt}])
             return korean_response.content if hasattr(korean_response, 'content') else str(korean_response)
             
+        except Exception as e:
+            logger.error(f"Failed to force Korean response: {e}")
+            # Fallback: return a simple Korean message
+            return f"죄송합니다. 질문에 대한 답변을 한국어로 제공하려고 했지만 오류가 발생했습니다. 원래 질문: {original_query}"
+    
+    def _force_korean_response(self, english_text: str, original_query: str) -> str:
+        """Force a Korean response by re-querying with Korean enforcement (sync wrapper)"""
+        try:
+            # Use asyncio.run to handle the async call
+            import asyncio
+            return asyncio.run(self._force_korean_response_async(english_text, original_query))
         except Exception as e:
             logger.error(f"Failed to force Korean response: {e}")
             # Fallback: return a simple Korean message
@@ -244,7 +250,7 @@ class LangChainRagService:
             # Force Korean response if the response is in English
             if self._is_english_response(response_text):
                 logger.warning("Detected English response, forcing Korean response")
-                response_text = self._force_korean_response(response_text, query)
+                response_text = await self._force_korean_response_async(response_text, query)
             
             # Format context documents with detailed source information
             context_docs = []
@@ -266,31 +272,25 @@ class LangChainRagService:
                 }
                 context_docs.append(source_info)
             
+            # Calculate average similarity score
+            similarity_scores = [doc.get("similarity", 0) for doc in context_docs]
+            avg_similarity = sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0.0
+            
             # Add metadata with source information
             metadata = {
                 "context_count": len(context_docs),
                 "context_sources": [doc.get("id") for doc in context_docs],
                 "context_files": [doc.get("filename", "Unknown") for doc in context_docs],
-                "similarity_scores": [doc.get("similarity", 0) for doc in context_docs],
+                "similarity_scores": similarity_scores,
+                "similarity": avg_similarity,  # Average similarity score for the response
                 "langchain_mode": True,
                 "memory_enabled": True,
                 "source_collection": self.current_collection,
                 "has_sources": len(context_docs) > 0
             }
             
-            # Format response with source information
+            # Format response without source information
             formatted_response = response_text
-            
-            # Add source information to response if sources exist
-            if context_docs:
-                source_info = "\n\n📚 **참조 출처:**\n"
-                for i, doc in enumerate(context_docs, 1):
-                    filename = doc.get("filename", "Unknown")
-                    page = doc.get("page_number", 1)
-                    collection = doc.get("collection", "documents")
-                    source_info += f"{i}. **{filename}** (페이지 {page}, 컬렉션: {collection})\n"
-                
-                formatted_response += source_info
             
             return {
                 "success": True,

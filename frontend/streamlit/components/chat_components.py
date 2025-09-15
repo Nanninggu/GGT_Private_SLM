@@ -5,6 +5,13 @@ import streamlit as st
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import io
+import sys
+import os
+
+# Add current directory to Python path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from services.pdf_service import PDFService
 
 class ChatComponents:
     """Reusable chat UI components"""
@@ -22,50 +29,125 @@ class ChatComponents:
             with st.chat_message("user"):
                 st.markdown(f"""
                 <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); 
-                            color: white; padding: 1rem; border-radius: 10px; margin: 0.5rem 0;">
+                            color: white; padding: 1.5rem; border-radius: 10px; 
+                            margin: 1rem 0 2rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     {content}
                 </div>
                 """, unsafe_allow_html=True)
-                if timestamp:
-                    st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
+                # User message with PDF icon
+                col1, col2 = st.columns([1, 0.08])
+                with col1:
+                    if timestamp:
+                        st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
+                with col2:
+                    if st.button("📄", key=f"download_user_message_{hash(content)}", help="PDF 저장", use_container_width=True, type="primary"):
+                        try:
+                            pdf_service = PDFService()
+                            single_message = [message]
+                            pdf_content = pdf_service.generate_chat_pdf(
+                                single_message,
+                                "single_message",
+                                "개별 메시지",
+                                True
+                            )
+                            
+                            filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                            
+                            st.download_button(
+                                label="📥 메시지 PDF 다운로드",
+                                data=pdf_content,
+                                file_name=filename,
+                                mime="application/pdf"
+                            )
+                        except Exception as e:
+                            st.error(f"PDF 생성 오류: {str(e)}")
         else:
             with st.chat_message("assistant"):
                 st.markdown(f"""
-                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; 
-                            border-left: 4px solid #8B5CF6; margin: 0.5rem 0;">
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; 
+                            border-left: 4px solid #8B5CF6; margin: 1rem 0 2rem 0; 
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     {content}
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Display source information if available
-                if context and len(context) > 0:
-                    st.markdown("---")
-                    st.markdown("📚 **참조 출처:**")
-                    
-                    for i, source in enumerate(context, 1):
-                        filename = source.get("filename", "Unknown")
-                        page = source.get("page_number", 1)
-                        collection = source.get("collection", "documents")
-                        similarity = source.get("similarity", 0)
-                        
-                        with st.expander(f"{i}. {filename} (페이지 {page}, 컬렉션: {collection})", expanded=False):
-                            st.write(f"**파일명:** {filename}")
-                            st.write(f"**페이지:** {page}")
-                            st.write(f"**컬렉션:** {collection}")
-                            st.write(f"**유사도:** {similarity:.2f}")
-                            if source.get("source_url"):
-                                st.write(f"**URL:** {source['source_url']}")
-                            if source.get("upload_date"):
-                                st.write(f"**업로드 날짜:** {source['upload_date']}")
-                            
-                            # Show content preview
-                            content_preview = source.get("content", "")[:200]
-                            if len(source.get("content", "")) > 200:
-                                content_preview += "..."
-                            st.write(f"**내용 미리보기:** {content_preview}")
+                # Display similarity score if available
+                if metadata and "similarity" in metadata:
+                    similarity = metadata.get("similarity", 0)
+                    ChatComponents._render_similarity_score(similarity)
+                elif metadata:
+                    # If metadata exists but no similarity, show a default score
+                    st.info("신뢰도 정보를 계산하는 중입니다...")
+                else:
+                    # No metadata available
+                    st.info("기본 모드로 응답합니다.")
                 
-                if timestamp:
-                    st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
+                # AI message with PDF icon
+                col1, col2 = st.columns([1, 0.08])
+                with col1:
+                    if timestamp:
+                        st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
+                with col2:
+                    if st.button("📄", key=f"download_message_{hash(content)}", help="PDF 저장", use_container_width=True, type="primary"):
+                        try:
+                            pdf_service = PDFService()
+                            single_message = [message]
+                            pdf_content = pdf_service.generate_chat_pdf(
+                                single_message,
+                                "single_message",
+                                "개별 메시지",
+                                True
+                            )
+                            
+                            filename = f"message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                            
+                            st.download_button(
+                                label="📥 메시지 PDF 다운로드",
+                                data=pdf_content,
+                                file_name=filename,
+                                mime="application/pdf"
+                            )
+                        except Exception as e:
+                            st.error(f"PDF 생성 오류: {str(e)}")
+
+    @staticmethod
+    def _render_similarity_score(similarity: float):
+        """Render similarity score with visual indicator"""
+        # Convert similarity to percentage
+        similarity_percent = round(similarity * 100, 1)
+        
+        # Determine color and emoji based on similarity
+        if similarity >= 0.8:
+            color = "#10B981"  # Green
+            emoji = "🟢"
+            status = "매우 높음"
+        elif similarity >= 0.6:
+            color = "#F59E0B"  # Yellow
+            emoji = "🟡"
+            status = "높음"
+        elif similarity >= 0.4:
+            color = "#F97316"  # Orange
+            emoji = "🟠"
+            status = "보통"
+        else:
+            color = "#EF4444"  # Red
+            emoji = "🔴"
+            status = "낮음"
+        
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; margin: 1rem 0 1.5rem 0; padding: 1rem; 
+                    background: #f8f9fa; border-radius: 8px; border-left: 3px solid {color};
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <span style="font-size: 1.2rem; margin-right: 0.75rem;">{emoji}</span>
+            <div style="flex: 1;">
+                <strong style="color: {color}; font-size: 1.1rem;">답변 신뢰도: {similarity_percent}%</strong>
+                <small style="color: #666; margin-left: 0.5rem; font-size: 0.9rem;">({status})</small>
+            </div>
+            <div style="background: {color}; height: 10px; border-radius: 5px; 
+                        width: {similarity_percent}%; min-width: 30px; margin-left: 1rem;"></div>
+        </div>
+        """, unsafe_allow_html=True)
+
 
     @staticmethod
     def render_chat_history(messages: List[Dict[str, Any]]):
@@ -76,6 +158,74 @@ class ChatComponents:
 
         for message in messages:
             ChatComponents.render_message(message)
+
+    @staticmethod
+    def _inject_accessibility_scripts():
+        """Inject CSS and JavaScript for accessibility features"""
+        st.markdown("""
+        <style>
+        /* Accessibility styles for similarity score display */
+        .similarity-score {
+            transition: all 0.3s ease;
+        }
+        
+        .similarity-score:hover {
+            background-color: #f0f8ff !important;
+            border-color: #8B5CF6 !important;
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .similarity-score {
+                border-width: 2px;
+            }
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            .similarity-score {
+                transition: none;
+            }
+        }
+        
+        /* PDF icon button styles - compact and clean */
+        .stButton > button[kind="primary"] {
+            background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 32px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            padding: 0 !important;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+        }
+        
+        .stButton > button[kind="primary"]:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4) !important;
+            background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%) !important;
+        }
+        
+        .stButton > button[kind="primary"]:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3) !important;
+        }
+        
+        /* Ensure PDF icon buttons are properly sized */
+        .stButton {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
     @staticmethod
     def render_sidebar():
@@ -110,6 +260,28 @@ class ChatComponents:
             st.markdown("### 💬 채팅 제어")
             if st.button("🗑️ 채팅 초기화", key="clear_chat", use_container_width=True):
                 return "clear_chat"
+            
+            # PDF Export section
+            st.markdown("---")
+            st.markdown("### 📄 PDF 내보내기")
+            
+            # PDF export options
+            pdf_type = st.radio(
+                "PDF 유형 선택",
+                ["전체 채팅 기록", "요약 보고서"],
+                help="전체 채팅 기록: 모든 메시지를 포함한 상세 PDF\n요약 보고서: 통계와 주요 내용을 포함한 요약 PDF"
+            )
+            
+            # PDF generation options
+            include_metadata = st.checkbox(
+                "메타데이터 포함",
+                value=True,
+                help="신뢰도 점수, 참조 문서 등 메타데이터를 PDF에 포함"
+            )
+            
+            # Generate PDF button
+            if st.button("📥 PDF 다운로드", key="download_pdf", use_container_width=True):
+                return ("download_pdf", pdf_type, include_metadata)
             
             # Response Mode selection
             st.subheader("응답 모드")
@@ -174,9 +346,26 @@ class ChatComponents:
                 collections = chat_controller.get_collections()
                 current_collection = chat_controller.get_current_collection()
                 
-                # Debug: Show collections info
-                st.write(f"🔍 Debug - Collections: {collections}")
-                st.write(f"🔍 Debug - Current Collection: {current_collection}")
+                # Display collections as a formatted list
+                if collections:
+                    st.markdown("**📋 사용 가능한 컬렉션:**")
+                    for collection in collections:
+                        collection_name = collection.get('name', 'Unknown')
+                        document_count = collection.get('document_count', 0)
+                        description = collection.get('metadata', {}).get('description', '')
+                        
+                        # Create a formatted list item
+                        list_item = f"• **{collection_name}** ({document_count}개 문서)"
+                        if description:
+                            list_item += f" - {description}"
+                        
+                        st.markdown(list_item)
+                    
+                    # Show current collection
+                    if current_collection:
+                        st.markdown(f"**현재 선택된 컬렉션:** {current_collection}")
+                else:
+                    st.info("컬렉션을 불러오는 중...")
                 
                 # If no collections returned, create default collection
                 if not collections:
@@ -630,6 +819,68 @@ class StatusComponents:
     def show_error(message: str):
         """Show error message"""
         st.error(f"❌ 오류: {message}")
+
+    @staticmethod
+    def show_success(message: str):
+        """Show success message"""
+        st.success(f"✅ {message}")
+
+    @staticmethod
+    def show_ai_typing():
+        """Show AI typing indicator with animation"""
+        st.markdown("""
+        <div style="display: flex; align-items: center; margin: 1rem 0; padding: 1rem; 
+                    background: #f8f9fa; border-radius: 10px; border-left: 4px solid #8B5CF6;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="margin-right: 1rem;">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <div style="flex: 1;">
+                <strong style="color: #8B5CF6;">🤖 AI가 답변을 생성하고 있습니다...</strong>
+                <br>
+                <small style="color: #666;">잠시만 기다려주세요</small>
+            </div>
+        </div>
+        
+        <style>
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            background-color: #8B5CF6;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
 class FileUploadComponents:
     """Components for file upload functionality"""

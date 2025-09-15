@@ -8,5 +8,9 @@ numpy==1.25.2
 plotly==5.17.0
 pillow==10.0.1
 
+# PDF generation
+reportlab==4.0.4
+weasyprint==60.2
+
 # Development
 pytest==7.4.3

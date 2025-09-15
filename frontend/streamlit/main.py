@@ -81,6 +81,55 @@ def main():
             StatusComponents.show_success("백엔드 서버에 연결되었습니다.")
         else:
             StatusComponents.show_error("백엔드 서버에 연결할 수 없습니다.")
+    elif isinstance(sidebar_action, tuple) and sidebar_action[0] == "download_pdf":
+        # Handle PDF download
+        pdf_type = sidebar_action[1]
+        include_metadata = sidebar_action[2]
+        
+        if st.session_state.messages:
+            try:
+                from services.pdf_service import PDFService
+                pdf_service = PDFService()
+                
+                # Get session info
+                current_session = st.session_state.session_id
+                session_name = st.session_state.get(f"session_name_{current_session}", "")
+                
+                # Generate PDF based on type
+                if pdf_type == "전체 채팅 기록":
+                    pdf_content = pdf_service.generate_chat_pdf(
+                        st.session_state.messages,
+                        current_session,
+                        session_name,
+                        include_metadata
+                    )
+                    filename = f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                else:  # 요약 보고서
+                    pdf_content = pdf_service.generate_summary_pdf(
+                        st.session_state.messages,
+                        current_session,
+                        session_name
+                    )
+                    filename = f"chat_summary_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                
+                # Create download button
+                st.download_button(
+                    label=f"📥 {pdf_type} 다운로드",
+                    data=pdf_content,
+                    file_name=filename,
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+                
+                st.success(f"✅ {pdf_type} PDF가 생성되었습니다!")
+                
+            except Exception as e:
+                st.error(f"❌ PDF 생성 중 오류가 발생했습니다: {str(e)}")
+        else:
+            st.warning("⚠️ 다운로드할 채팅 메시지가 없습니다.")
+
+    # Inject accessibility scripts
+    ChatComponents._inject_accessibility_scripts()
 
     # Custom CSS for HAI Portal styling
     st.markdown("""
@@ -105,7 +154,17 @@ def main():
     /* Adjust main content padding */
     .main .block-container {
         padding-top: 1rem;
-        padding-bottom: 1rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Chat message spacing */
+    .stChatMessage {
+        margin-bottom: 2rem !important;
+    }
+    
+    /* Chat input spacing */
+    .stChatInput {
+        margin-top: 2rem !important;
     }
     
     .main-header {
@@ -238,17 +297,57 @@ def main():
             st.switch_page("pages/file_upload.py")
         if st.button("🗂️ 컬렉션 관리", use_container_width=True):
             st.switch_page("pages/collection_management.py")
+        if st.button("♿ 접근성 데모", use_container_width=True):
+            st.switch_page("pages/accessibility_demo.py")
         if st.button("🔄 새로고침", use_container_width=True):
             st.rerun()
 
     # Chat interface section
     st.markdown("---")
-    st.markdown("### 💬 HAI-Chat 대화")
+    
+    # Chat header with PDF download option
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown("### 💬 HAI-Chat 대화")
+    with col2:
+        if st.session_state.messages:
+            if st.button("📄 전체 대화 PDF로 저장", key="download_all_chat"):
+                try:
+                    from services.pdf_service import PDFService
+                    pdf_service = PDFService()
+                    
+                    current_session = st.session_state.session_id
+                    session_name = st.session_state.get(f"session_name_{current_session}", "")
+                    
+                    pdf_content = pdf_service.generate_chat_pdf(
+                        st.session_state.messages,
+                        current_session,
+                        session_name,
+                        True
+                    )
+                    
+                    filename = f"full_chat_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    
+                    st.download_button(
+                        label="📥 전체 대화 다운로드",
+                        data=pdf_content,
+                        file_name=filename,
+                        mime="application/pdf"
+                    )
+                except Exception as e:
+                    st.error(f"PDF 생성 오류: {str(e)}")
+    
+    # Add spacing before chat messages
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     
     # Display chat history
     for message in st.session_state.messages:
         ChatComponents.render_message(message)
+    
 
+    # Add spacing before chat input
+    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
+    
     # Chat input
     if prompt := st.chat_input("HAI-Chat에게 메시지를 입력하세요..."):
         # Add user message to chat history
@@ -269,16 +368,19 @@ def main():
                 streaming_enabled = st.session_state.get("streaming_enabled", True)
                 
                 if streaming_enabled:
-                    # Use streaming response
-                    response = chat_controller.send_message_stream(prompt)
+                    # Use streaming response with enhanced loading
+                    with st.spinner("🤖 AI가 답변을 생성하고 있습니다..."):
+                        response = chat_controller.send_message_stream(prompt)
                 else:
-                    # Use regular response
-                    with st.spinner("응답을 생성하고 있습니다..."):
-                        rag_mode = st.session_state.get("rag_mode", "기본 RAG")
-                        
-                        if rag_mode == "LangChain RAG":
+                    # Use regular response with enhanced spinner
+                    rag_mode = st.session_state.get("rag_mode", "기본 RAG")
+                    
+                    # Generate response with spinner
+                    if rag_mode == "LangChain RAG":
+                        with st.spinner("🤖 LangChain RAG로 답변을 생성하고 있습니다..."):
                             response = chat_controller.send_message_langchain(prompt)
-                        else:
+                    else:
+                        with st.spinner("🤖 RAG로 답변을 생성하고 있습니다..."):
                             response = chat_controller.send_message(prompt)
                 
                 if response:

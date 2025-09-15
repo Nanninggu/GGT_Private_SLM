@@ -156,17 +156,26 @@ class RagService:
             
             # Add metadata with file information
             context_files = []
+            similarity_scores = []
             for doc in context:
                 doc_metadata = doc.get("metadata", {})
                 filename = doc_metadata.get("filename", doc_metadata.get("file_name", ""))
                 if filename:
                     context_files.append(filename)
+                
+                # Collect similarity scores
+                similarity = doc.get("similarity", 0)
+                similarity_scores.append(similarity)
+            
+            # Calculate average similarity score
+            avg_similarity = sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0.0
             
             metadata = {
                 "context_count": len(context),
                 "context_sources": [doc.get("id") for doc in context],
                 "context_files": context_files,
-                "similarity_scores": [doc.get("similarity", 0) for doc in context],
+                "similarity_scores": similarity_scores,
+                "similarity": avg_similarity,  # Average similarity score for the response
                 "strict_mode": settings.RAG_STRICT_MODE_ENABLED,
                 "fallback_enabled": settings.RAG_FALLBACK_TO_GENERAL_KNOWLEDGE
             }

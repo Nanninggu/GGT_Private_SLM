@@ -47,8 +47,7 @@ class ChatController:
             return None
 
         # Send message to backend
-        with st.spinner("응답을 생성하고 있습니다..."):
-            response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True)
+        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True)
 
         if response["success"]:
             return {
@@ -157,8 +156,7 @@ class ChatController:
             return None
 
         # Send message to backend using LangChain
-        with st.spinner("LangChain RAG로 응답을 생성하고 있습니다..."):
-            response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag)
+        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag)
 
         if response["success"]:
             return {
@@ -196,10 +194,22 @@ class ChatController:
             with status_container.container():
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); 
-                            color: white; padding: 0.75rem; border-radius: 8px; 
-                            text-align: center; margin: 0.5rem 0;">
-                    🤖 AI가 응답을 생성하고 있습니다...
+                            color: white; padding: 1rem; border-radius: 10px; 
+                            text-align: center; margin: 1rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <div style="animation: pulse 1.5s ease-in-out infinite; font-size: 1.2rem;">🤖</div>
+                        <span style="font-size: 1.1rem; font-weight: 500;">AI가 응답을 생성하고 있습니다...</span>
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">
+                        벡터 검색 및 답변 생성 중
+                    </div>
                 </div>
+                <style>
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.1); opacity: 0.7; }
+                }
+                </style>
                 """, unsafe_allow_html=True)
             
             for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain):
@@ -257,6 +267,25 @@ class ChatController:
                             0%, 50% {{ opacity: 1; }}
                             51%, 100% {{ opacity: 0; }}
                         }}
+                        </style>
+                        """, unsafe_allow_html=True)
+                    
+                    # Show streaming status
+                    with status_container.container():
+                        st.markdown("""
+                        <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
+                                    color: white; padding: 0.75rem; border-radius: 8px; 
+                                    text-align: center; margin: 0.5rem 0;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <div style="animation: pulse 1s ease-in-out infinite; font-size: 1rem;">✨</div>
+                                <span style="font-size: 0.9rem;">답변을 생성하고 있습니다...</span>
+                            </div>
+                        </div>
+                        <style>
+                        @keyframes pulse {
+                            0%, 100% { transform: scale(1); opacity: 1; }
+                            50% { transform: scale(1.1); opacity: 0.7; }
+                        }
                         </style>
                         """, unsafe_allow_html=True)
                 

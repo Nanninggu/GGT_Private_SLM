@@ -52,6 +52,9 @@ pandas>=2.1.4
 sse-starlette==1.6.5
 websockets==12.0
 
+# JWT authentication
+PyJWT==2.8.0
+
 # For Exaone model integration (add specific packages as needed)
 # torch>=2.0.0
 # transformers>=4.30.0

@@ -428,3 +428,27 @@ class ChatController:
         
         response = self.api_service.rename_collection(old_name, new_name)
         return response
+    
+    def export_chat_markdown(self, session_id: str, session_name: str = "채팅 기록", include_metadata: bool = True) -> Dict[str, Any]:
+        """Export chat session to markdown format"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+        
+        response = self.api_service.export_chat_markdown(session_id, session_name, include_metadata)
+        return response
+    
+    def export_single_message_markdown(self, message: Dict[str, Any], include_metadata: bool = True) -> Dict[str, Any]:
+        """Export a single message to markdown format"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+        
+        response = self.api_service.export_single_message_markdown(message, include_metadata)
+        return response
+    
+    def get_markdown_export_stats(self) -> Dict[str, Any]:
+        """Get statistics about exported markdown files"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+        
+        response = self.api_service.get_markdown_export_stats()
+        return response

@@ -4,6 +4,7 @@ Main Streamlit application for Exaone chatbot
 import streamlit as st
 import sys
 import os
+import uuid
 from datetime import datetime
 
 # Add current directory to Python path for imports
@@ -12,13 +13,21 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from controllers.chat_controller import ChatController
 from components.chat_components import ChatComponents, StatusComponents
 
-# Page configuration
-st.set_page_config(
-    page_title="HAI Portal",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Page configuration will be set dynamically based on current page
+
+def check_auth_status():
+    """Check if user is authenticated"""
+    if not st.session_state.get("auth_token"):
+        return False
+    
+    # Verify token with backend
+    try:
+        from services.api_service import APIService
+        api_service = APIService()
+        result = api_service.verify_token(st.session_state.auth_token)
+        return result.get("valid", False)
+    except:
+        return False
 
 def main():
     """Main application function"""
@@ -35,6 +44,89 @@ def main():
         st.session_state.force_refresh = False
     if "is_new_session" not in st.session_state:
         st.session_state.is_new_session = False
+    if "auth_token" not in st.session_state:
+        st.session_state.auth_token = None
+    if "user_info" not in st.session_state:
+        st.session_state.user_info = None
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "main"
+    
+    # Page routing
+    current_page = st.session_state.current_page
+    
+    # Set page configuration based on current page
+    if current_page == "login":
+        st.set_page_config(
+            page_title="HAI Portal - 로그인",
+            page_icon="🔐",
+            layout="centered",
+            initial_sidebar_state="collapsed"
+        )
+        from pages.login import main as login_main
+        login_main()
+        return
+    elif current_page == "file_upload":
+        st.set_page_config(
+            page_title="HAI Portal - 파일 업로드",
+            page_icon="📁",
+            layout="wide"
+        )
+        from pages.file_upload import main as file_upload_main
+        file_upload_main()
+        return
+    elif current_page == "collection_management":
+        st.set_page_config(
+            page_title="HAI Portal - 컬렉션 관리",
+            page_icon="🗂️",
+            layout="wide"
+        )
+        from pages.collection_management import main as collection_main
+        collection_main()
+        return
+    elif current_page == "accessibility_demo":
+        st.set_page_config(
+            page_title="접근성 데모 - HAI Portal",
+            page_icon="♿",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        from pages.accessibility_demo import main as accessibility_main
+        accessibility_main()
+        return
+    elif current_page == "configuration":
+        st.set_page_config(
+            page_title="시스템 설정 - HAI Portal",
+            page_icon="⚙️",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        from pages.configuration import main as configuration_main
+        configuration_main()
+        return
+    elif current_page == "main":
+        # Main page configuration
+        st.set_page_config(
+            page_title="HAI Portal",
+            page_icon="🤖",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+    else:
+        # Default configuration for main page
+        st.set_page_config(
+            page_title="HAI Portal",
+            page_icon="🤖",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+    
+    # Check authentication for main page
+    if not check_auth_status():
+        st.warning("로그인이 필요합니다.")
+        if st.button("로그인 페이지로 이동"):
+            st.session_state.current_page = "login"
+            st.rerun()
+        return
 
     # Initialize controller
     chat_controller = ChatController()
@@ -74,6 +166,13 @@ def main():
     # Handle sidebar actions
     if sidebar_action == "clear_chat":
         st.session_state.messages = []
+        st.rerun()
+    elif sidebar_action == "logout":
+        # Clear authentication data
+        st.session_state.auth_token = None
+        st.session_state.user_info = None
+        st.session_state.messages = []
+        st.success("로그아웃되었습니다.")
         st.rerun()
     elif sidebar_action == "check_connection":
         st.session_state.backend_connected = chat_controller.check_backend_connection()
@@ -125,6 +224,42 @@ def main():
                 
             except Exception as e:
                 st.error(f"❌ PDF 생성 중 오류가 발생했습니다: {str(e)}")
+        else:
+            st.warning("⚠️ 다운로드할 채팅 메시지가 없습니다.")
+    elif isinstance(sidebar_action, tuple) and sidebar_action[0] == "download_markdown":
+        # Handle Markdown download
+        session_name = sidebar_action[1]
+        include_metadata = sidebar_action[2]
+        
+        if st.session_state.messages:
+            try:
+                current_session = st.session_state.session_id
+                
+                # Export chat to markdown
+                result = chat_controller.export_chat_markdown(
+                    current_session, 
+                    session_name, 
+                    include_metadata
+                )
+                
+                if result.get("success"):
+                    filename = f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                    
+                    st.download_button(
+                        label="📥 마크다운 다운로드",
+                        data=result.get("content", ""),
+                        file_name=filename,
+                        mime="text/markdown",
+                        use_container_width=True
+                    )
+                    
+                    st.success(f"✅ 마크다운 파일이 생성되었습니다!")
+                    st.info(f"📊 총 {result.get('message_count', 0)}개의 메시지가 포함되었습니다.")
+                else:
+                    st.error(f"❌ 마크다운 생성 중 오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}")
+                
+            except Exception as e:
+                st.error(f"❌ 마크다운 생성 중 오류가 발생했습니다: {str(e)}")
         else:
             st.warning("⚠️ 다운로드할 채팅 메시지가 없습니다.")
 
@@ -294,11 +429,17 @@ def main():
         
         # Navigation buttons
         if st.button("📁 파일 업로드", use_container_width=True):
-            st.switch_page("pages/file_upload.py")
+            st.session_state.current_page = "file_upload"
+            st.rerun()
         if st.button("🗂️ 컬렉션 관리", use_container_width=True):
-            st.switch_page("pages/collection_management.py")
+            st.session_state.current_page = "collection_management"
+            st.rerun()
         if st.button("♿ 접근성 데모", use_container_width=True):
-            st.switch_page("pages/accessibility_demo.py")
+            st.session_state.current_page = "accessibility_demo"
+            st.rerun()
+        if st.button("⚙️ 시스템 설정", use_container_width=True):
+            st.session_state.current_page = "configuration"
+            st.rerun()
         if st.button("🔄 새로고침", use_container_width=True):
             st.rerun()
 
@@ -352,6 +493,7 @@ def main():
     if prompt := st.chat_input("HAI-Chat에게 메시지를 입력하세요..."):
         # Add user message to chat history
         st.session_state.messages.append({
+            "id": str(uuid.uuid4()),
             "role": "user",
             "content": prompt,
             "timestamp": datetime.now().strftime("%H:%M:%S")
@@ -388,6 +530,7 @@ def main():
                     if isinstance(response, dict):
                         # Response with context information
                         assistant_message = {
+                            "id": str(uuid.uuid4()),
                             "role": "assistant",
                             "content": response.get("content", ""),
                             "context": response.get("context", []),
@@ -397,6 +540,7 @@ def main():
                     else:
                         # Simple string response
                         assistant_message = {
+                            "id": str(uuid.uuid4()),
                             "role": "assistant",
                             "content": response,
                             "context": [],

@@ -10,9 +10,10 @@ import json
 class APIService:
     """Service for backend API communication"""
 
-    def __init__(self, base_url: str = "http://localhost:8080"):
+    def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url
-        self.timeout = 30
+        self.timeout = 60  # 기본 타임아웃을 60초로 증가
+        self.upload_timeout = 600  # 파일 업로드 전용 타임아웃을 10분으로 증가
 
     def create_session(self) -> Dict[str, Any]:
         """Create a new chat session"""
@@ -198,7 +199,7 @@ class APIService:
                 f"{self.base_url}/api/upload",
                 files=files,
                 data=data,
-                timeout=self.timeout
+                timeout=self.upload_timeout
             )
             response.raise_for_status()
             return response.json()
@@ -219,7 +220,7 @@ class APIService:
                 f"{self.base_url}/api/langchain/upload",
                 files=files,
                 data=data,
-                timeout=self.timeout
+                timeout=self.upload_timeout
             )
             response.raise_for_status()
             return response.json()
@@ -245,7 +246,7 @@ class APIService:
                 f"{self.base_url}/api/upload/multiple",
                 files=files,
                 data=data,
-                timeout=self.timeout * 2  # Longer timeout for multiple files
+                timeout=self.upload_timeout * 3  # Longer timeout for multiple files (30분)
             )
             response.raise_for_status()
             return response.json()
@@ -271,7 +272,7 @@ class APIService:
                 f"{self.base_url}/api/langchain/upload/multiple",
                 files=files,
                 data=data,
-                timeout=self.timeout * 2  # Longer timeout for multiple files
+                timeout=self.upload_timeout * 3  # Longer timeout for multiple files (30분)
             )
             response.raise_for_status()
             return response.json()
@@ -526,3 +527,164 @@ class APIService:
                 return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
+    
+    # Markdown Export Methods
+    def export_chat_markdown(self, session_id: str, session_name: str = "채팅 기록", include_metadata: bool = True) -> Dict[str, Any]:
+        """Export chat session to markdown format"""
+        try:
+            payload = {
+                "session_id": session_id,
+                "session_name": session_name,
+                "include_metadata": include_metadata
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/chat/export/markdown",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def export_single_message_markdown(self, message: Dict[str, Any], include_metadata: bool = True) -> Dict[str, Any]:
+        """Export a single message to markdown format"""
+        try:
+            payload = {
+                "message": message,
+                "include_metadata": include_metadata
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/chat/export/markdown/single",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_markdown_export_stats(self) -> Dict[str, Any]:
+        """Get statistics about exported markdown files"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/chat/export/markdown/stats",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def download_markdown_file(self, filename: str) -> Dict[str, Any]:
+        """Download a specific markdown file"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/chat/export/markdown/download/{filename}",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    # Authentication Methods
+    def login(self, username: str, password: str) -> Dict[str, Any]:
+        """Login user"""
+        try:
+            payload = {
+                "username": username,
+                "password": password
+            }
+            response = requests.post(
+                f"{self.base_url}/api/auth/login",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "message": str(e)}
+    
+    def register(self, username: str, email: str, password: str, confirm_password: str) -> Dict[str, Any]:
+        """Register user"""
+        try:
+            payload = {
+                "username": username,
+                "email": email,
+                "password": password,
+                "confirm_password": confirm_password
+            }
+            response = requests.post(
+                f"{self.base_url}/api/auth/register",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "message": str(e)}
+    
+    def refresh_token(self, refresh_token: str) -> Dict[str, Any]:
+        """Refresh access token"""
+        try:
+            payload = {
+                "refresh_token": refresh_token
+            }
+            response = requests.post(
+                f"{self.base_url}/api/auth/refresh",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "message": str(e)}
+    
+    def get_current_user(self, token: str) -> Dict[str, Any]:
+        """Get current user information"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.get(
+                f"{self.base_url}/api/auth/me",
+                headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def logout(self, token: str) -> Dict[str, Any]:
+        """Logout user"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.post(
+                f"{self.base_url}/api/auth/logout",
+                headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def verify_token(self, token: str) -> Dict[str, Any]:
+        """Verify if token is valid"""
+        try:
+            payload = {"token": token}
+            response = requests.post(
+                f"{self.base_url}/api/auth/verify",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "valid": False, "error": str(e)}

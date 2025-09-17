@@ -24,6 +24,7 @@ class ChatComponents:
         timestamp = message.get("timestamp", "")
         context = message.get("context", [])
         metadata = message.get("metadata", {})
+        message_id = message.get("id", str(hash(content + str(timestamp))))
 
         if role == "user":
             with st.chat_message("user"):
@@ -40,27 +41,54 @@ class ChatComponents:
                     if timestamp:
                         st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
                 with col2:
-                    if st.button("📄", key=f"download_user_message_{hash(content)}", help="PDF 저장", use_container_width=True, type="primary"):
-                        try:
-                            pdf_service = PDFService()
-                            single_message = [message]
-                            pdf_content = pdf_service.generate_chat_pdf(
-                                single_message,
-                                "single_message",
-                                "개별 메시지",
-                                True
-                            )
-                            
-                            filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                            
-                            st.download_button(
-                                label="📥 메시지 PDF 다운로드",
-                                data=pdf_content,
-                                file_name=filename,
-                                mime="application/pdf"
-                            )
-                        except Exception as e:
-                            st.error(f"PDF 생성 오류: {str(e)}")
+                    # PDF and Markdown export buttons
+                    col2_1, col2_2 = st.columns(2)
+                    
+                    with col2_1:
+                        if st.button("📄", key=f"download_user_message_pdf_{message_id}", help="PDF 저장", use_container_width=True, type="primary"):
+                            try:
+                                pdf_service = PDFService()
+                                single_message = [message]
+                                pdf_content = pdf_service.generate_chat_pdf(
+                                    single_message,
+                                    "single_message",
+                                    "개별 메시지",
+                                    True
+                                )
+                                
+                                filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                                
+                                st.download_button(
+                                    label="📥 메시지 PDF 다운로드",
+                                    data=pdf_content,
+                                    file_name=filename,
+                                    mime="application/pdf"
+                                )
+                            except Exception as e:
+                                st.error(f"PDF 생성 오류: {str(e)}")
+                    
+                    with col2_2:
+                        if st.button("📝", key=f"download_user_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="secondary"):
+                            try:
+                                from services.api_service import APIService
+                                api_service = APIService()
+                                
+                                # Export single message to markdown
+                                result = api_service.export_single_message_markdown(message, True)
+                                
+                                if result.get("success"):
+                                    filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                                    
+                                    st.download_button(
+                                        label="📥 마크다운 다운로드",
+                                        data=result.get("content", ""),
+                                        file_name=filename,
+                                        mime="text/markdown"
+                                    )
+                                else:
+                                    st.error(f"마크다운 생성 오류: {result.get('error', '알 수 없는 오류')}")
+                            except Exception as e:
+                                st.error(f"마크다운 생성 오류: {str(e)}")
         else:
             with st.chat_message("assistant"):
                 st.markdown(f"""
@@ -82,33 +110,60 @@ class ChatComponents:
                     # No metadata available
                     st.info("기본 모드로 응답합니다.")
                 
-                # AI message with PDF icon
+                # AI message with PDF and Markdown icons
                 col1, col2 = st.columns([1, 0.08])
                 with col1:
                     if timestamp:
                         st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
                 with col2:
-                    if st.button("📄", key=f"download_message_{hash(content)}", help="PDF 저장", use_container_width=True, type="primary"):
-                        try:
-                            pdf_service = PDFService()
-                            single_message = [message]
-                            pdf_content = pdf_service.generate_chat_pdf(
-                                single_message,
-                                "single_message",
-                                "개별 메시지",
-                                True
-                            )
-                            
-                            filename = f"message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                            
-                            st.download_button(
-                                label="📥 메시지 PDF 다운로드",
-                                data=pdf_content,
-                                file_name=filename,
-                                mime="application/pdf"
-                            )
-                        except Exception as e:
-                            st.error(f"PDF 생성 오류: {str(e)}")
+                    # PDF and Markdown export buttons
+                    col2_1, col2_2 = st.columns(2)
+                    
+                    with col2_1:
+                        if st.button("📄", key=f"download_message_pdf_{message_id}", help="PDF 저장", use_container_width=True, type="primary"):
+                            try:
+                                pdf_service = PDFService()
+                                single_message = [message]
+                                pdf_content = pdf_service.generate_chat_pdf(
+                                    single_message,
+                                    "single_message",
+                                    "개별 메시지",
+                                    True
+                                )
+                                
+                                filename = f"message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                                
+                                st.download_button(
+                                    label="📥 메시지 PDF 다운로드",
+                                    data=pdf_content,
+                                    file_name=filename,
+                                    mime="application/pdf"
+                                )
+                            except Exception as e:
+                                st.error(f"PDF 생성 오류: {str(e)}")
+                    
+                    with col2_2:
+                        if st.button("📝", key=f"download_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="secondary"):
+                            try:
+                                from services.api_service import APIService
+                                api_service = APIService()
+                                
+                                # Export single message to markdown
+                                result = api_service.export_single_message_markdown(message, True)
+                                
+                                if result.get("success"):
+                                    filename = f"message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                                    
+                                    st.download_button(
+                                        label="📥 마크다운 다운로드",
+                                        data=result.get("content", ""),
+                                        file_name=filename,
+                                        mime="text/markdown"
+                                    )
+                                else:
+                                    st.error(f"마크다운 생성 오류: {result.get('error', '알 수 없는 오류')}")
+                            except Exception as e:
+                                st.error(f"마크다운 생성 오류: {str(e)}")
 
     @staticmethod
     def _render_similarity_score(similarity: float):
@@ -231,6 +286,9 @@ class ChatComponents:
     def render_sidebar():
         """Render sidebar with HAI Portal navigation"""
         with st.sidebar:
+            # Get current session ID first
+            current_session = st.session_state.get("session_id", "default")
+            
             # HAI Portal branding
             st.markdown("""
             <div style="text-align: center; padding: 1rem 0; border-bottom: 2px solid #8B5CF6;">
@@ -238,21 +296,30 @@ class ChatComponents:
             </div>
             """, unsafe_allow_html=True)
             
+            # User info
+            user_info = st.session_state.get("user_info")
+            if user_info:
+                st.markdown(f"""
+                <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border-left: 3px solid #0ea5e9;">
+                    <div style="font-weight: 500; color: #0c4a6e;">👤 {user_info.get('username', '사용자')}</div>
+                    <div style="font-size: 0.8rem; color: #64748b;">{user_info.get('email', '')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
             st.markdown("---")
             
             # HAI-Chat section (current)
             st.markdown("### 💬 HAI-Chat")
             st.markdown('<div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; margin: 0.5rem 0;">현재 선택된 서비스</div>', unsafe_allow_html=True)
             
-            st.markdown("---")
-            
             # Settings and logout
             st.markdown("### ⚙️ 설정")
             if st.button("🔧 설정", key="nav_settings", use_container_width=True):
-                st.info("설정 페이지는 준비 중입니다.")
+                st.session_state.current_page = "configuration"
+                st.rerun()
             
             if st.button("🚪 로그아웃", key="nav_logout", use_container_width=True):
-                st.info("로그아웃 기능은 준비 중입니다.")
+                return "logout"
             
             st.markdown("---")
             
@@ -261,27 +328,53 @@ class ChatComponents:
             if st.button("🗑️ 채팅 초기화", key="clear_chat", use_container_width=True):
                 return "clear_chat"
             
-            # PDF Export section
+            # Export section
             st.markdown("---")
-            st.markdown("### 📄 PDF 내보내기")
+            st.markdown("### 📄 내보내기")
             
-            # PDF export options
-            pdf_type = st.radio(
-                "PDF 유형 선택",
-                ["전체 채팅 기록", "요약 보고서"],
-                help="전체 채팅 기록: 모든 메시지를 포함한 상세 PDF\n요약 보고서: 통계와 주요 내용을 포함한 요약 PDF"
+            # Export format selection
+            export_format = st.radio(
+                "내보내기 형식 선택",
+                ["PDF", "마크다운"],
+                help="PDF: 시각적으로 보기 좋은 문서\n마크다운: 텍스트 기반 문서 (GitHub, Notion 등에서 사용 가능)"
             )
             
-            # PDF generation options
-            include_metadata = st.checkbox(
-                "메타데이터 포함",
-                value=True,
-                help="신뢰도 점수, 참조 문서 등 메타데이터를 PDF에 포함"
-            )
+            if export_format == "PDF":
+                # PDF export options
+                pdf_type = st.radio(
+                    "PDF 유형 선택",
+                    ["전체 채팅 기록", "요약 보고서"],
+                    help="전체 채팅 기록: 모든 메시지를 포함한 상세 PDF\n요약 보고서: 통계와 주요 내용을 포함한 요약 PDF"
+                )
+                
+                # PDF generation options
+                include_metadata = st.checkbox(
+                    "메타데이터 포함",
+                    value=True,
+                    help="신뢰도 점수, 참조 문서 등 메타데이터를 PDF에 포함"
+                )
+                
+                # Generate PDF button
+                if st.button("📥 PDF 다운로드", key="download_pdf", use_container_width=True):
+                    return ("download_pdf", pdf_type, include_metadata)
             
-            # Generate PDF button
-            if st.button("📥 PDF 다운로드", key="download_pdf", use_container_width=True):
-                return ("download_pdf", pdf_type, include_metadata)
+            else:  # Markdown export
+                # Markdown export options
+                session_name = st.text_input(
+                    "세션 이름",
+                    value=st.session_state.get(f"session_name_{current_session}", "채팅 기록"),
+                    help="마크다운 파일에 표시될 세션 이름"
+                )
+                
+                include_metadata = st.checkbox(
+                    "메타데이터 포함",
+                    value=True,
+                    help="신뢰도 점수, 참조 문서 등 메타데이터를 마크다운에 포함"
+                )
+                
+                # Generate Markdown button
+                if st.button("📝 마크다운 다운로드", key="download_markdown", use_container_width=True):
+                    return ("download_markdown", session_name, include_metadata)
             
             # Response Mode selection
             st.subheader("응답 모드")
@@ -439,349 +532,24 @@ class ChatComponents:
                     2. 파일 업로드 페이지에서 문서를 업로드
                     3. LangChain RAG 모드로 업로드
                     """)
-
-            # Session management
-            st.subheader("세션 관리")
-            
-            # Current session display
-            current_session = st.session_state.get("session_id", "default")
-            st.text_input("현재 세션 ID", value=current_session, disabled=True)
-            
-            # Session list
-            st.markdown("### 📋 채팅 히스토리")
-            
-            # Import here to avoid circular imports
-            from services.api_service import APIService
-            api_service = APIService()
-            
-            # Get all sessions (skip if we just created a new session)
-            if not st.session_state.get("is_new_session", False):
-                sessions_response = api_service.get_sessions()
-                if sessions_response.get("success"):
-                    sessions = sessions_response.get("sessions", [])
-                    # Cache the sessions for future use
-                    st.session_state.cached_sessions = sessions
-                else:
-                    sessions = []
-            else:
-                # For new sessions, use cached sessions or empty list
-                sessions = st.session_state.get("cached_sessions", [])
-                # Reset the new session flag after using cached sessions
-                st.session_state.is_new_session = False
                 
-                if sessions:
-                    # Session selector
-                    session_options = []
-                    session_map = {}
-                    
-                    for session_id in sessions:
-                        # Create display name for session
-                        if session_id == "default":
-                            display_name = f"기본 세션 ({session_id})"
-                        else:
-                            # Check if session has a custom name
-                            session_name = st.session_state.get(f"session_name_{session_id}", "")
-                            if session_name:
-                                # Try to get session info to show message count
-                                history_response = api_service.get_chat_history(session_id, limit=1)
-                                if history_response.get("success"):
-                                    message_count = len(history_response.get("messages", []))
-                                    display_name = f"{session_name} ({message_count}개 메시지)"
-                                else:
-                                    display_name = f"{session_name} (메시지 없음)"
-                            else:
-                                # Try to get session info to show message count
-                                history_response = api_service.get_chat_history(session_id, limit=1)
-                                if history_response.get("success"):
-                                    message_count = len(history_response.get("messages", []))
-                                    display_name = f"세션 {session_id[:8]}... ({message_count}개 메시지)"
-                                else:
-                                    display_name = f"세션 {session_id[:8]}..."
-                        
-                        session_options.append(display_name)
-                        session_map[display_name] = session_id
-                    
-                    # Add current session if not in list
-                    if current_session not in sessions:
-                        session_options.insert(0, f"현재 세션 ({current_session})")
-                        session_map[f"현재 세션 ({current_session})"] = current_session
-                    
-                    # Find current session index
-                    current_index = 0
-                    for i, option in enumerate(session_options):
-                        if session_map[option] == current_session:
-                            current_index = i
-                            break
-                    
-                    # Session selector
-                    selected_display = st.selectbox(
-                        "세션 선택",
-                        session_options,
-                        index=current_index,
-                        key="session_selector"
-                    )
-                    
-                    if selected_display and session_map[selected_display] != current_session:
-                        if st.button("🔄 세션 전환", key="switch_session"):
-                            # Use ChatController to switch session and load history
-                            from controllers.chat_controller import ChatController
-                            chat_controller = ChatController()
-                            chat_controller.switch_to_session(session_map[selected_display])
-                    
-                    # Session name editing
-                    st.markdown("#### ✏️ 세션 이름 편집")
-                    current_session_name = st.session_state.get(f"session_name_{current_session}", "")
-                    new_session_name = st.text_input(
-                        "세션 이름",
-                        value=current_session_name,
-                        placeholder="세션 이름을 입력하세요...",
-                        key=f"session_name_input_{current_session}"
-                    )
-                    
-                    if new_session_name != current_session_name:
-                        if st.button("💾 이름 저장", key="save_session_name"):
-                            st.session_state[f"session_name_{current_session}"] = new_session_name
-                            st.success("세션 이름이 저장되었습니다.")
-                            st.rerun()
-                    
-                    # Session actions
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        if st.button("➕ 새 세션", key="new_session"):
-                            import uuid
-                            new_session_id = str(uuid.uuid4())
-                            
-                            # Set all session state at once to avoid infinite loop
-                            st.session_state.session_id = new_session_id
-                            st.session_state.messages = []  # Clear messages for new session
-                            st.session_state.last_loaded_session = new_session_id  # Update last loaded session
-                            st.session_state.is_new_session = True  # Mark as new session to skip existence check
-                            
-                            # Add new session to cached sessions to avoid re-fetching
-                            if "cached_sessions" not in st.session_state:
-                                st.session_state.cached_sessions = []
-                            if new_session_id not in st.session_state.cached_sessions:
-                                st.session_state.cached_sessions.append(new_session_id)
-                            
-                            st.success("새 세션이 생성되었습니다.")
-                            st.rerun()
-                    
-                    with col2:
-                        if st.button("🗑️ 세션 삭제", key="delete_session"):
-                            if current_session != "default":  # Don't allow deleting default session
-                                delete_response = api_service.clear_session(current_session)
-                                if delete_response.get("success"):
-                                    # Also remove session name from session state
-                                    if f"session_name_{current_session}" in st.session_state:
-                                        del st.session_state[f"session_name_{current_session}"]
-                                    st.success("세션이 삭제되었습니다.")
-                                    st.session_state.session_id = "default"
-                                    st.rerun()
-                                else:
-                                    st.error("세션 삭제에 실패했습니다.")
-                            else:
-                                st.warning("기본 세션은 삭제할 수 없습니다.")
-                    
-                    with col3:
-                        if st.button("🔄 새로고침", key="refresh_session_list"):
-                            st.rerun()
-                    
-                    # All sessions delete section
-                    st.markdown("---")
-                    st.markdown("#### ⚠️ 위험한 작업")
-                    
-                    # Check if deletion is in progress
-                    if st.session_state.get("deleting_all_sessions", False):
-                        st.info("🔄 모든 세션을 삭제하는 중입니다...")
-                        return None
-                    
-                    # Check if sessions were just deleted
-                    if st.session_state.get("sessions_deleted", False):
-                        st.success("✅ 모든 세션이 성공적으로 삭제되었습니다!")
-                        st.session_state.sessions_deleted = False  # Clear the flag
-                        return None
-                    
-                    # Show session count
-                    non_default_sessions = [s for s in sessions if s != "default"]
-                    if non_default_sessions:
-                        st.warning(f"⚠️ **{len(non_default_sessions)}개의 세션**이 삭제 대상입니다.")
-                        
-                        # Confirmation checkbox
-                        confirm_delete = st.checkbox(
-                            "모든 세션 삭제를 확인합니다 (기본 세션 제외)",
-                            key="confirm_delete_all",
-                            help="이 작업은 되돌릴 수 없습니다!"
-                        )
-                        
-                        if confirm_delete:
-                            # Additional confirmation with session list
-                            st.markdown("**삭제될 세션 목록:**")
-                            for session_id in non_default_sessions:
-                                session_name = st.session_state.get(f"session_name_{session_id}", "")
-                                if session_name:
-                                    st.write(f"• {session_name} ({session_id[:8]}...)")
-                                else:
-                                    st.write(f"• 세션 {session_id[:8]}...")
-                            
-                            # Final delete button
-                            if st.button("💥 모든 세션 삭제", key="delete_all_sessions", type="primary"):
-                                # Set deletion in progress flag
-                                st.session_state.deleting_all_sessions = True
-                                
-                                # Use ChatController to delete all sessions
-                                from controllers.chat_controller import ChatController
-                                chat_controller = ChatController()
-                                
-                                with st.spinner("모든 세션을 삭제하는 중..."):
-                                    result = chat_controller.clear_all_sessions()
-                                
-                                if result.get("success"):
-                                    cleared_count = len(result.get("cleared_sessions", []))
-                                    
-                                    # Clear session names from session state
-                                    for session_id in result.get("cleared_sessions", []):
-                                        if f"session_name_{session_id}" in st.session_state:
-                                            del st.session_state[f"session_name_{session_id}"]
-                                    
-                                    # Switch to default session and clear messages
-                                    st.session_state.session_id = "default"
-                                    st.session_state.messages = []
-                                    st.session_state.last_loaded_session = "default"
-                                    
-                                    # Clear deletion flag
-                                    st.session_state.deleting_all_sessions = False
-                                    
-                                    # Show success message
-                                    st.success(f"✅ {cleared_count}개의 세션이 삭제되었습니다.")
-                                    
-                                    # Force a complete page refresh to avoid infinite loop
-                                    st.session_state.force_refresh = True
-                                    st.rerun()
-                                else:
-                                    st.session_state.deleting_all_sessions = False
-                                    st.error(f"❌ 세션 삭제에 실패했습니다: {result.get('error', '알 수 없는 오류')}")
-                    else:
-                        st.info("삭제할 세션이 없습니다. (기본 세션만 존재)")
-                    
-                    # Show session info
-                    if current_session:
-                        history_response = api_service.get_chat_history(current_session)
-                        if history_response.get("success"):
-                            message_count = len(history_response.get("messages", []))
-                            st.info(f"📊 현재 세션: {message_count}개 메시지")
-                            
-                            # History search and filter
-                            if message_count > 0:
-                                st.markdown("#### 🔍 히스토리 검색")
-                                search_term = st.text_input(
-                                    "메시지 검색",
-                                    placeholder="검색어를 입력하세요...",
-                                    key="history_search"
-                                )
-                                
-                                # Filter messages by search term
-                                messages = history_response.get("messages", [])
-                                if search_term:
-                                    filtered_messages = [
-                                        msg for msg in messages 
-                                        if search_term.lower() in msg.get("content", "").lower()
-                                    ]
-                                    st.info(f"'{search_term}' 검색 결과: {len(filtered_messages)}개 메시지")
-                                else:
-                                    filtered_messages = messages
-                                
-                                # Show recent messages preview
-                                if filtered_messages:
-                                    st.markdown("#### 📝 최근 메시지 미리보기")
-                                    preview_count = min(3, len(filtered_messages))
-                                    for i, msg in enumerate(filtered_messages[-preview_count:]):
-                                        role = msg.get("role", "unknown")
-                                        content = msg.get("content", "")
-                                        timestamp = msg.get("timestamp", "")
-                                        
-                                        # Truncate content for preview
-                                        preview_content = content[:100] + "..." if len(content) > 100 else content
-                                        
-                                        if role == "user":
-                                            st.markdown(f"**👤 사용자:** {preview_content}")
-                                        else:
-                                            st.markdown(f"**🤖 AI:** {preview_content}")
-                                        
-                                        if timestamp:
-                                            try:
-                                                from datetime import datetime
-                                                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                                                st.caption(f"시간: {dt.strftime('%H:%M:%S')}")
-                                            except:
-                                                st.caption(f"시간: {timestamp}")
-                                        
-                                        if i < preview_count - 1:
-                                            st.markdown("---")
-                                
-                                # History actions
-                                col1, col2 = st.columns(2)
-                                with col1:
-                                    if st.button("📖 전체 히스토리 보기", key="show_full_history"):
-                                        st.session_state.show_full_history = not st.session_state.get("show_full_history", False)
-                                        st.rerun()
-                                
-                                with col2:
-                                    if st.button("💾 히스토리 내보내기", key="export_history"):
-                                        # Create export data
-                                        export_data = {
-                                            "session_id": current_session,
-                                            "session_name": st.session_state.get(f"session_name_{current_session}", ""),
-                                            "exported_at": datetime.now().isoformat(),
-                                            "message_count": len(filtered_messages),
-                                            "messages": filtered_messages
-                                        }
-                                        
-                                        # Convert to JSON
-                                        import json
-                                        json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
-                                        
-                                        # Create download button
-                                        st.download_button(
-                                            label="📥 JSON 파일로 다운로드",
-                                            data=json_data,
-                                            file_name=f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                                            mime="application/json"
-                                        )
-                                
-                                # Show full history if requested
-                                if st.session_state.get("show_full_history", False):
-                                    st.markdown("#### 📚 전체 채팅 히스토리")
-                                    for msg in reversed(filtered_messages):  # Show newest first
-                                        ChatComponents.render_message({
-                                            "role": msg.get("role", "unknown"),
-                                            "content": msg.get("content", ""),
-                                            "timestamp": msg.get("timestamp", ""),
-                                            "context": [],
-                                            "metadata": {}
-                                        })
-                        else:
-                            st.info("📊 현재 세션: 메시지 없음")
-                    else:
-                        st.info("저장된 세션이 없습니다.")
-                        if st.button("➕ 새 세션 생성", key="create_first_session"):
-                            import uuid
-                            new_session_id = str(uuid.uuid4())
-                            st.session_state.session_id = new_session_id
-                            st.rerun()
-                else:
-                    st.error("세션 목록을 불러올 수 없습니다.")
-                    if st.button("🔄 새로고침", key="refresh_sessions"):
-                        st.rerun()
+                # Configuration page link
+                st.markdown("---")
+                if st.button("⚙️ 고급 설정", key="advanced_config", use_container_width=True):
+                    st.session_state.current_page = "configuration"
+                    st.rerun()
 
-            # Connection status
-            st.subheader("연결 상태")
-            if st.session_state.get("backend_connected", False):
-                st.success("✅ 백엔드 연결됨")
-            else:
-                st.error("❌ 백엔드 연결 실패")
-
-            if st.button("🔄 연결 확인", key="check_connection"):
-                return "check_connection"
+            # Configuration page link
+            st.markdown("---")
+            if st.button("⚙️ 시스템 설정", key="system_config", use_container_width=True):
+                st.session_state.current_page = "configuration"
+                st.rerun()
+            
+            # Navigation
+            st.markdown("---")
+            if st.button("🏠 메인으로", key="nav_main", use_container_width=True):
+                st.session_state.current_page = "main"
+                st.rerun()
 
         return None
 

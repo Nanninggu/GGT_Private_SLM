@@ -15,13 +15,31 @@ sys.path.append(grandparent_dir)
 from services.api_service import APIService
 from components.chat_components import FileUploadComponents, StatusComponents
 
+def check_auth_status():
+    """Check if user is authenticated"""
+    if not st.session_state.get("auth_token"):
+        return False
+    
+    # Verify token with backend
+    try:
+        from services.api_service import APIService
+        api_service = APIService()
+        result = api_service.verify_token(st.session_state.auth_token)
+        return result.get("valid", False)
+    except:
+        return False
+
 def main():
     """Main file upload page"""
-    st.set_page_config(
-        page_title="HAI Portal - 파일 업로드",
-        page_icon="📁",
-        layout="wide"
-    )
+    # Page configuration is handled in main.py
+    
+    # Check authentication
+    if not check_auth_status():
+        st.warning("로그인이 필요합니다.")
+        if st.button("로그인 페이지로 이동"):
+            st.session_state.current_page = "login"
+            st.rerun()
+        return
     
     # HAI Portal styling
     st.markdown("""
@@ -123,7 +141,10 @@ def main():
     st.sidebar.title("⚙️ 설정")
     rag_mode = FileUploadComponents.render_rag_mode_selector()
     
-    # Collection Selection (only for LangChain RAG)
+    # Initialize selected_collection for all RAG modes
+    selected_collection = "documents"
+    
+    # Collection Selection
     if rag_mode == "LangChain RAG":
         st.sidebar.markdown("---")
         st.sidebar.subheader("📚 Vector DB 컬렉션")
@@ -145,9 +166,6 @@ def main():
                 "created_at": None,
                 "document_count": 0
             }]
-        
-        # Initialize selected_collection
-        selected_collection = "documents"
         
         if collections:
             # Create collection options
@@ -198,6 +216,16 @@ def main():
             1. 파일을 업로드하면 자동으로 컬렉션이 생성됩니다
             2. LangChain RAG 모드로 업로드하세요
             """)
+    else:
+        # Basic RAG mode - show simple collection info
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("📚 Vector DB 컬렉션")
+        st.sidebar.info("기본 RAG 모드에서는 'documents' 컬렉션을 사용합니다.")
+        st.sidebar.markdown("""
+        **기본 RAG 모드:**
+        - 기본 컬렉션 'documents'를 사용합니다
+        - LangChain RAG 모드에서 컬렉션 관리가 가능합니다
+        """)
     
     # Upload mode selector
     upload_mode = st.sidebar.radio(
@@ -221,11 +249,14 @@ def main():
                     with StatusComponents.show_loading():
                         try:
                             # Read file content
+                            st.info("📁 파일을 읽는 중...")
                             file_content = uploaded_file.getvalue()
                             filename = uploaded_file.name
                             content_type = uploaded_file.type
+                            st.info(f"✅ 파일 읽기 완료: {filename} ({len(file_content)} bytes)")
                             
                             # Upload to appropriate RAG system
+                            st.info("🚀 서버로 파일을 전송하는 중...")
                             if rag_mode == "기본 RAG":
                                 result = api_service.upload_file(file_content, filename, content_type, selected_collection)
                             else:  # LangChain RAG
@@ -251,10 +282,16 @@ def main():
                                 st.info(f"🎯 RAG 모드: {rag_mode}")
                                 
                             else:
-                                FileUploadComponents.show_upload_error(result.get("error", "알 수 없는 오류"))
+                                error_msg = result.get("error", "알 수 없는 오류")
+                                if "timeout" in error_msg.lower():
+                                    error_msg += "\n\n💡 해결 방법:\n- 파일 크기를 줄여보세요\n- 네트워크 연결을 확인하세요\n- 잠시 후 다시 시도해보세요"
+                                FileUploadComponents.show_upload_error(error_msg)
                                 
                         except Exception as e:
-                            FileUploadComponents.show_upload_error(str(e))
+                            error_msg = str(e)
+                            if "timeout" in error_msg.lower():
+                                error_msg += "\n\n💡 해결 방법:\n- 파일 크기를 줄여보세요\n- 네트워크 연결을 확인하세요\n- 잠시 후 다시 시도해보세요"
+                            FileUploadComponents.show_upload_error(error_msg)
         
         else:  # Multiple files
             # Multiple files uploader
@@ -267,15 +304,19 @@ def main():
                     with StatusComponents.show_loading():
                         try:
                             # Prepare file list
+                            st.info(f"📁 {len(uploaded_files)}개 파일을 읽는 중...")
                             file_list = []
-                            for uploaded_file in uploaded_files:
+                            for i, uploaded_file in enumerate(uploaded_files):
+                                st.info(f"  📄 파일 {i+1}/{len(uploaded_files)}: {uploaded_file.name}")
                                 file_list.append({
                                     'filename': uploaded_file.name,
                                     'content': uploaded_file.getvalue(),
                                     'content_type': uploaded_file.type
                                 })
+                            st.info("✅ 모든 파일 읽기 완료")
                             
                             # Upload to appropriate RAG system
+                            st.info("🚀 서버로 파일들을 전송하는 중...")
                             if rag_mode == "기본 RAG":
                                 result = api_service.upload_multiple_files(file_list, selected_collection)
                             else:  # LangChain RAG
@@ -309,10 +350,16 @@ def main():
                                         st.error(f"❌ {file_result['filename']} - 실패: {file_result.get('error', '알 수 없는 오류')}")
                                 
                             else:
-                                FileUploadComponents.show_upload_error(result.get("error", "알 수 없는 오류"))
+                                error_msg = result.get("error", "알 수 없는 오류")
+                                if "timeout" in error_msg.lower():
+                                    error_msg += "\n\n💡 해결 방법:\n- 파일 크기를 줄여보세요\n- 네트워크 연결을 확인하세요\n- 잠시 후 다시 시도해보세요"
+                                FileUploadComponents.show_upload_error(error_msg)
                                 
                         except Exception as e:
-                            FileUploadComponents.show_upload_error(str(e))
+                            error_msg = str(e)
+                            if "timeout" in error_msg.lower():
+                                error_msg += "\n\n💡 해결 방법:\n- 파일 크기를 줄여보세요\n- 네트워크 연결을 확인하세요\n- 잠시 후 다시 시도해보세요"
+                            FileUploadComponents.show_upload_error(error_msg)
     
     with col2:
         # Information panel
@@ -340,8 +387,17 @@ def main():
         5. RAG 시스템에서 활용 가능
         """)
         
-        # Show current RAG mode
+        st.markdown("""
+        **⚠️ 주의사항:**
+        - 대용량 파일은 처리 시간이 오래 걸릴 수 있습니다 (최대 10분)
+        - CSV 파일의 경우 10MB 이상은 청크 단위로 처리됩니다
+        - 타임아웃 발생 시 파일 크기를 줄이거나 잠시 후 다시 시도해보세요
+        - 네트워크 연결이 안정적인지 확인하세요
+        """)
+        
+        # Show current RAG mode and collection
         st.info(f"현재 선택된 모드: **{rag_mode}**")
+        st.info(f"현재 선택된 컬렉션: **{selected_collection}**")
 
 if __name__ == "__main__":
     main()

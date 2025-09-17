@@ -66,6 +66,8 @@ class LangChainVectorService:
             if not self.documents:
                 raise Exception("Vector store not initialized")
             
+            logger.info(f"Starting document processing: {len(content)} characters")
+            
             # Create document
             doc = Document(
                 page_content=content,
@@ -73,12 +75,15 @@ class LangChainVectorService:
             )
             
             # Split document into chunks
+            logger.info("Splitting document into chunks...")
             chunks = self.text_splitter.split_documents([doc])
+            logger.info(f"Document split into {len(chunks)} chunks")
             
             # Add chunks to vector store
+            logger.info("Adding chunks to vector store...")
             doc_ids = await self.documents.aadd_documents(chunks)
+            logger.info(f"Successfully added {len(doc_ids)} document chunks to vector store")
             
-            logger.info(f"Added {len(doc_ids)} document chunks to vector store")
             return doc_ids
             
         except Exception as e:

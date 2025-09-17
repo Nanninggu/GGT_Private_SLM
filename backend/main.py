@@ -2,7 +2,7 @@
 FastAPI backend server for the chatbot
 Converted from Spring Boot with enhanced RAG capabilities
 """
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -22,6 +22,7 @@ from contextlib import asynccontextmanager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from controllers.chat_controller import ChatController
+from controllers.auth_controller import auth_controller
 from config.settings import settings
 from services.database_service import db_service
 from services.vector_service import vector_service
@@ -31,6 +32,7 @@ from services.search_service import search_service
 from services.langchain_rag_service import langchain_rag_service
 from services.prompt_service import prompt_service
 from services.file_processing_service import FileProcessingService
+from services.markdown_service import MarkdownService
 
 # Configure logging
 logging.basicConfig(
@@ -113,8 +115,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize controller
+# Initialize controller and services
 chat_controller = ChatController()
+markdown_service = MarkdownService()
 
 # Request models
 class MessageRequest(BaseModel):
@@ -134,6 +137,29 @@ class SearchRequest(BaseModel):
     query: str
     max_results: Optional[int] = None
     deep_search: bool = False
+
+class MarkdownExportRequest(BaseModel):
+    session_id: str
+    session_name: Optional[str] = "채팅 기록"
+    include_metadata: bool = True
+
+class SingleMessageMarkdownRequest(BaseModel):
+    message: Dict[str, Any]
+    include_metadata: bool = True
+
+# Authentication models
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+    confirm_password: str
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
 
 # Health check endpoints
 @app.get("/")
@@ -676,13 +702,18 @@ async def vector_search(query: str, top_k: Optional[int] = None, similarity_thre
 async def upload_file(file: UploadFile = File(...), collection_name: str = Form("documents")):
     """Upload and process file"""
     try:
+        logger.info(f"Starting file upload: {file.filename} to collection: {collection_name}")
+        
         # Read file content
         content = await file.read()
+        logger.info(f"File read successfully: {len(content)} bytes")
         
         # Extract text from file using file processing service
+        logger.info("Starting text extraction...")
         extraction_result = FileProcessingService.extract_text_from_file(
             content, file.filename, file.content_type
         )
+        logger.info(f"Text extraction completed: {len(extraction_result['text'])} characters")
         
         if not extraction_result["text"]:
             raise HTTPException(
@@ -690,15 +721,13 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
                 detail=f"Failed to extract text from {file.filename}: {extraction_result['metadata'].get('error', 'Unknown error')}"
             )
         
-        # Switch to specified collection if different from current
-        if collection_name != "documents":
-            await langchain_rag_service.set_collection(collection_name)
-        
-        # Add to knowledge base
+        # Add to knowledge base (basic RAG doesn't use collections)
+        logger.info("Adding document to knowledge base...")
         doc_id = await rag_service.add_document(
             extraction_result["text"],
             extraction_result["metadata"]
         )
+        logger.info(f"Document added successfully with ID: {doc_id}")
         
         return {
             "success": True,
@@ -710,22 +739,35 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
             "collection": collection_name,
             "message": "File uploaded and processed successfully"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"File upload failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Provide more detailed error information
+        error_detail = f"파일 업로드 중 오류가 발생했습니다: {str(e)}"
+        if "timeout" in str(e).lower():
+            error_detail += " (타임아웃 발생 - 파일이 너무 크거나 처리 시간이 오래 걸립니다)"
+        elif "connection" in str(e).lower():
+            error_detail += " (연결 오류 - 서버 상태를 확인해주세요)"
+        raise HTTPException(status_code=500, detail=error_detail)
 
 # LangChain file upload endpoint with collection support
 @app.post("/api/langchain/upload")
 async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("documents")):
     """Upload and process file using LangChain"""
     try:
+        logger.info(f"Starting LangChain file upload: {file.filename} to collection: {collection_name}")
+        
         # Read file content
         content = await file.read()
+        logger.info(f"File read successfully: {len(content)} bytes")
         
         # Extract text from file using file processing service
+        logger.info("Starting text extraction...")
         extraction_result = FileProcessingService.extract_text_from_file(
             content, file.filename, file.content_type
         )
+        logger.info(f"Text extraction completed: {len(extraction_result['text'])} characters")
         
         if not extraction_result["text"]:
             raise HTTPException(
@@ -735,13 +777,16 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
         
         # Switch to specified collection if different from current
         if collection_name != "documents":
+            logger.info(f"Switching to collection: {collection_name}")
             await langchain_rag_service.set_collection(collection_name)
         
         # Add to LangChain knowledge base
+        logger.info("Adding document to LangChain knowledge base...")
         doc_ids = await langchain_rag_service.add_document(
             extraction_result["text"],
             extraction_result["metadata"]
         )
+        logger.info(f"Document added successfully with IDs: {doc_ids}")
         
         return {
             "success": True,
@@ -753,9 +798,17 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
             "collection": collection_name,
             "message": "File uploaded and processed successfully with LangChain"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"LangChain file upload failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Provide more detailed error information
+        error_detail = f"LangChain 파일 업로드 중 오류가 발생했습니다: {str(e)}"
+        if "timeout" in str(e).lower():
+            error_detail += " (타임아웃 발생 - 파일이 너무 크거나 처리 시간이 오래 걸립니다)"
+        elif "connection" in str(e).lower():
+            error_detail += " (연결 오류 - 서버 상태를 확인해주세요)"
+        raise HTTPException(status_code=500, detail=error_detail)
 
 # Multiple files upload endpoint with collection support
 @app.post("/api/upload/multiple")
@@ -1050,6 +1103,225 @@ async def rename_collection(request: RenameCollectionRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to rename collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Markdown export endpoints
+@app.post("/api/chat/export/markdown")
+async def export_chat_markdown(request: MarkdownExportRequest):
+    """Export chat session to markdown format"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        # Get chat history for the session
+        history_response = chat_controller.get_chat_history(request.session_id)
+        
+        if not history_response.get("success"):
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Session '{request.session_id}' not found or error loading history"
+            )
+        
+        messages = history_response.get("messages", [])
+        
+        if not messages:
+            raise HTTPException(
+                status_code=400, 
+                detail="No messages found in the session"
+            )
+        
+        # Generate markdown content
+        markdown_content = markdown_service.generate_chat_markdown(
+            messages=messages,
+            session_id=request.session_id,
+            session_name=request.session_name,
+            include_metadata=request.include_metadata
+        )
+        
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"chat_export_{request.session_id}_{timestamp}.md"
+        
+        # Save to file
+        filepath = markdown_service.save_markdown_to_file(markdown_content, filename)
+        
+        return {
+            "success": True,
+            "message": "Markdown export generated successfully",
+            "filename": filename,
+            "filepath": filepath,
+            "content": markdown_content,
+            "message_count": len(messages)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to export chat markdown: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat/export/markdown/single")
+async def export_single_message_markdown(request: SingleMessageMarkdownRequest):
+    """Export a single message to markdown format"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        # Generate markdown content for single message
+        markdown_content = markdown_service.generate_single_message_markdown(
+            message=request.message,
+            include_metadata=request.include_metadata
+        )
+        
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        role = request.message.get("role", "unknown")
+        filename = f"message_{role}_{timestamp}.md"
+        
+        # Save to file
+        filepath = markdown_service.save_markdown_to_file(markdown_content, filename)
+        
+        return {
+            "success": True,
+            "message": "Single message markdown export generated successfully",
+            "filename": filename,
+            "filepath": filepath,
+            "content": markdown_content
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to export single message markdown: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat/export/markdown/stats")
+async def get_markdown_export_stats():
+    """Get statistics about exported markdown files"""
+    try:
+        stats = markdown_service.get_export_stats()
+        return {
+            "success": True,
+            "stats": stats
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get markdown export stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat/export/markdown/download/{filename}")
+async def download_markdown_file(filename: str):
+    """Download a specific markdown file"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        # Security check - ensure filename is safe
+        if not filename.endswith('.md') or '..' in filename or '/' in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        
+        filepath = os.path.join(markdown_service.export_dir, filename)
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Read file content
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return {
+            "success": True,
+            "filename": filename,
+            "content": content,
+            "size": len(content)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to download markdown file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Authentication endpoints
+@app.post("/api/auth/register")
+async def register(request: RegisterRequest):
+    """Register a new user"""
+    try:
+        result = auth_controller.register(request)
+        if not result.success:
+            raise HTTPException(status_code=400, detail=result.message)
+        return result
+    except Exception as e:
+        logger.error(f"Registration failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/login")
+async def login(request: LoginRequest):
+    """Login user"""
+    try:
+        result = auth_controller.login(request)
+        if not result.success:
+            raise HTTPException(status_code=401, detail=result.message)
+        return result
+    except Exception as e:
+        logger.error(f"Login failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/auth/refresh")
+async def refresh_token(request: TokenRefreshRequest):
+    """Refresh access token"""
+    try:
+        result = auth_controller.refresh_token(request.refresh_token)
+        if not result.success:
+            raise HTTPException(status_code=401, detail=result.message)
+        return result
+    except Exception as e:
+        logger.error(f"Token refresh failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/auth/me")
+async def get_current_user(current_user = Depends(auth_controller.get_current_user)):
+    """Get current user information"""
+    return {
+        "success": True,
+        "user": {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email,
+            "role": current_user.role.value,
+            "is_active": current_user.is_active,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+            "last_login": current_user.last_login.isoformat() if current_user.last_login else None
+        }
+    }
+
+@app.post("/api/auth/logout")
+async def logout(current_user = Depends(auth_controller.get_current_user)):
+    """Logout user"""
+    try:
+        success = auth_controller.logout(current_user.id)
+        return {
+            "success": success,
+            "message": "로그아웃되었습니다." if success else "로그아웃 중 오류가 발생했습니다."
+        }
+    except Exception as e:
+        logger.error(f"Logout failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class TokenVerifyRequest(BaseModel):
+    token: str
+
+@app.post("/api/auth/verify")
+async def verify_token(request: TokenVerifyRequest):
+    """Verify if token is valid"""
+    try:
+        is_valid = auth_controller.verify_token(request.token)
+        return {
+            "success": True,
+            "valid": is_valid
+        }
+    except Exception as e:
+        logger.error(f"Token verification failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

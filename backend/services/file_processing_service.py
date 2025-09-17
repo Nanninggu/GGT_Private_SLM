@@ -28,23 +28,35 @@ class FileProcessingService:
             Dict containing extracted text and metadata
         """
         try:
+            logger.info(f"Starting text extraction from {filename} ({len(file_content)} bytes, {content_type})")
+            
             # Get file extension
             file_ext = filename.lower().split('.')[-1] if '.' in filename else ''
+            logger.info(f"File extension: {file_ext}")
             
             # Extract text based on file type
             if content_type == 'application/pdf' or file_ext == 'pdf':
-                return FileProcessingService._extract_from_pdf(file_content, filename)
+                logger.info("Processing PDF file...")
+                result = FileProcessingService._extract_from_pdf(file_content, filename)
             elif content_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' or file_ext == 'docx':
-                return FileProcessingService._extract_from_docx(file_content, filename)
+                logger.info("Processing DOCX file...")
+                result = FileProcessingService._extract_from_docx(file_content, filename)
             elif content_type == 'text/csv' or file_ext == 'csv':
-                return FileProcessingService._extract_from_csv(file_content, filename)
+                logger.info("Processing CSV file...")
+                result = FileProcessingService._extract_from_csv(file_content, filename)
             elif content_type == 'application/json' or file_ext == 'json':
-                return FileProcessingService._extract_from_json(file_content, filename)
+                logger.info("Processing JSON file...")
+                result = FileProcessingService._extract_from_json(file_content, filename)
             elif content_type.startswith('text/') or file_ext in ['txt', 'md']:
-                return FileProcessingService._extract_from_text(file_content, filename)
+                logger.info("Processing text file...")
+                result = FileProcessingService._extract_from_text(file_content, filename)
             else:
+                logger.info("Processing unknown file type as text...")
                 # Try to decode as text for unknown types
-                return FileProcessingService._extract_from_text(file_content, filename)
+                result = FileProcessingService._extract_from_text(file_content, filename)
+            
+            logger.info(f"Text extraction completed: {len(result['text'])} characters extracted")
+            return result
                 
         except Exception as e:
             logger.error(f"Failed to extract text from {filename}: {e}")
@@ -132,13 +144,26 @@ class FileProcessingService:
     
     @staticmethod
     def _extract_from_csv(file_content: bytes, filename: str) -> Dict[str, Any]:
-        """Extract text from CSV file"""
+        """Extract text from CSV file with optimized processing for large files"""
         try:
+            logger.info(f"Processing CSV file: {filename} ({len(file_content)} bytes)")
+            
             csv_text = file_content.decode('utf-8')
+            
+            # For large files, use chunked processing
+            if len(csv_text) > 10 * 1024 * 1024:  # 10MB 이상
+                logger.info("Large CSV file detected, using chunked processing")
+                return FileProcessingService._extract_from_csv_chunked(csv_text, filename, len(file_content))
+            
+            # For smaller files, use regular processing
             df = pd.read_csv(io.StringIO(csv_text))
             
-            # Convert DataFrame to text
-            text_content = df.to_string(index=False)
+            # Convert DataFrame to text with optimized formatting
+            text_content = df.to_string(index=False, max_rows=10000)  # Limit rows for very large files
+            
+            # If file is too large, add truncation notice
+            if len(df) > 10000:
+                text_content += f"\n\n[파일이 너무 커서 처음 10,000행만 표시됩니다. 전체 행 수: {len(df)}]"
             
             return {
                 "text": text_content,
@@ -149,7 +174,8 @@ class FileProcessingService:
                     "column_count": len(df.columns),
                     "columns": list(df.columns),
                     "extraction_method": "csv",
-                    "size": len(file_content)
+                    "size": len(file_content),
+                    "truncated": len(df) > 10000
                 }
             }
         except Exception as e:
@@ -161,6 +187,72 @@ class FileProcessingService:
                     "content_type": "text/csv",
                     "error": str(e),
                     "extraction_method": "csv_failed"
+                }
+            }
+    
+    @staticmethod
+    def _extract_from_csv_chunked(csv_text: str, filename: str, file_size: int) -> Dict[str, Any]:
+        """Extract text from large CSV file using chunked processing"""
+        try:
+            logger.info("Starting chunked CSV processing")
+            
+            # Read CSV in chunks
+            chunk_size = 1000
+            chunks = []
+            total_rows = 0
+            columns = None
+            
+            # Use StringIO for chunked reading
+            csv_io = io.StringIO(csv_text)
+            
+            for chunk_df in pd.read_csv(csv_io, chunksize=chunk_size):
+                if columns is None:
+                    columns = list(chunk_df.columns)
+                
+                total_rows += len(chunk_df)
+                
+                # Convert chunk to text
+                chunk_text = chunk_df.to_string(index=False)
+                chunks.append(chunk_text)
+                
+                # Limit total chunks to prevent memory issues
+                if len(chunks) >= 50:  # Max 50,000 rows
+                    logger.info(f"Reached chunk limit, processing {len(chunks) * chunk_size} rows")
+                    break
+            
+            # Combine chunks
+            text_content = "\n\n".join(chunks)
+            
+            # Add truncation notice if needed
+            if total_rows >= 50000:
+                text_content += f"\n\n[파일이 너무 커서 처음 50,000행만 표시됩니다. 전체 행 수: {total_rows}]"
+            
+            logger.info(f"Chunked CSV processing completed: {total_rows} rows processed")
+            
+            return {
+                "text": text_content,
+                "metadata": {
+                    "filename": filename,
+                    "content_type": "text/csv",
+                    "row_count": total_rows,
+                    "column_count": len(columns) if columns else 0,
+                    "columns": columns or [],
+                    "extraction_method": "csv_chunked",
+                    "size": file_size,
+                    "truncated": total_rows >= 50000
+                }
+            }
+        except Exception as e:
+            logger.error(f"Chunked CSV extraction failed for {filename}: {e}")
+            # Fallback to basic text extraction
+            return {
+                "text": csv_text[:1000000],  # First 1MB as text
+                "metadata": {
+                    "filename": filename,
+                    "content_type": "text/csv",
+                    "extraction_method": "csv_fallback",
+                    "size": file_size,
+                    "note": "Large file processed as plain text"
                 }
             }
     

@@ -14,14 +14,31 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from controllers.chat_controller import ChatController
 from components.chat_components import ChatComponents, StatusComponents
 
+def check_auth_status():
+    """Check if user is authenticated"""
+    if not st.session_state.get("auth_token"):
+        return False
+    
+    # Verify token with backend
+    try:
+        from services.api_service import APIService
+        api_service = APIService()
+        result = api_service.verify_token(st.session_state.auth_token)
+        return result.get("valid", False)
+    except:
+        return False
+
 def main():
     """Collection management page"""
-    # Page configuration
-    st.set_page_config(
-        page_title="HAI Portal - 컬렉션 관리",
-        page_icon="🗂️",
-        layout="wide"
-    )
+    # Page configuration is handled in main.py
+    
+    # Check authentication
+    if not check_auth_status():
+        st.warning("로그인이 필요합니다.")
+        if st.button("로그인 페이지로 이동"):
+            st.session_state.current_page = "login"
+            st.rerun()
+        return
     
     # 하얀색 배경 CSS
     st.markdown("""

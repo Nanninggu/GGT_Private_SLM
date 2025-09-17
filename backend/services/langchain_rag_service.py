@@ -11,8 +11,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains import ConversationalRetrievalChain
+# from langchain.memory import ConversationBufferWindowMemory
+# from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import PGVector
 
 from config.settings import settings
@@ -27,8 +27,6 @@ class LangChainRagService:
     def __init__(self):
         self.llm = None
         self.documents = None
-        self.memory = None
-        self.qa_chain = None
         self.embeddings = None
         self.current_collection = "documents"  # Default collection
         
@@ -53,27 +51,8 @@ class LangChainRagService:
             self.documents = langchain_vector_service.documents
             self.embeddings = langchain_vector_service.embeddings
             
-            # Initialize conversation memory
-            self.memory = ConversationBufferWindowMemory(
-                k=settings.RAG_MEMORY_WINDOW_SIZE,
-                memory_key="chat_history",
-                return_messages=True,
-                output_key="answer"
-            )
-            
-            # Create conversational retrieval chain
-            self.qa_chain = ConversationalRetrievalChain.from_llm(
-                llm=self.llm,
-                retriever=self.documents.as_retriever(
-                    search_kwargs={
-                        "k": settings.RAG_VECTOR_SEARCH_TOP_K,
-                        "score_threshold": settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD
-                    }
-                ),
-                memory=self.memory,
-                return_source_documents=True,
-                verbose=True
-            )
+            # Initialize simple RAG without memory for now
+            logger.info("LangChain RAG service initialized (simplified version without memory)")
             
             logger.info("LangChain RAG service initialized successfully")
             
@@ -99,19 +78,8 @@ class LangChainRagService:
             self.documents = langchain_vector_service.documents
             self.current_collection = collection_name
             
-            # Recreate QA chain with new collection
-            self.qa_chain = ConversationalRetrievalChain.from_llm(
-                llm=self.llm,
-                retriever=self.documents.as_retriever(
-                    search_kwargs={
-                        "k": settings.RAG_VECTOR_SEARCH_TOP_K,
-                        "score_threshold": settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD
-                    }
-                ),
-                memory=self.memory,
-                return_source_documents=True,
-                verbose=True
-            )
+            # Update documents reference for new collection
+            logger.info(f"Updated documents reference for collection: {collection_name}")
             
             logger.info(f"Switched to collection: {collection_name}")
             return True
@@ -177,13 +145,18 @@ class LangChainRagService:
     async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """Add document to knowledge base"""
         try:
+            logger.info(f"Starting document addition to knowledge base: {len(content)} characters")
+            
             # Clean and preprocess content
+            logger.info("Preprocessing content...")
             cleaned_content = self._preprocess_content(content)
+            logger.info(f"Content preprocessed: {len(cleaned_content)} characters")
             
             # Add to vector store
+            logger.info("Adding document to vector store...")
             doc_ids = await langchain_vector_service.add_document(cleaned_content, metadata)
             
-            logger.info(f"Document added to knowledge base: {len(doc_ids)} chunks")
+            logger.info(f"Document successfully added to knowledge base: {len(doc_ids)} chunks")
             return f"Added {len(doc_ids)} document chunks"
             
         except Exception as e:
@@ -240,12 +213,29 @@ class LangChainRagService:
     async def rag_query(self, query: str, session_id: str = None) -> Dict[str, Any]:
         """Main RAG query method using LangChain"""
         try:
-            # Use LangChain conversational retrieval chain
-            result = await self.qa_chain.ainvoke({"question": query})
+            # Search for relevant documents
+            source_docs = await self.documents.asimilarity_search(
+                query,
+                k=settings.RAG_VECTOR_SEARCH_TOP_K,
+                score_threshold=settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD
+            )
             
-            # Extract response and source documents
-            response_text = result.get("answer", "")
-            source_docs = result.get("source_documents", [])
+            # Create context from source documents
+            context = "\n\n".join([doc.page_content for doc in source_docs])
+            
+            # Create prompt for LLM
+            prompt = f"""다음 컨텍스트를 바탕으로 질문에 답변해 주세요. 컨텍스트에서 답을 찾을 수 없다면 "죄송합니다. 제공된 컨텍스트에서 해당 질문에 대한 답변을 찾을 수 없습니다."라고 답변해 주세요.
+
+컨텍스트:
+{context}
+
+질문: {query}
+
+답변:"""
+            
+            # Get response from LLM
+            response = await self.llm.ainvoke([{"role": "user", "content": prompt}])
+            response_text = response.content if hasattr(response, 'content') else str(response)
             
             # Force Korean response if the response is in English
             if self._is_english_response(response_text):
@@ -341,29 +331,22 @@ class LangChainRagService:
             return []
     
     async def clear_memory(self, session_id: str = None) -> bool:
-        """Clear conversation memory"""
+        """Clear conversation memory (simplified - no memory in current implementation)"""
         try:
-            if self.memory:
-                self.memory.clear()
-                logger.info("Conversation memory cleared")
-                return True
-            return False
+            logger.info("Memory clear requested (no memory in current implementation)")
+            return True
         except Exception as e:
             logger.error(f"Failed to clear memory: {e}")
             return False
     
     async def get_memory_state(self) -> Dict[str, Any]:
-        """Get current memory state"""
+        """Get current memory state (simplified - no memory in current implementation)"""
         try:
-            if self.memory:
-                memory_vars = self.memory.load_memory_variables({})
-                return {
-                    "memory_type": "ConversationBufferWindowMemory",
-                    "window_size": settings.RAG_MEMORY_WINDOW_SIZE,
-                    "current_messages": len(memory_vars.get("chat_history", [])),
-                    "memory_variables": list(memory_vars.keys())
-                }
-            return {"memory_type": "None", "current_messages": 0}
+            return {
+                "memory_type": "None",
+                "current_messages": 0,
+                "note": "Memory disabled in current implementation"
+            }
         except Exception as e:
             logger.error(f"Failed to get memory state: {e}")
             return {"error": str(e)}

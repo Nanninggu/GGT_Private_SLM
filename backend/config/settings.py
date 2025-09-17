@@ -12,7 +12,7 @@ class Settings:
     
     # ===== 애플리케이션 기본 설정 =====
     APP_NAME: str = "sllm-pattern"
-    SERVER_PORT: int = int(os.getenv("SERVER_PORT", "8080"))
+    SERVER_PORT: int = int(os.getenv("SERVER_PORT", "8000"))
     API_HOST: str = os.getenv("API_HOST", "localhost")
     
     # ===== 액추에이터/헬스체크 설정 =====
@@ -33,8 +33,8 @@ class Settings:
     DB_POOL_LEAK_DETECTION_THRESHOLD: int = 60000
     
     # ===== 파일 업로드 설정 =====
-    MAX_FILE_SIZE: str = "30MB"
-    MAX_REQUEST_SIZE: str = "30MB"
+    MAX_FILE_SIZE: str = "100MB"  # 파일 크기 제한 증가
+    MAX_REQUEST_SIZE: str = "100MB"  # 요청 크기 제한 증가
     
     # ===== 서버 성능 설정 =====
     TOMCAT_MAX_THREADS: int = 20
@@ -134,6 +134,12 @@ class Settings:
     
     # ===== 정적 리소스 설정 =====
     STATIC_PATH_PATTERN: str = "/static/**"
+    
+    # ===== JWT 설정 =====
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production-2024")
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # ===== 기존 설정 유지 =====
     MODEL_NAME: str = "exaone3.5:2.4b"

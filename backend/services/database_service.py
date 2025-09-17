@@ -86,6 +86,7 @@ class DatabaseService:
                         content TEXT NOT NULL,
                         metadata JSONB,
                         embedding vector(1024),
+                        collection_name VARCHAR(255),
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
@@ -96,6 +97,12 @@ class DatabaseService:
                     CREATE INDEX IF NOT EXISTS documents_embedding_idx 
                     ON documents USING hnsw (embedding vector_cosine_ops)
                     WITH (m = 16, ef_construction = 200)
+                """))
+                
+                # Create index for collection_name for faster filtering
+                await conn.execute(text("""
+                    CREATE INDEX IF NOT EXISTS documents_collection_name_idx 
+                    ON documents (collection_name)
                 """))
                 
                 logger.info("Database tables created successfully")
@@ -129,7 +136,30 @@ class DatabaseService:
                     """))
                     logger.info("Documents table recreated with correct schema")
                 else:
-                    logger.info("Using existing documents table with correct schema")
+                    # Check if collection_name column exists
+                    result = await conn.execute(text("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'documents' AND column_name = 'collection_name'
+                    """))
+                    collection_column = result.fetchone()
+                    
+                    if not collection_column:
+                        # Add collection_name column to existing table
+                        await conn.execute(text("""
+                            ALTER TABLE documents 
+                            ADD COLUMN collection_name VARCHAR(255)
+                        """))
+                        
+                        # Create index for collection_name
+                        await conn.execute(text("""
+                            CREATE INDEX IF NOT EXISTS documents_collection_name_idx 
+                            ON documents (collection_name)
+                        """))
+                        
+                        logger.info("Added collection_name column to existing documents table")
+                    else:
+                        logger.info("Using existing documents table with correct schema")
             
             # Create chat sessions table
             await conn.execute(text("""

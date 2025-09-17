@@ -82,8 +82,9 @@ cp backend/env.example backend/.env
 
 # .env 파일 편집하여 실제 값으로 업데이트
 # - DATABASE_URL: PostgreSQL 연결 정보
-# - GOOGLE_SEARCH_API_KEY: Google Search API 키
-# - GOOGLE_SEARCH_ENGINE_ID: Google Search Engine ID
+# - GOOGLE_API_KEY: Google Custom Search API 키
+# - GOOGLE_CSE_ID: Google Custom Search Engine ID
+# - SERPAPI_KEY: SerpAPI 키 (선택사항, Google API 대안)
 ```
 
 ### 6. 백엔드 실행
@@ -104,8 +105,10 @@ cp backend/env.example backend/.env
 - **벡터 검색**: pgvector를 활용한 고성능 유사도 검색
 - **Ollama 통합**: 로컬 LLM 서버 연동
 - **Google Search API**: 실시간 웹 검색 기능
+- **웹 검색 및 컬렉션 저장**: 구글 웹 검색 후 결과를 컬렉션에 자동 저장
 - **Deep Search**: 향상된 검색 결과 처리
 - **문서 관리**: 지식 베이스 문서 추가/삭제/검색
+- **컬렉션 관리**: 벡터 데이터베이스 컬렉션 생성/삭제/전환
 - **세션 관리**: 채팅 기록 저장 및 관리
 - **PDF 내보내기**: 채팅 대화를 PDF로 저장하는 기능
   - 전체 채팅 기록 PDF
@@ -162,13 +165,46 @@ TEMPERATURE = 0.7                       # 생성 온도
 - 백엔드 서버: `http://localhost:8000`
 - Streamlit 앱: `http://localhost:8501`
 
+## 🔍 웹 검색 및 컬렉션 저장 기능
+
+### 웹 검색 기능
+- **Google Custom Search API**: 정확한 웹 검색 결과 제공
+- **SerpAPI 지원**: Google API 대안으로 사용 가능
+- **웹페이지 내용 추출**: 검색 결과의 실제 웹페이지 내용 자동 추출
+- **실시간 처리**: 검색과 저장 과정을 실시간으로 모니터링
+
+### 컬렉션 저장 기능
+- **자동 벡터화**: 검색 결과를 벡터 데이터베이스에 자동 저장
+- **컬렉션 관리**: 검색 결과를 특정 컬렉션에 저장하여 체계적 관리
+- **RAG 통합**: 저장된 검색 결과를 채팅에서 RAG 기능으로 활용
+- **메타데이터 보존**: URL, 도메인, 제목 등 검색 결과 메타데이터 유지
+
+### 사용 방법
+1. **웹 검색 페이지 접속**: Streamlit 앱에서 "웹 검색" 페이지 선택
+2. **검색어 입력**: 검색할 키워드나 질문 입력
+3. **컬렉션 선택**: 결과를 저장할 컬렉션 선택 (또는 새 컬렉션 생성)
+4. **검색 실행**: "검색만 하기" 또는 "검색 후 컬렉션에 저장" 선택
+5. **결과 확인**: 검색 결과를 확인하고 필요시 링크로 이동
+
 ## 📝 API 엔드포인트
 
+### 채팅 API
 - `POST /api/chat/session`: 새 채팅 세션 생성
 - `POST /api/chat/message`: 메시지 전송
 - `GET /api/chat/history/{session_id}`: 채팅 기록 조회
 - `GET /api/chat/sessions`: 모든 세션 목록
 - `DELETE /api/chat/session/{session_id}`: 세션 삭제
+
+### 웹 검색 API
+- `POST /api/web-search/search`: 웹 검색 수행
+- `POST /api/web-search/search-and-save`: 웹 검색 후 컬렉션에 저장
+- `GET /api/web-search/collections`: 사용 가능한 컬렉션 목록 조회
+
+### 컬렉션 관리 API
+- `GET /api/collections`: 컬렉션 목록 조회
+- `POST /api/collections/create`: 새 컬렉션 생성
+- `DELETE /api/collections/{collection_name}`: 컬렉션 삭제
+- `POST /api/collections/switch`: 활성 컬렉션 전환
 
 ## 📄 PDF 내보내기 기능
 

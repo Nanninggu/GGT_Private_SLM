@@ -6,7 +6,7 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResponse
+from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResponse, SourceInfo, AccuracyInfo
 from backend.repositories.chat_repository import ChatRepository
 from backend.services.llm_service import ExaoneLLMService
 from backend.services.langchain_rag_service import langchain_rag_service
@@ -77,6 +77,11 @@ class ChatService:
         # Get recent messages for context (limit to MAX_HISTORY)
         recent_messages = session.messages[-settings.MAX_HISTORY:]
 
+        # Initialize response variables
+        response_content = ""
+        sources = []
+        accuracy_info = None
+        
         try:
             # Use LangChain RAG service to generate response
             logger.info(f"Processing LangChain RAG query: {user_message[:100]}...")
@@ -87,6 +92,33 @@ class ChatService:
                 response_content = rag_result["response"]
                 context_count = rag_result["metadata"].get("context_count", 0)
                 context_files = rag_result["metadata"].get("context_files", [])
+                similarity_scores = rag_result["metadata"].get("similarity_scores", [])
+                avg_similarity = rag_result["metadata"].get("similarity", 0.0)
+                fallback_used = rag_result["metadata"].get("fallback_mode", False)
+                
+                # Extract source information
+                if rag_result.get("context"):
+                    for i, doc in enumerate(rag_result["context"]):
+                        doc_metadata = doc.get("metadata", {})
+                        filename = doc_metadata.get("filename", doc_metadata.get("file_name", f"Document {i+1}"))
+                        similarity = doc.get("similarity", 0.0)
+                        content_preview = doc.get("content", "")[:200] + "..." if len(doc.get("content", "")) > 200 else doc.get("content", "")
+                        document_id = doc.get("id", f"doc_{i}")
+                        
+                        sources.append(SourceInfo(
+                            filename=filename,
+                            similarity_score=similarity,
+                            content_preview=content_preview,
+                            document_id=document_id
+                        ))
+                
+                # Create accuracy information
+                accuracy_info = AccuracyInfo(
+                    confidence_score=avg_similarity,
+                    context_count=context_count,
+                    avg_similarity=avg_similarity,
+                    fallback_used=fallback_used
+                )
                 
                 logger.info(f"LangChain RAG response generated with {context_count} context documents")
                 if context_files:
@@ -100,13 +132,15 @@ class ChatService:
             logger.error(f"LangChain RAG processing failed: {e}")
             response_content = f"죄송합니다. RAG 시스템에 오류가 발생했습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {str(e)}"
 
-        # Create assistant message
+        # Create assistant message with source and accuracy information
         assistant_msg = ChatMessage(
             id=str(uuid.uuid4()),
             role=MessageRole.ASSISTANT,
             content=response_content,
             timestamp=datetime.now(),
-            session_id=session_id
+            session_id=session_id,
+            sources=sources,
+            accuracy=accuracy_info
         )
 
         # Add assistant message to session

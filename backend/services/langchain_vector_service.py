@@ -15,7 +15,7 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from config.settings import settings
-from services.database_service import db_service
+from backend.services.database_service import db_service
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class LangChainVectorService:
             self.documents = PGVector(
                 connection_string=connection_string,
                 embedding_function=self.embeddings,
-                collection_name="documents",
+                collection_name="langchain_documents",
                 distance_strategy="cosine"
             )
             
@@ -162,8 +162,10 @@ class LangChainVectorService:
             
             # Note: PGVector doesn't have a direct delete method
             # We'll need to use raw SQL for deletion
-            if not db_service.async_session_factory:
-                raise Exception("Database not initialized")
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
             
             session = db_service.get_session()
             async with session:
@@ -184,8 +186,10 @@ class LangChainVectorService:
     async def get_document_count(self) -> int:
         """Get total document count"""
         try:
-            if not db_service.async_session_factory:
-                raise Exception("Database not initialized")
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
             
             session = db_service.get_session()
             async with session:
@@ -202,17 +206,19 @@ class LangChainVectorService:
     async def get_collections(self) -> List[Dict[str, Any]]:
         """Get list of available collections (tables) in vector database"""
         try:
-            if not db_service.async_session_factory:
-                raise Exception("Database not initialized")
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
             
             session = db_service.get_session()
             async with session:
                 collections = []
                 
-                # Always include the default 'documents' collection
+                # Always include the default 'langchain_documents' collection
                 default_collection = {
                     "id": "default",
-                    "name": "documents",
+                    "name": "langchain_documents",
                     "metadata": {},
                     "created_at": None,
                     "document_count": 0
@@ -265,7 +271,7 @@ class LangChainVectorService:
             # Return default collection even if there's an error
             return [{
                 "id": "default",
-                "name": "documents",
+                "name": "langchain_documents",
                 "metadata": {},
                 "created_at": None,
                 "document_count": 0
@@ -274,13 +280,15 @@ class LangChainVectorService:
     async def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         """Get detailed information about a specific collection"""
         try:
-            if not db_service.async_session_factory:
-                raise Exception("Database not initialized")
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
             
             session = db_service.get_session()
             async with session:
-                # Handle default 'documents' collection
-                if collection_name == "documents":
+                # Handle default 'langchain_documents' collection
+                if collection_name == "langchain_documents":
                     # Count documents in default collection (all documents)
                     doc_count_result = await session.execute(text("""
                         SELECT COUNT(*) 
@@ -307,7 +315,7 @@ class LangChainVectorService:
                     
                     return {
                         "id": "default",
-                        "name": "documents",
+                        "name": "langchain_documents",
                         "metadata": {},
                         "created_at": None,
                         "document_count": doc_count,
@@ -373,6 +381,11 @@ class LangChainVectorService:
             if not collection_name or collection_name.strip() == "":
                 raise ValueError("Collection name cannot be empty")
             
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
+            
             # Check if collection already exists
             existing_collections = await self.get_collections()
             for collection in existing_collections:
@@ -419,8 +432,13 @@ class LangChainVectorService:
     async def delete_collection(self, collection_name: str) -> Dict[str, Any]:
         """Delete a collection and all its documents"""
         try:
-            if collection_name == "documents":
-                raise ValueError("Cannot delete the default 'documents' collection")
+            if collection_name == "langchain_documents":
+                raise ValueError("Cannot delete the default 'langchain_documents' collection")
+            
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
             
             # Check if collection exists
             collections = await self.get_collections()
@@ -470,11 +488,16 @@ class LangChainVectorService:
     async def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
         """Rename a collection"""
         try:
-            if old_name == "documents":
-                raise ValueError("Cannot rename the default 'documents' collection")
+            if old_name == "langchain_documents":
+                raise ValueError("Cannot rename the default 'langchain_documents' collection")
             
             if not new_name or new_name.strip() == "":
                 raise ValueError("New collection name cannot be empty")
+            
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
             
             # Check if old collection exists
             collections = await self.get_collections()

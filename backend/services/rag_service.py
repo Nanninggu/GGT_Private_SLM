@@ -31,16 +31,16 @@ class RagService:
             logger.error(f"Failed to initialize RAG service: {e}")
             raise
     
-    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None) -> str:
         """Add document to knowledge base"""
         try:
             # Clean and preprocess content
             cleaned_content = self._preprocess_content(content)
             
             # Add to vector database
-            doc_id = await self.vector_service.add_document(cleaned_content, metadata)
+            doc_id = await self.vector_service.add_document(cleaned_content, metadata, collection_name)
             
-            logger.info(f"Document added to knowledge base: {doc_id}")
+            logger.info(f"Document added to knowledge base: {doc_id} in collection: {collection_name}")
             return doc_id
             
         except Exception as e:
@@ -182,7 +182,7 @@ class RagService:
             
             return {
                 "success": True,
-                "response": response["content"],
+                "response": response["response"],
                 "context": context,
                 "metadata": metadata,
                 "model_info": response.get("model_info", {})
@@ -346,6 +346,14 @@ class RagService:
             logger.error(f"Failed to force Korean response: {e}")
             # Fallback: return a simple Korean message
             return f"죄송합니다. 질문에 대한 답변을 한국어로 제공하려고 했지만 오류가 발생했습니다. 원래 질문: {original_query}"
+    
+    async def get_available_collections(self) -> List[Dict[str, Any]]:
+        """Get list of available collections from documents table"""
+        try:
+            return await self.vector_service.get_collections()
+        except Exception as e:
+            logger.error(f"Failed to get collections: {e}")
+            return []
     
     async def close(self):
         """Close RAG service"""

@@ -99,12 +99,14 @@ class ChatComponents:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Display similarity score if available
-                if metadata and "similarity" in metadata:
-                    similarity = metadata.get("similarity", 0)
-                    ChatComponents._render_similarity_score(similarity)
+                # Display sources and accuracy information
+                sources = message.get("sources", [])
+                accuracy = message.get("accuracy", {})
+                
+                if sources or accuracy:
+                    ChatComponents._render_sources_and_accuracy(sources, accuracy)
                 elif metadata:
-                    # If metadata exists but no similarity, show a default score
+                    # If metadata exists but no sources/accuracy, show a default score
                     st.info("신뢰도 정보를 계산하는 중입니다...")
                 else:
                     # No metadata available
@@ -166,8 +168,113 @@ class ChatComponents:
                                 st.error(f"마크다운 생성 오류: {str(e)}")
 
     @staticmethod
+    def _render_sources_and_accuracy(sources: List[Dict[str, Any]], accuracy: Dict[str, Any]):
+        """Render sources and accuracy information with visual indicators"""
+        # Render accuracy information
+        if accuracy:
+            confidence_score = accuracy.get("confidence_score", 0.0)
+            context_count = accuracy.get("context_count", 0)
+            avg_similarity = accuracy.get("avg_similarity", 0.0)
+            fallback_used = accuracy.get("fallback_used", False)
+            
+            # Convert scores to percentage
+            confidence_percent = round(confidence_score * 100, 1)
+            similarity_percent = round(avg_similarity * 100, 1)
+            
+            # Determine color and emoji based on confidence
+            if confidence_score >= 0.8:
+                color = "#10B981"  # Green
+                emoji = "🟢"
+                status = "매우 높음"
+            elif confidence_score >= 0.6:
+                color = "#F59E0B"  # Yellow
+                emoji = "🟡"
+                status = "높음"
+            elif confidence_score >= 0.4:
+                color = "#F97316"  # Orange
+                emoji = "🟠"
+                status = "보통"
+            else:
+                color = "#EF4444"  # Red
+                emoji = "🔴"
+                status = "낮음"
+            
+            # Show fallback warning if used
+            if fallback_used:
+                st.warning("⚠️ 관련 문서를 찾을 수 없어 일반 지식으로 답변했습니다.")
+            
+            # Render accuracy information
+            st.markdown(f"""
+            <div style="display: flex; align-items: center; margin: 1rem 0 1rem 0; padding: 1rem; 
+                        background: #f8f9fa; border-radius: 8px; border-left: 3px solid {color};
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <span style="font-size: 1.2rem; margin-right: 0.75rem;">{emoji}</span>
+                <div style="flex: 1;">
+                    <strong style="color: {color}; font-size: 1.1rem;">답변 신뢰도: {confidence_percent}%</strong>
+                    <small style="color: #666; margin-left: 0.5rem; font-size: 0.9rem;">({status})</small>
+                    <br>
+                    <small style="color: #666; font-size: 0.9rem;">
+                        컨텍스트 문서: {context_count}개 | 평균 유사도: {similarity_percent}%
+                    </small>
+                </div>
+                <div style="background: {color}; height: 10px; border-radius: 5px; 
+                            width: {confidence_percent}%; min-width: 30px; margin-left: 1rem;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Render sources information
+        if sources:
+            st.markdown("**📚 참조 문서:**")
+            
+            for i, source in enumerate(sources, 1):
+                filename = source.get("filename", f"문서 {i}")
+                similarity_score = source.get("similarity_score", 0.0)
+                content_preview = source.get("content_preview", "")
+                document_id = source.get("document_id", "")
+                
+                # Convert similarity to percentage
+                similarity_percent = round(similarity_score * 100, 1)
+                
+                # Determine color based on similarity
+                if similarity_score >= 0.8:
+                    source_color = "#10B981"
+                elif similarity_score >= 0.6:
+                    source_color = "#F59E0B"
+                elif similarity_score >= 0.4:
+                    source_color = "#F97316"
+                else:
+                    source_color = "#EF4444"
+                
+                # Create expandable source information
+                with st.expander(f"📄 {filename} (유사도: {similarity_percent}%)", expanded=False):
+                    col1, col2 = st.columns([3, 1])
+                    
+                    with col1:
+                        st.write(f"**파일명:** {filename}")
+                        if document_id:
+                            st.write(f"**문서 ID:** {document_id}")
+                        st.write(f"**유사도 점수:** {similarity_percent}%")
+                    
+                    with col2:
+                        st.markdown(f"""
+                        <div style="background: {source_color}; height: 20px; border-radius: 10px; 
+                                    width: 100%; display: flex; align-items: center; justify-content: center;
+                                    color: white; font-weight: bold; font-size: 0.9rem;">
+                            {similarity_percent}%
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    if content_preview:
+                        st.write("**내용 미리보기:**")
+                        st.text_area("", content_preview, height=100, disabled=True, key=f"source_preview_{i}")
+        
+        # If no sources but accuracy info exists, show a message
+        elif accuracy and not sources:
+            st.info("📚 참조 문서 정보를 가져오는 중입니다...")
+
+    @staticmethod
     def _render_similarity_score(similarity: float):
-        """Render similarity score with visual indicator"""
+        """Render similarity score with visual indicator (legacy method)"""
         # Convert similarity to percentage
         similarity_percent = round(similarity * 100, 1)
         

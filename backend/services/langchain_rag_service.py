@@ -28,7 +28,7 @@ class LangChainRagService:
         self.llm = None
         self.documents = None
         self.embeddings = None
-        self.current_collection = "documents"  # Default collection
+        self.current_collection = "langchain_documents"  # Default collection
         
     async def initialize(self):
         """Initialize LangChain RAG service"""
@@ -119,7 +119,7 @@ class LangChainRagService:
             
             # If we're deleting the current collection, switch to default
             if self.current_collection == collection_name:
-                await self.set_collection("documents")
+                await self.set_collection("langchain_documents")
                 logger.info(f"Switched to default collection after deleting {collection_name}")
             
             return result

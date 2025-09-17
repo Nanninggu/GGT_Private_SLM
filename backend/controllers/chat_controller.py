@@ -40,6 +40,27 @@ class ChatController:
 
             user_msg, assistant_msg = await self.chat_service.send_message(session_id, message)
 
+            # Format sources for response
+            sources_data = []
+            if assistant_msg.sources:
+                for source in assistant_msg.sources:
+                    sources_data.append({
+                        "filename": source.filename,
+                        "similarity_score": source.similarity_score,
+                        "content_preview": source.content_preview,
+                        "document_id": source.document_id
+                    })
+            
+            # Format accuracy info for response
+            accuracy_data = None
+            if assistant_msg.accuracy:
+                accuracy_data = {
+                    "confidence_score": assistant_msg.accuracy.confidence_score,
+                    "context_count": assistant_msg.accuracy.context_count,
+                    "avg_similarity": assistant_msg.accuracy.avg_similarity,
+                    "fallback_used": assistant_msg.accuracy.fallback_used
+                }
+            
             return {
                 "success": True,
                 "user_message": {
@@ -50,7 +71,10 @@ class ChatController:
                 "assistant_message": {
                     "id": assistant_msg.id,
                     "content": assistant_msg.content,
-                    "timestamp": assistant_msg.timestamp.isoformat()
+                    "timestamp": assistant_msg.timestamp.isoformat(),
+                    "sources": sources_data,
+                    "accuracy": accuracy_data,
+                    "metadata": assistant_msg.metadata
                 }
             }
         except Exception as e:
@@ -64,17 +88,49 @@ class ChatController:
         try:
             messages = self.chat_service.get_chat_history(session_id, limit)
 
+            formatted_messages = []
+            for msg in messages:
+                message_data = {
+                    "id": msg.id,
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat()
+                }
+                
+                # Add source and accuracy info for assistant messages
+                if msg.role == MessageRole.ASSISTANT:
+                    # Format sources
+                    sources_data = []
+                    if msg.sources:
+                        for source in msg.sources:
+                            sources_data.append({
+                                "filename": source.filename,
+                                "similarity_score": source.similarity_score,
+                                "content_preview": source.content_preview,
+                                "document_id": source.document_id
+                            })
+                    
+                    # Format accuracy info
+                    accuracy_data = None
+                    if msg.accuracy:
+                        accuracy_data = {
+                            "confidence_score": msg.accuracy.confidence_score,
+                            "context_count": msg.accuracy.context_count,
+                            "avg_similarity": msg.accuracy.avg_similarity,
+                            "fallback_used": msg.accuracy.fallback_used
+                        }
+                    
+                    message_data.update({
+                        "sources": sources_data,
+                        "accuracy": accuracy_data,
+                        "metadata": msg.metadata
+                    })
+                
+                formatted_messages.append(message_data)
+            
             return {
                 "success": True,
-                "messages": [
-                    {
-                        "id": msg.id,
-                        "role": msg.role.value,
-                        "content": msg.content,
-                        "timestamp": msg.timestamp.isoformat()
-                    }
-                    for msg in messages
-                ]
+                "messages": formatted_messages
             }
         except Exception as e:
             return {

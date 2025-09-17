@@ -379,6 +379,62 @@ class VectorService:
             logger.error(f"Failed to search similar documents in collection: {e}")
             raise
 
+    async def get_collections(self) -> List[Dict[str, Any]]:
+        """Get list of available collections from documents table"""
+        try:
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                await db_service.initialize()
+            
+            async with db_service.get_session() as session:
+                # Get unique collection names and their document counts
+                result = await session.execute(text("""
+                    SELECT 
+                        collection_name,
+                        COUNT(*) as document_count
+                    FROM documents 
+                    WHERE collection_name IS NOT NULL
+                    GROUP BY collection_name
+                    ORDER BY collection_name
+                """))
+                
+                collections = []
+                for row in result:
+                    collections.append({
+                        "id": f"basic_rag_{row.collection_name}",
+                        "name": row.collection_name,
+                        "metadata": {},
+                        "created_at": None,
+                        "document_count": row.document_count
+                    })
+                
+                # Always include the default 'documents' collection
+                if not any(c["name"] == "documents" for c in collections):
+                    # Get count for documents collection (NULL collection_name)
+                    null_count_result = await session.execute(text("SELECT COUNT(*) FROM documents WHERE collection_name IS NULL"))
+                    null_count = null_count_result.scalar() or 0
+                    
+                    collections.insert(0, {
+                        "id": "basic_rag_documents",
+                        "name": "documents",
+                        "metadata": {},
+                        "created_at": None,
+                        "document_count": null_count
+                    })
+                
+                return collections
+                
+        except Exception as e:
+            logger.error(f"Failed to get collections: {e}")
+            # Return default collection even if there's an error
+            return [{
+                "id": "basic_rag_documents",
+                "name": "documents",
+                "metadata": {},
+                "created_at": None,
+                "document_count": 0
+            }]
+    
     async def close(self):
         """Close vector service"""
         if self.ollama_client:

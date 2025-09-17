@@ -721,11 +721,12 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
                 detail=f"Failed to extract text from {file.filename}: {extraction_result['metadata'].get('error', 'Unknown error')}"
             )
         
-        # Add to knowledge base (basic RAG doesn't use collections)
-        logger.info("Adding document to knowledge base...")
+        # Add to knowledge base with collection name
+        logger.info(f"Adding document to knowledge base in collection: {collection_name}")
         doc_id = await rag_service.add_document(
             extraction_result["text"],
-            extraction_result["metadata"]
+            extraction_result["metadata"],
+            collection_name
         )
         logger.info(f"Document added successfully with ID: {doc_id}")
         
@@ -753,7 +754,7 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
 
 # LangChain file upload endpoint with collection support
 @app.post("/api/langchain/upload")
-async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("documents")):
+async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("langchain_documents")):
     """Upload and process file using LangChain"""
     try:
         logger.info(f"Starting LangChain file upload: {file.filename} to collection: {collection_name}")
@@ -776,7 +777,7 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
             )
         
         # Switch to specified collection if different from current
-        if collection_name != "documents":
+        if collection_name != "langchain_documents":
             logger.info(f"Switching to collection: {collection_name}")
             await langchain_rag_service.set_collection(collection_name)
         
@@ -816,7 +817,7 @@ async def upload_multiple_files(files: List[UploadFile] = File(...), collection_
     """Upload and process multiple files"""
     try:
         # Switch to specified collection if different from current
-        if collection_name != "documents":
+        if collection_name != "langchain_documents":
             await langchain_rag_service.set_collection(collection_name)
         
         results = []
@@ -839,10 +840,11 @@ async def upload_multiple_files(files: List[UploadFile] = File(...), collection_
                     })
                     continue
                 
-                # Add to knowledge base
+                # Add to knowledge base with collection name
                 doc_id = await rag_service.add_document(
                     extraction_result["text"],
-                    extraction_result["metadata"]
+                    extraction_result["metadata"],
+                    collection_name
                 )
                 
                 results.append({
@@ -885,7 +887,7 @@ async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), c
     """Upload and process multiple files using LangChain"""
     try:
         # Switch to specified collection if different from current
-        if collection_name != "documents":
+        if collection_name != "langchain_documents":
             await langchain_rag_service.set_collection(collection_name)
         
         results = []
@@ -956,14 +958,44 @@ async def get_collections():
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        collections = await langchain_rag_service.get_available_collections()
-        current_collection = getattr(langchain_rag_service, 'current_collection', 'documents')
+        # Get LangChain RAG collections
+        langchain_collections = await langchain_rag_service.get_available_collections()
+        
+        # Get basic RAG collections (documents table)
+        basic_collections = await rag_service.get_available_collections()
+        
+        # Combine all collections
+        all_collections = []
+        
+        # Add basic RAG collections first
+        for collection in basic_collections:
+            all_collections.append({
+                "id": collection.get("id", "basic_rag"),
+                "name": collection.get("name", "Unknown"),
+                "metadata": collection.get("metadata", {}),
+                "created_at": collection.get("created_at"),
+                "document_count": collection.get("document_count", 0)
+            })
+        
+        # Add LangChain RAG collections
+        for collection in langchain_collections:
+            # Skip if already exists in basic collections
+            if not any(c["name"] == collection.get("name") for c in all_collections):
+                all_collections.append({
+                    "id": collection.get("id", "langchain_rag"),
+                    "name": collection.get("name", "Unknown"),
+                    "metadata": collection.get("metadata", {}),
+                    "created_at": collection.get("created_at"),
+                    "document_count": collection.get("document_count", 0)
+                })
+        
+        current_collection = getattr(langchain_rag_service, 'current_collection', 'langchain_documents')
         
         return {
             "success": True,
-            "collections": collections,
+            "collections": all_collections,
             "current_collection": current_collection,
-            "total_collections": len(collections)
+            "total_collections": len(all_collections)
         }
         
     except Exception as e:

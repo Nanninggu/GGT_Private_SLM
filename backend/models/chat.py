@@ -1,15 +1,31 @@
 """
 Chat message models for the chatbot application
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from enum import Enum
 
 class MessageRole(Enum):
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
+
+@dataclass
+class SourceInfo:
+    """Source information for RAG responses"""
+    filename: str
+    similarity_score: float
+    content_preview: str
+    document_id: str
+
+@dataclass
+class AccuracyInfo:
+    """Accuracy information for responses"""
+    confidence_score: float
+    context_count: int
+    avg_similarity: float
+    fallback_used: bool = False
 
 @dataclass
 class ChatMessage:
@@ -19,6 +35,9 @@ class ChatMessage:
     content: str = ""
     timestamp: datetime = None
     session_id: Optional[str] = None
+    sources: List[SourceInfo] = field(default_factory=list)
+    accuracy: Optional[AccuracyInfo] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         if self.timestamp is None:

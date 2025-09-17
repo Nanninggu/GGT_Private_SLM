@@ -212,6 +212,16 @@ def render_vector_db_management(chat_controller):
     collections = collections_response.get("collections", [])
     current_collection = collections_response.get("current_collection", "documents")
     
+    # 중복 제거를 위해 컬렉션을 딕셔너리로 변환 (name을 키로 사용)
+    unique_collections = {}
+    for collection in collections:
+        name = collection.get("name", "Unknown")
+        if name not in unique_collections:
+            unique_collections[name] = collection
+        else:
+            # 중복된 경우 문서 수를 합산
+            unique_collections[name]["document_count"] += collection.get("document_count", 0)
+    
     # Main content
     col1, col2 = st.columns([2, 1])
     
@@ -241,11 +251,11 @@ def render_vector_db_management(chat_controller):
                 except Exception as e:
                     st.error(f"❌ 새로고침 중 오류가 발생했습니다: {str(e)}")
         
-        if not collections:
+        if not unique_collections:
             st.info("컬렉션이 없습니다. 새 컬렉션을 생성해보세요.")
         else:
-            for collection in collections:
-                name = collection.get("name", "Unknown")
+            
+            for idx, (name, collection) in enumerate(unique_collections.items()):
                 doc_count = collection.get("document_count", 0)
                 is_current = name == current_collection
                 
@@ -262,8 +272,8 @@ def render_vector_db_management(chat_controller):
                         st.markdown(f"📄 {doc_count}개")
                     
                     with col_actions:
-                        if name != "documents":  # Don't allow operations on default collection
-                            if st.button("삭제", key=f"delete_{name}", type="secondary"):
+                        if name != "documents" and name != "langchain_documents":  # Don't allow operations on default collections
+                            if st.button("삭제", key=f"delete_{name}_{idx}", type="secondary"):
                                 # Show confirmation dialog
                                 if st.session_state.get(f"confirm_delete_{name}", False):
                                     try:
@@ -338,9 +348,9 @@ def render_vector_db_management(chat_controller):
         
         st.markdown("#### ✏️ 컬렉션 수정")
         
-        if collections:
-            # 컬렉션 이름 변경
-            rename_collections = [c for c in collections if c["name"] != "documents"]
+        if unique_collections:
+            # 컬렉션 이름 변경 (중복 제거된 컬렉션 사용)
+            rename_collections = [c for c in unique_collections.values() if c["name"] not in ["documents", "langchain_documents"]]
             if rename_collections:
                 with st.form("rename_collection_form"):
                     old_name = st.selectbox(
@@ -396,8 +406,9 @@ def render_vector_db_management(chat_controller):
         
         st.markdown("#### 🔄 컬렉션 전환")
         
-        if collections:
-            collection_names = [c["name"] for c in collections]
+        if unique_collections:
+            # 중복 제거된 컬렉션 이름 목록 생성
+            collection_names = list(unique_collections.keys())
             selected_collection = st.selectbox(
                 "활성 컬렉션 선택",
                 collection_names,

@@ -142,7 +142,7 @@ def main():
     rag_mode = FileUploadComponents.render_rag_mode_selector()
     
     # Initialize selected_collection for all RAG modes
-    selected_collection = "documents"
+    selected_collection = "documents"  # Will be overridden based on RAG mode
     
     # Collection Selection
     if rag_mode == "LangChain RAG":
@@ -161,7 +161,7 @@ def main():
         if not collections:
             collections = [{
                 "id": "default",
-                "name": "documents",
+                "name": "langchain_documents",
                 "metadata": {},
                 "created_at": None,
                 "document_count": 0
@@ -199,7 +199,7 @@ def main():
         else:
             # Show default collection when no collections are available
             st.sidebar.info("기본 컬렉션을 사용합니다.")
-            selected_collection = "documents"
+            selected_collection = "langchain_documents"
             
             # Show current collection info
             if current_collection:

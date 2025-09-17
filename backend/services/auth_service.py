@@ -156,13 +156,16 @@ class AuthService:
     def login_user(self, request: LoginRequest) -> AuthResponse:
         """Login user"""
         try:
+            print(f"Login attempt for username: {request.username}")
             # Get user by username
             user = self.user_repository.get_user_by_username(request.username)
             if not user:
+                print(f"User not found: {request.username}")
                 return AuthResponse(
                     success=False,
                     message="사용자명 또는 비밀번호가 올바르지 않습니다."
                 )
+            print(f"User found: {user.username}, active: {user.is_active}")
             
             # Check if user is active
             if not user.is_active:
@@ -172,7 +175,9 @@ class AuthService:
                 )
             
             # Verify password
-            if not self.verify_password(request.password, user.password_hash):
+            password_valid = self.verify_password(request.password, user.password_hash)
+            print(f"Password valid: {password_valid}")
+            if not password_valid:
                 return AuthResponse(
                     success=False,
                     message="사용자명 또는 비밀번호가 올바르지 않습니다."
@@ -185,6 +190,7 @@ class AuthService:
             # Create tokens
             access_token = self.create_access_token(user)
             refresh_token = self.create_refresh_token(user)
+            print(f"Tokens created successfully")
             
             return AuthResponse(
                 success=True,

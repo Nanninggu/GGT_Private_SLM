@@ -23,6 +23,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from controllers.chat_controller import ChatController
 from controllers.auth_controller import auth_controller
+from controllers.web_search_controller import router as web_search_router
 from config.settings import settings
 from services.database_service import db_service
 from services.vector_service import vector_service
@@ -118,6 +119,9 @@ app.add_middleware(
 # Initialize controller and services
 chat_controller = ChatController()
 markdown_service = MarkdownService()
+
+# Include routers
+app.include_router(web_search_router)
 
 # Request models
 class MessageRequest(BaseModel):
@@ -215,6 +219,22 @@ async def info():
             "Deep search capabilities"
         ]
     }
+
+@app.get("/api/test/login")
+async def test_login():
+    """Test login endpoint"""
+    try:
+        from backend.models.user import LoginRequest
+        request = LoginRequest(username="test1234", password="test1234")
+        result = auth_controller.login(request)
+        return {
+            "success": result.success,
+            "message": result.message,
+            "user": result.user.username if result.user else None
+        }
+    except Exception as e:
+        logger.error(f"Test login failed: {e}")
+        return {"error": str(e)}
 
 # Chat endpoints
 @app.post("/api/chat/session")
@@ -1291,7 +1311,9 @@ async def register(request: RegisterRequest):
 async def login(request: LoginRequest):
     """Login user"""
     try:
+        logger.info(f"Login request for user: {request.username}")
         result = auth_controller.login(request)
+        logger.info(f"Login result: success={result.success}, message={result.message}")
         if not result.success:
             raise HTTPException(status_code=401, detail=result.message)
         return result
@@ -1361,147 +1383,7 @@ async def verify_token(request: TokenVerifyRequest):
 async def test_endpoint():
     return {"message": "API is working", "status": "success"}
 
-# Web search endpoints (inline implementation)
-from services.web_search_service import WebSearchService
-from services.vector_service import VectorService
-from services.langchain_vector_service import LangChainVectorService
-# from utils.helpers import get_current_user_id  # Not needed for inline implementation
 
-class WebSearchRequest(BaseModel):
-    query: str
-    num_results: int = 10
-    collection_name: Optional[str] = None
-
-class WebSearchResponse(BaseModel):
-    success: bool
-    message: str
-    results: List[dict]
-    collection_name: Optional[str] = None
-
-class WebSearchAndSaveRequest(BaseModel):
-    query: str
-    num_results: int = 10
-    collection_name: str
-    auto_save: bool = True
-
-@app.post("/api/web-search/search", response_model=WebSearchResponse)
-async def search_web(request: WebSearchRequest):
-    """웹 검색을 수행합니다."""
-    try:
-        web_search_service = WebSearchService()
-        
-        # 웹 검색 실행
-        search_results = await web_search_service.search_web(
-            query=request.query,
-            num_results=request.num_results
-        )
-        
-        # 결과를 딕셔너리로 변환
-        results = []
-        for result in search_results:
-            results.append({
-                "title": result.title,
-                "url": result.url,
-                "snippet": result.snippet,
-                "content": result.content,
-                "domain": result.domain
-            })
-        
-        return WebSearchResponse(
-            success=True,
-            message=f"웹 검색이 완료되었습니다. {len(results)}개의 결과를 찾았습니다.",
-            results=results,
-            collection_name=request.collection_name
-        )
-        
-    except Exception as e:
-        logger.error(f"Web search failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"웹 검색 중 오류가 발생했습니다: {str(e)}")
-
-@app.post("/api/web-search/search-and-save", response_model=WebSearchResponse)
-async def search_and_save_to_collection(request: WebSearchAndSaveRequest):
-    """웹 검색을 수행하고 결과를 컬렉션에 저장합니다."""
-    try:
-        web_search_service = WebSearchService()
-        vector_service = VectorService()
-        langchain_vector_service = LangChainVectorService()
-        
-        # 웹 검색 실행
-        search_results = await web_search_service.search_web(
-            query=request.query,
-            num_results=request.num_results
-        )
-        
-        if not search_results:
-            return WebSearchResponse(
-                success=False,
-                message="검색 결과가 없습니다.",
-                results=[],
-                collection_name=request.collection_name
-            )
-        
-        # 컬렉션 존재 확인 및 생성
-        try:
-            await vector_service.get_collection(request.collection_name)
-        except:
-            # 컬렉션이 없으면 생성
-            await vector_service.create_collection(request.collection_name)
-        
-        # 검색 결과를 저장용 형식으로 변환
-        formatted_results = web_search_service.format_search_results_for_storage(search_results)
-        
-        # 벡터 저장
-        for result in formatted_results:
-            await vector_service.add_document(
-                collection_name=request.collection_name,
-                content=result["content"],
-                metadata={
-                    "title": result["title"],
-                    "url": result["url"],
-                    "snippet": result["snippet"],
-                    "domain": result["domain"],
-                    "source": "web_search",
-                    **result["metadata"]
-                }
-            )
-        
-        # 결과를 딕셔너리로 변환
-        results = []
-        for result in search_results:
-            results.append({
-                "title": result.title,
-                "url": result.url,
-                "snippet": result.snippet,
-                "content": result.content,
-                "domain": result.domain
-            })
-        
-        return WebSearchResponse(
-            success=True,
-            message=f"웹 검색이 완료되었습니다. {len(results)}개의 결과를 찾았고, 컬렉션 '{request.collection_name}'에 저장했습니다.",
-            results=results,
-            collection_name=request.collection_name
-        )
-        
-    except Exception as e:
-        logger.error(f"Web search and save failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"웹 검색 및 저장 중 오류가 발생했습니다: {str(e)}")
-
-@app.get("/api/web-search/collections")
-async def get_available_collections():
-    """사용 가능한 컬렉션 목록을 반환합니다."""
-    try:
-        vector_service = VectorService()
-        collections = await vector_service.list_collections()
-        
-        return {
-            "success": True,
-            "collections": collections
-        }
-        
-    except Exception as e:
-        logger.error(f"Failed to get collections: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"컬렉션 목록을 가져오는 중 오류가 발생했습니다: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

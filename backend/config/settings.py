@@ -121,8 +121,10 @@ class Settings:
     RAG_CONTEXT_MAX_LENGTH: int = 300
     
     # ===== Google Custom Search API 설정 =====
-    GOOGLE_SEARCH_API_KEY: str = os.getenv("GOOGLE_SEARCH_API_KEY", "your_api_key_here")
-    GOOGLE_SEARCH_ENGINE_ID: str = os.getenv("GOOGLE_SEARCH_ENGINE_ID", "your_engine_id_here")
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "AIzaSyD9308788888888888888888888888888")
+    GOOGLE_CSE_ID: str = os.getenv("GOOGLE_CSE_ID", "aaaaa")
+    GOOGLE_SEARCH_API_KEY: str = os.getenv("GOOGLE_SEARCH_API_KEY", "AIzaSyD9308788888888888888888888888888")
+    GOOGLE_SEARCH_ENGINE_ID: str = os.getenv("GOOGLE_SEARCH_ENGINE_ID", "aaaaa")
     GOOGLE_SEARCH_MAX_RESULTS: int = 10
     GOOGLE_SEARCH_TIMEOUT: int = 30  # seconds
     

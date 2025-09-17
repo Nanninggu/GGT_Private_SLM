@@ -11,6 +11,7 @@ import json
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +25,8 @@ class SearchResult:
 
 class WebSearchService:
     def __init__(self):
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        self.google_cse_id = os.getenv("GOOGLE_CSE_ID")
+        self.google_api_key = settings.GOOGLE_API_KEY
+        self.google_cse_id = settings.GOOGLE_CSE_ID
         self.serpapi_key = os.getenv("SERPAPI_KEY")
         
         if not self.google_api_key or not self.google_cse_id:

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "f31985ea-bab4-47ee-bb9f-9d884d009afc",
+    "username": "admin",
+    "email": "admin@example.com",
+    "password_hash": "86d2a988d2db29e7ce8a4c9e47559dc4:61eaccb058d5e75da27c87dd3f0980ff2be683427de75b09f5849dee449ee39a",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2025-09-18T00:07:11.270749",
+    "updated_at": "2025-09-18T00:56:15.108295",
+    "last_login": "2025-09-18T00:56:15.108125"
+  }
+]

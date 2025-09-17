@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 import json
 
-from backend.config.settings import settings
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 

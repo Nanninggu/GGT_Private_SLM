@@ -11,7 +11,7 @@ from backend.models.user import User, UserRole
 class UserRepository:
     """Repository for user data operations"""
     
-    def __init__(self, data_dir: str = "backend/data"):
+    def __init__(self, data_dir: str = "backend/backend/data"):
         self.data_dir = data_dir
         self.users_file = os.path.join(data_dir, "users.json")
         self._ensure_data_directory()

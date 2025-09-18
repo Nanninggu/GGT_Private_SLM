@@ -688,3 +688,67 @@ class APIService:
             return response.json()
         except requests.exceptions.RequestException as e:
             return {"success": False, "valid": False, "error": str(e)}
+    
+    # Accuracy Measurement Methods
+    def measure_query_accuracy(self, query: str, expected_answer: Optional[str] = None) -> Dict[str, Any]:
+        """Measure accuracy for a single query"""
+        try:
+            payload = {
+                "query": query,
+                "expected_answer": expected_answer
+            }
+            response = requests.post(
+                f"{self.base_url}/api/accuracy/measure",
+                json=payload,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def run_accuracy_test_suite(self, test_queries: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+        """Run a comprehensive accuracy test suite"""
+        try:
+            if test_queries is None:
+                # Get sample test queries
+                sample_response = self.get_sample_test_queries()
+                if sample_response.get("success"):
+                    test_queries = sample_response.get("sample_queries", [])
+                else:
+                    return {"success": False, "error": "Failed to get sample test queries"}
+            
+            payload = {"test_queries": test_queries}
+            response = requests.post(
+                f"{self.base_url}/api/accuracy/test-suite",
+                json=payload,
+                timeout=self.timeout * 2  # Longer timeout for test suite
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_system_health(self) -> Dict[str, Any]:
+        """Get system health metrics"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/accuracy/system-health",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_sample_test_queries(self) -> Dict[str, Any]:
+        """Get sample test queries for accuracy testing"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/accuracy/sample-queries",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}

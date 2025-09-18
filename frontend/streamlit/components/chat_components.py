@@ -415,28 +415,7 @@ class ChatComponents:
             
             st.markdown("---")
             
-            # HAI-Chat section (current)
-            st.markdown("### 💬 HAI-Chat")
-            st.markdown('<div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; margin: 0.5rem 0;">현재 선택된 서비스</div>', unsafe_allow_html=True)
-            
-            # Settings and logout
-            st.markdown("### ⚙️ 설정")
-            if st.button("🔧 설정", key="nav_settings", use_container_width=True):
-                st.session_state.current_page = "configuration"
-                st.rerun()
-            
-            if st.button("🚪 로그아웃", key="nav_logout", use_container_width=True):
-                return "logout"
-            
-            st.markdown("---")
-            
-            # Chat controls
-            st.markdown("### 💬 채팅 제어")
-            if st.button("🗑️ 채팅 초기화", key="clear_chat", use_container_width=True):
-                return "clear_chat"
-            
             # Export section
-            st.markdown("---")
             st.markdown("### 📄 내보내기")
             
             # Export format selection
@@ -640,23 +619,6 @@ class ChatComponents:
                     3. LangChain RAG 모드로 업로드
                     """)
                 
-                # Configuration page link
-                st.markdown("---")
-                if st.button("⚙️ 고급 설정", key="advanced_config", use_container_width=True):
-                    st.session_state.current_page = "configuration"
-                    st.rerun()
-
-            # Configuration page link
-            st.markdown("---")
-            if st.button("⚙️ 시스템 설정", key="system_config", use_container_width=True):
-                st.session_state.current_page = "configuration"
-                st.rerun()
-            
-            # Navigation
-            st.markdown("---")
-            if st.button("🏠 메인으로", key="nav_main", use_container_width=True):
-                st.session_state.current_page = "main"
-                st.rerun()
 
         return None
 

@@ -24,6 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from controllers.chat_controller import ChatController
 from controllers.auth_controller import auth_controller
 from controllers.web_search_controller import router as web_search_router
+from controllers.accuracy_controller import AccuracyController
 from config.settings import settings
 from services.database_service import db_service
 from services.vector_service import vector_service
@@ -34,6 +35,7 @@ from services.langchain_rag_service import langchain_rag_service
 from services.prompt_service import prompt_service
 from services.file_processing_service import FileProcessingService
 from services.markdown_service import MarkdownService
+from services.accuracy_service import accuracy_service
 
 # Configure logging
 logging.basicConfig(
@@ -81,6 +83,7 @@ async def lifespan(app: FastAPI):
         await rag_service.initialize()
         await search_service.initialize()
         await langchain_rag_service.initialize()
+        await accuracy_service.initialize()
         services_initialized = True
         logger.info("All services initialized successfully")
     except Exception as e:
@@ -118,6 +121,7 @@ app.add_middleware(
 
 # Initialize controller and services
 chat_controller = ChatController()
+accuracy_controller = AccuracyController()
 markdown_service = MarkdownService()
 
 # Include routers
@@ -164,6 +168,14 @@ class RegisterRequest(BaseModel):
 
 class TokenRefreshRequest(BaseModel):
     refresh_token: str
+
+# Accuracy measurement models
+class AccuracyQueryRequest(BaseModel):
+    query: str
+    expected_answer: Optional[str] = None
+
+class AccuracyTestSuiteRequest(BaseModel):
+    test_queries: List[Dict[str, str]]
 
 # Health check endpoints
 @app.get("/")
@@ -1376,6 +1388,58 @@ async def verify_token(request: TokenVerifyRequest):
         }
     except Exception as e:
         logger.error(f"Token verification failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Accuracy measurement endpoints
+@app.post("/api/accuracy/measure")
+async def measure_query_accuracy(request: AccuracyQueryRequest):
+    """Measure accuracy for a single query"""
+    try:
+        result = await accuracy_controller.measure_single_query(
+            request.query, 
+            request.expected_answer
+        )
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Accuracy measurement failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/accuracy/test-suite")
+async def run_accuracy_test_suite(request: AccuracyTestSuiteRequest):
+    """Run a comprehensive accuracy test suite"""
+    try:
+        result = await accuracy_controller.run_test_suite(request.test_queries)
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Accuracy test suite failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/accuracy/system-health")
+async def get_system_health():
+    """Get system health metrics"""
+    try:
+        result = await accuracy_controller.get_system_health()
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"System health check failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/accuracy/sample-queries")
+async def get_sample_test_queries():
+    """Get sample test queries for accuracy testing"""
+    try:
+        result = accuracy_controller.get_sample_test_queries()
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Failed to get sample queries: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Test endpoint

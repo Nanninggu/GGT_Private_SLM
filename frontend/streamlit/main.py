@@ -74,15 +74,6 @@ def main():
         from pages.file_upload import main as file_upload_main
         file_upload_main()
         return
-    elif current_page == "collection_management":
-        st.set_page_config(
-            page_title="HAI Portal - 컬렉션 관리",
-            page_icon="🗂️",
-            layout="wide"
-        )
-        from pages.collection_management import main as collection_main
-        collection_main()
-        return
     elif current_page == "accessibility_demo":
         st.set_page_config(
             page_title="접근성 데모 - HAI Portal",
@@ -402,46 +393,16 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Service status and navigation
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Service card
-        st.markdown("""
+    # Service card - centered
+    st.markdown("""
+    <div style="display: flex; justify-content: center; margin: 2rem 0;">
         <div class="service-card">
             <div class="service-icon">💬</div>
             <div class="service-title">HAI-Chat</div>
             <div class="service-description">AI 챗봇과 대화하고 문서를 분석해보세요</div>
         </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        # Status and navigation
-        st.markdown("### 🔧 서비스 관리")
-        
-        # Connection status
-        if st.session_state.backend_connected:
-            st.markdown('<div class="status-indicator status-online">🟢 서비스 온라인</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="status-indicator status-offline">🔴 서비스 오프라인</div>', unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # Navigation buttons
-        if st.button("📁 파일 업로드", use_container_width=True):
-            st.session_state.current_page = "file_upload"
-            st.rerun()
-        if st.button("🗂️ 컬렉션 관리", use_container_width=True):
-            st.session_state.current_page = "collection_management"
-            st.rerun()
-        if st.button("♿ 접근성 데모", use_container_width=True):
-            st.session_state.current_page = "accessibility_demo"
-            st.rerun()
-        if st.button("⚙️ 시스템 설정", use_container_width=True):
-            st.session_state.current_page = "configuration"
-            st.rerun()
-        if st.button("🔄 새로고침", use_container_width=True):
-            st.rerun()
+    </div>
+    """, unsafe_allow_html=True)
 
     # Chat interface section
     st.markdown("---")

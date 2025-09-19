@@ -27,7 +27,7 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def send_message(self, message: str, session_id: Optional[str] = None, use_rag: bool = True) -> Dict[str, Any]:
+    def send_message(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None) -> Dict[str, Any]:
         """Send a message to the chatbot"""
         try:
             payload = {
@@ -36,6 +36,8 @@ class APIService:
             }
             if session_id:
                 payload["session_id"] = session_id
+            if rag_mode:
+                payload["rag_mode"] = rag_mode
 
             response = requests.post(
                 f"{self.base_url}/api/chat/message",
@@ -120,7 +122,7 @@ class APIService:
         except:
             return False
     
-    def send_message_langchain(self, message: str, session_id: Optional[str] = None, use_rag: bool = True) -> Dict[str, Any]:
+    def send_message_langchain(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None) -> Dict[str, Any]:
         """Send a message using LangChain RAG"""
         try:
             payload = {
@@ -129,6 +131,8 @@ class APIService:
             }
             if session_id:
                 payload["session_id"] = session_id
+            if rag_mode:
+                payload["rag_mode"] = rag_mode
 
             response = requests.post(
                 f"{self.base_url}/api/langchain/chat/message",
@@ -279,7 +283,7 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
-    def send_message_stream(self, message: str, session_id: Optional[str] = None, use_rag: bool = True) -> Generator[Dict[str, Any], None, None]:
+    def send_message_stream(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None) -> Generator[Dict[str, Any], None, None]:
         """Send a message to the chatbot with streaming response"""
         max_retries = 3
         retry_count = 0
@@ -294,6 +298,8 @@ class APIService:
                     "message": message,
                     "session_id": session_id
                 }
+                if rag_mode:
+                    payload["rag_mode"] = rag_mode
                 
                 response = requests.post(
                     url,
@@ -336,7 +342,7 @@ class APIService:
                 yield {"error": f"요청 오류: {str(e)}", "finished": True}
                 break
     
-    def send_message_stream_basic(self, message: str, session_id: Optional[str] = None) -> Generator[Dict[str, Any], None, None]:
+    def send_message_stream_basic(self, message: str, session_id: Optional[str] = None, rag_mode: Optional[str] = None) -> Generator[Dict[str, Any], None, None]:
         """Send a message to the chatbot with basic streaming response"""
         try:
             url = f"{self.base_url}/api/chat/stream"
@@ -345,6 +351,8 @@ class APIService:
                 "message": message,
                 "session_id": session_id
             }
+            if rag_mode:
+                payload["rag_mode"] = rag_mode
             
             response = requests.post(
                 url,

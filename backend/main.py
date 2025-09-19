@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
+    rag_mode: Optional[str] = "LangChain RAG"
 
 class CollectionRequest(BaseModel):
     collection_name: str
@@ -133,6 +134,7 @@ class MessageRequest(BaseModel):
     session_id: Optional[str] = None
     use_rag: bool = True  # RAG is enabled by default
     use_search: bool = False
+    rag_mode: Optional[str] = "LangChain RAG"  # RAG mode selection
 
 class SessionRequest(BaseModel):
     session_id: str
@@ -259,17 +261,24 @@ async def create_session():
 
 @app.post("/api/chat/message")
 async def send_message(request: MessageRequest):
-    """Send a message and get AI response using LangChain RAG"""
+    """Send a message and get AI response using selected RAG mode"""
     session_id = request.session_id or "default"
+    rag_mode = request.rag_mode or "LangChain RAG"
     
     try:
-        # Always use LangChain RAG service for vector DB-based responses
-        logger.info(f"Processing LangChain RAG query: {request.message[:100]}...")
-        result = await langchain_rag_service.rag_query(request.message, session_id)
+        # Use selected RAG mode
+        logger.info(f"Processing {rag_mode} query: {request.message[:100]}...")
+        
+        if rag_mode == "기본 RAG":
+            # Use basic RAG service
+            result = await rag_service.rag_query(request.message, session_id)
+        else:
+            # Use LangChain RAG service (default)
+            result = await langchain_rag_service.rag_query(request.message, session_id)
         
         if not result["success"]:
             # If RAG fails, return error message instead of fallback
-            logger.error(f"LangChain RAG failed: {result.get('error', 'Unknown error')}")
+            logger.error(f"{rag_mode} failed: {result.get('error', 'Unknown error')}")
             return {
                 "success": False,
                 "error": f"죄송합니다. 현재 vector DB에서 관련 정보를 찾을 수 없어 답변을 생성할 수 없습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {result.get('error', 'Unknown error')}",
@@ -283,7 +292,7 @@ async def send_message(request: MessageRequest):
                 "metadata": {
                     "context_count": 0,
                     "vector_db_required": True,
-                    "langchain_mode": True
+                    "rag_mode": rag_mode
                 }
             }
         
@@ -310,13 +319,20 @@ async def send_message(request: MessageRequest):
 
 @app.post("/api/chat/stream")
 async def stream_chat(request: ChatRequest):
-    """Stream chat response using LangChain RAG with Server-Sent Events"""
+    """Stream chat response using selected RAG mode with Server-Sent Events"""
     try:
         async def generate_response():
             try:
-                # Use LangChain RAG service for vector DB-based responses
-                logger.info(f"Processing LangChain RAG stream query: {request.message[:100]}...")
-                result = await langchain_rag_service.rag_query(request.message, request.session_id)
+                # Use selected RAG mode
+                rag_mode = request.rag_mode or "LangChain RAG"
+                logger.info(f"Processing {rag_mode} stream query: {request.message[:100]}...")
+                
+                if rag_mode == "기본 RAG":
+                    # Use basic RAG service
+                    result = await rag_service.rag_query(request.message, request.session_id)
+                else:
+                    # Use LangChain RAG service (default)
+                    result = await langchain_rag_service.rag_query(request.message, request.session_id)
                 
                 if result["success"] and result.get("response"):
                     # Stream the response
@@ -403,13 +419,20 @@ async def stream_chat(request: ChatRequest):
 
 @app.post("/api/chat/stream/langchain")
 async def stream_chat_langchain(request: ChatRequest):
-    """Stream chat response using LangChain RAG with Server-Sent Events"""
+    """Stream chat response using selected RAG mode with Server-Sent Events"""
     try:
         async def generate_response():
             try:
-                # Use LangChain RAG service for vector DB-based responses
-                logger.info(f"Processing LangChain RAG stream query: {request.message[:100]}...")
-                result = await langchain_rag_service.rag_query(request.message, request.session_id)
+                # Use selected RAG mode
+                rag_mode = request.rag_mode or "LangChain RAG"
+                logger.info(f"Processing {rag_mode} stream query: {request.message[:100]}...")
+                
+                if rag_mode == "기본 RAG":
+                    # Use basic RAG service
+                    result = await rag_service.rag_query(request.message, request.session_id)
+                else:
+                    # Use LangChain RAG service (default)
+                    result = await langchain_rag_service.rag_query(request.message, request.session_id)
                 
                 if result["success"] and result.get("response"):
                     response_text = result["response"]
@@ -579,9 +602,16 @@ async def langchain_chat_message(request: MessageRequest):
             "timestamp": datetime.now().isoformat()
         }
         
-        # Always use LangChain RAG service for vector DB-based responses
-        logger.info(f"Processing LangChain RAG query: {request.message[:100]}...")
-        rag_result = await langchain_rag_service.rag_query(request.message, request.session_id)
+        # Use selected RAG mode
+        rag_mode = request.rag_mode or "LangChain RAG"
+        logger.info(f"Processing {rag_mode} query: {request.message[:100]}...")
+        
+        if rag_mode == "기본 RAG":
+            # Use basic RAG service
+            rag_result = await rag_service.rag_query(request.message, request.session_id)
+        else:
+            # Use LangChain RAG service (default)
+            rag_result = await langchain_rag_service.rag_query(request.message, request.session_id)
         
         if rag_result["success"]:
             assistant_message = {

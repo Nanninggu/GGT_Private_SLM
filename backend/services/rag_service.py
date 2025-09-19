@@ -147,7 +147,8 @@ class RagService:
                         "context_count": 0,
                         "context_files": [],
                         "fallback_mode": True,
-                        "enhanced_prompting": True
+                        "enhanced_prompting": True,
+                        "rag_mode": "기본 RAG"
                     }
                 }
             
@@ -177,7 +178,8 @@ class RagService:
                 "similarity_scores": similarity_scores,
                 "similarity": avg_similarity,  # Average similarity score for the response
                 "strict_mode": settings.RAG_STRICT_MODE_ENABLED,
-                "fallback_enabled": settings.RAG_FALLBACK_TO_GENERAL_KNOWLEDGE
+                "fallback_enabled": settings.RAG_FALLBACK_TO_GENERAL_KNOWLEDGE,
+                "rag_mode": "기본 RAG"
             }
             
             return {

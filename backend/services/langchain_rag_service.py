@@ -213,15 +213,30 @@ class LangChainRagService:
     async def rag_query(self, query: str, session_id: str = None) -> Dict[str, Any]:
         """Main RAG query method using LangChain"""
         try:
-            # Search for relevant documents
-            source_docs = await self.documents.asimilarity_search(
+            # Search for relevant documents with similarity scores
+            source_docs_with_scores = await self.documents.asimilarity_search_with_score(
                 query,
-                k=settings.RAG_VECTOR_SEARCH_TOP_K,
-                score_threshold=settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD
+                k=settings.RAG_VECTOR_SEARCH_TOP_K
             )
             
+            # Filter by similarity threshold and extract documents
+            source_docs = []
+            for doc, score in source_docs_with_scores:
+                # For cosine distance strategy, convert distance to similarity
+                # Cosine distance ranges from 0 to 2, where 0 means identical
+                # Convert to similarity: similarity = 1 - (distance / 2)
+                similarity = 1 - (score / 2)
+                
+                # Ensure similarity is between 0 and 1
+                similarity = max(0.0, min(1.0, similarity))
+                
+                logger.debug(f"Document similarity: {similarity:.3f} (distance: {score:.3f})")
+                
+                if similarity >= settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD:
+                    source_docs.append((doc, similarity))
+            
             # Create context from source documents
-            context = "\n\n".join([doc.page_content for doc in source_docs])
+            context = "\n\n".join([doc.page_content for doc, similarity in source_docs])
             
             # Create prompt for LLM
             prompt = f"""다음 컨텍스트를 바탕으로 질문에 답변해 주세요. 컨텍스트에서 답을 찾을 수 없다면 "죄송합니다. 제공된 컨텍스트에서 해당 질문에 대한 답변을 찾을 수 없습니다."라고 답변해 주세요.
@@ -244,13 +259,13 @@ class LangChainRagService:
             
             # Format context documents with detailed source information
             context_docs = []
-            for i, doc in enumerate(source_docs):
+            for i, (doc, similarity) in enumerate(source_docs):
                 # Extract source information
                 source_info = {
                     "id": doc.metadata.get("id", f"doc_{i}"),
                     "content": doc.page_content,
                     "metadata": doc.metadata,
-                    "similarity": 1.0,  # LangChain doesn't provide similarity scores directly
+                    "similarity": similarity,  # Use actual similarity score
                     "source_type": "vector_db",
                     "collection": self.current_collection,
                     "filename": doc.metadata.get("filename", "Unknown"),
@@ -276,7 +291,8 @@ class LangChainRagService:
                 "langchain_mode": True,
                 "memory_enabled": True,
                 "source_collection": self.current_collection,
-                "has_sources": len(context_docs) > 0
+                "has_sources": len(context_docs) > 0,
+                "rag_mode": "LangChain RAG"
             }
             
             # Format response without source information
@@ -304,7 +320,8 @@ class LangChainRagService:
                     "context_count": 0,
                     "context_files": [],
                     "error_mode": True,
-                    "langchain_mode": True
+                    "langchain_mode": True,
+                    "rag_mode": "LangChain RAG"
                 }
             }
     

@@ -46,8 +46,9 @@ class ChatController:
             st.error("백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.")
             return None
 
-        # Send message to backend
-        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True)
+        # Send message to backend with RAG mode
+        rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
+        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode)
 
         if response["success"]:
             return {
@@ -156,7 +157,8 @@ class ChatController:
             return None
 
         # Send message to backend using LangChain
-        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag)
+        rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
+        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag, rag_mode)
 
         if response["success"]:
             return {
@@ -212,7 +214,7 @@ class ChatController:
                 </style>
                 """, unsafe_allow_html=True)
             
-            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain):
+            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode):
                 if "error" in chunk:
                     if chunk.get("retrying", False):
                         # Show retry status

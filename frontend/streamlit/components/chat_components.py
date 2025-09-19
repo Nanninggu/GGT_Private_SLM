@@ -109,8 +109,12 @@ class ChatComponents:
                     # If metadata exists but no sources/accuracy, show a default score
                     st.info("신뢰도 정보를 계산하는 중입니다...")
                 else:
-                    # No metadata available
-                    st.info("기본 모드로 응답합니다.")
+                    # No metadata available - show RAG mode from metadata or session state
+                    rag_mode = metadata.get("rag_mode") if metadata else st.session_state.get("rag_mode", "LangChain RAG")
+                    if rag_mode == "기본 RAG":
+                        st.info("기본 RAG 모드로 응답합니다.")
+                    else:
+                        st.info("LangChain RAG 모드로 응답합니다.")
                 
                 # AI message with PDF and Markdown icons
                 col1, col2 = st.columns([1, 0.08])
@@ -228,22 +232,23 @@ class ChatComponents:
             
             for i, source in enumerate(sources, 1):
                 filename = source.get("filename", f"문서 {i}")
-                similarity_score = source.get("similarity_score", 0.0)
+                similarity_score = source.get("similarity", source.get("similarity_score", 0.0))
                 content_preview = source.get("content_preview", "")
                 document_id = source.get("document_id", "")
                 
-                # Convert similarity to percentage
-                similarity_percent = round(similarity_score * 100, 1)
+                # Convert similarity to percentage and ensure it's valid
+                similarity_percent = round(max(0.0, min(1.0, similarity_score)) * 100, 1)
                 
-                # Determine color based on similarity
-                if similarity_score >= 0.8:
-                    source_color = "#10B981"
-                elif similarity_score >= 0.6:
-                    source_color = "#F59E0B"
-                elif similarity_score >= 0.4:
-                    source_color = "#F97316"
+                # Determine color based on similarity (ensure valid range)
+                normalized_score = max(0.0, min(1.0, similarity_score))
+                if normalized_score >= 0.8:
+                    source_color = "#10B981"  # Green
+                elif normalized_score >= 0.6:
+                    source_color = "#F59E0B"  # Yellow
+                elif normalized_score >= 0.4:
+                    source_color = "#F97316"  # Orange
                 else:
-                    source_color = "#EF4444"
+                    source_color = "#EF4444"  # Red
                 
                 # Create expandable source information
                 with st.expander(f"📄 {filename} (유사도: {similarity_percent}%)", expanded=False):

@@ -110,7 +110,11 @@ class LangChainVectorService:
             documents = []
             for doc, score in docs_with_scores:
                 # Convert distance to similarity (1 - distance for cosine similarity)
-                similarity = 1 - score
+                # For cosine distance, score ranges from 0 to 2, where 0 means identical
+                similarity = 1 - (score / 2)
+                
+                # Ensure similarity is between 0 and 1
+                similarity = max(0.0, min(1.0, similarity))
                 
                 if similarity >= similarity_threshold:
                     documents.append({

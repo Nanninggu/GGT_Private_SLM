@@ -472,7 +472,8 @@ def main():
                 
                 if streaming_enabled:
                     # Use streaming response with enhanced loading
-                    with st.spinner("🤖 AI가 답변을 생성하고 있습니다..."):
+                    rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
+                    with st.spinner(f"🤖 {rag_mode}로 답변을 생성하고 있습니다..."):
                         response = chat_controller.send_message_stream(prompt)
                 else:
                     # Use regular response with enhanced spinner

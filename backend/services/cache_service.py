@@ -70,7 +70,7 @@ class CacheService:
             logger.info(f"Cleaned up {len(expired_keys)} expired cache entries")
     
     def _evict_oldest(self, cache_dict: Dict[str, Any]):
-        """Evict oldest entries when cache is full"""
+        """Evict the oldest entries when cache is full"""
         if len(cache_dict) >= self.max_cache_size:
             # Remove oldest 10% of entries
             items_to_remove = len(cache_dict) // 10

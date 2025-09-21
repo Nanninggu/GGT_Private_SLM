@@ -14,8 +14,8 @@ from langchain_community.vectorstores import PGVector
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from config.settings import settings
-from services.database_service import db_service
+from backend.config.settings import settings
+from backend.services.database_service import db_service
 
 logger = logging.getLogger(__name__)
 

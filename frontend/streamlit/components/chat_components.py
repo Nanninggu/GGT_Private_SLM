@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.pdf_service import PDFService
 from services.api_service import APIService
+from config import ADMIN_USER_ID
 
 class ChatComponents:
     """Reusable chat UI components"""
@@ -699,9 +700,16 @@ class ChatComponents:
                     if st.button("🔄 컬렉션 목록 새로고침", key="refresh_collections"):
                         st.rerun()
                     
-                    # Collection management button
-                    if st.button("🗂️ 컬렉션 관리", key="collection_management", use_container_width=True):
-                        st.switch_page("pages/collection_management.py")
+            # Collection management button
+            if st.button("🗂️ 컬렉션 관리", key="collection_management", use_container_width=True):
+                st.switch_page("pages/collection_management.py")
+            
+            # User management button (admin only)
+            user_info = st.session_state.get("user_info")
+            if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
+                if st.button("👥 사용자 관리", key="user_management", use_container_width=True):
+                    st.session_state.current_page = "user_management"
+                    st.rerun()
                     
                     # Show message about creating collections
                     st.markdown("""
@@ -710,7 +718,19 @@ class ChatComponents:
                     2. 파일 업로드 페이지에서 문서를 업로드
                     3. LangChain RAG 모드로 업로드
                     """)
+            
+            # Logout button
+            st.markdown("---")
+            if st.button("🚪 로그아웃", key="logout", use_container_width=True, type="secondary"):
+                # Clear all session state
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
                 
+                # Show success message
+                st.success("로그아웃되었습니다.")
+                
+                # Redirect to login page
+                st.switch_page("pages/login.py")
 
         return None
 

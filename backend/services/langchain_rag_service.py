@@ -16,9 +16,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 # from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import PGVector
 
-from config.settings import settings
-from services.langchain_vector_service import langchain_vector_service
-from services.prompt_service import prompt_service
+from backend.config.settings import settings
+from backend.services.langchain_vector_service import langchain_vector_service
+from backend.services.prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
 

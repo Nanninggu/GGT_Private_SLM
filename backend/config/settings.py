@@ -157,6 +157,9 @@ class Settings:
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
+    # ===== 관리자 설정 =====
+    ADMIN_USER_ID: str = "5ba9fad6-3b51-4f80-ba65-482be46e6bac"  # admin 사용자 ID
+    
     # ===== 기존 설정 유지 =====
     # Model configurations for different types
     MODEL_FAST: str = "exaone3.5:2.4b-instruct-q4_K_M"

@@ -26,6 +26,7 @@ from backend.controllers.auth_controller import auth_controller
 from backend.controllers.web_search_controller import router as web_search_router
 from backend.controllers.accuracy_controller import AccuracyController
 from backend.controllers.performance_controller import PerformanceController
+from backend.services.auth_service import auth_service
 from backend.models.user import User
 from backend.config.settings import settings
 from backend.services.database_service import db_service
@@ -1796,7 +1797,29 @@ async def login(request: LoginRequest):
         logger.info(f"Login result: success={result.success}, message={result.message}")
         if not result.success:
             raise HTTPException(status_code=401, detail=result.message)
-        return result
+        
+        # Convert AuthResponse to dictionary for JSON serialization
+        response_dict = {
+            "success": result.success,
+            "message": result.message,
+            "access_token": result.access_token,
+            "refresh_token": result.refresh_token,
+            "expires_in": result.expires_in
+        }
+        
+        # Convert User object to dictionary
+        if result.user:
+            response_dict["user"] = {
+                "id": result.user.id,
+                "username": result.user.username,
+                "email": result.user.email,
+                "role": result.user.role.value,
+                "is_active": result.user.is_active,
+                "created_at": result.user.created_at.isoformat() if result.user.created_at else None,
+                "last_login": result.user.last_login.isoformat() if result.user.last_login else None
+            }
+        
+        return response_dict
     except Exception as e:
         logger.error(f"Login failed: {e}")
         raise HTTPException(status_code=500, detail=str(e) if str(e) else "Login failed")
@@ -1933,6 +1956,247 @@ async def get_model_config(model_type: str):
         return result
     except Exception as e:
         logger.error(f"Failed to get model config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# User management endpoints
+@app.get("/api/users")
+async def get_all_users(current_user = Depends(auth_controller.get_current_user)):
+    """Get all users (admin only)"""
+    try:
+        # Check if user is admin (only admin ID has admin permission)
+        if current_user.id != settings.ADMIN_USER_ID:
+            raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+        
+        from backend.repositories.user_repository import UserRepository
+        user_repo = UserRepository()
+        users = user_repo.get_all_users()
+        
+        # Convert User objects to dictionaries
+        user_list = []
+        for user in users:
+            user_dict = {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role.value,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+                "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+                "last_login": user.last_login.isoformat() if user.last_login else None
+            }
+            user_list.append(user_dict)
+        
+        return {
+            "success": True,
+            "users": user_list,
+            "total": len(user_list)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get users: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/users/{user_id}")
+async def get_user(user_id: str, current_user = Depends(auth_controller.get_current_user)):
+    """Get user by ID (admin only)"""
+    try:
+        # Check if user is admin (only admin ID has admin permission)
+        if current_user.id != settings.ADMIN_USER_ID:
+            raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+        
+        from backend.repositories.user_repository import UserRepository
+        user_repo = UserRepository()
+        user = user_repo.get_user_by_id(user_id)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        
+        user_dict = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role.value,
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+            "last_login": user.last_login.isoformat() if user.last_login else None
+        }
+        
+        return {
+            "success": True,
+            "user": user_dict
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class UserCreateRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+    role: str = "user"
+    is_active: bool = True
+
+@app.post("/api/users")
+async def create_user(request: UserCreateRequest, current_user = Depends(auth_controller.get_current_user)):
+    """Create a new user (admin only)"""
+    try:
+        # Check if user is admin (only admin ID has admin permission)
+        if current_user.id != settings.ADMIN_USER_ID:
+            raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+        
+        from backend.repositories.user_repository import UserRepository
+        from backend.models.user import User, UserRole
+        import uuid
+        
+        user_repo = UserRepository()
+        
+        # Check if username or email already exists
+        existing_user_by_username = user_repo.get_user_by_username(request.username)
+        if existing_user_by_username:
+            logger.warning(f"Username already exists: {request.username}")
+            raise HTTPException(status_code=400, detail="이미 존재하는 사용자명입니다.")
+        
+        existing_user_by_email = user_repo.get_user_by_email(request.email)
+        if existing_user_by_email:
+            logger.warning(f"Email already exists: {request.email}")
+            raise HTTPException(status_code=400, detail="이미 존재하는 이메일입니다.")
+        
+        # Create new user
+        user = User(
+            id=str(uuid.uuid4()),
+            username=request.username,
+            email=request.email,
+            password_hash=auth_service.hash_password(request.password),
+            role=UserRole(request.role),
+            is_active=request.is_active
+        )
+        
+        # Save user
+        logger.info(f"Creating user: {user.username}, {user.email}")
+        if user_repo.create_user(user):
+            logger.info(f"User created successfully: {user.id}")
+            return {
+                "success": True,
+                "message": "사용자가 성공적으로 생성되었습니다.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role.value,
+                    "is_active": user.is_active,
+                    "created_at": user.created_at.isoformat() if user.created_at else None
+                }
+            }
+        else:
+            logger.error(f"Failed to create user: {user.username}")
+            raise HTTPException(status_code=500, detail="사용자 생성 중 오류가 발생했습니다.")
+            
+    except HTTPException as e:
+        logger.error(f"HTTP Exception in create_user: {e.detail}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create user: {e}")
+        raise HTTPException(status_code=500, detail=f"사용자 생성 중 오류가 발생했습니다: {str(e)}")
+
+class UserUpdateRequest(BaseModel):
+    username: str
+    email: str
+    role: str
+    is_active: bool
+
+@app.put("/api/users/{user_id}")
+async def update_user(user_id: str, request: UserUpdateRequest, current_user = Depends(auth_controller.get_current_user)):
+    """Update user (admin only)"""
+    try:
+        # Check if user is admin (only admin ID has admin permission)
+        if current_user.id != settings.ADMIN_USER_ID:
+            raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+        
+        from backend.repositories.user_repository import UserRepository
+        from backend.models.user import User, UserRole
+        
+        user_repo = UserRepository()
+        user = user_repo.get_user_by_id(user_id)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        
+        # Check if username or email already exists (excluding current user)
+        existing_user_by_username = user_repo.get_user_by_username(request.username)
+        if existing_user_by_username and existing_user_by_username.id != user_id:
+            raise HTTPException(status_code=400, detail="이미 존재하는 사용자명입니다.")
+        
+        existing_user_by_email = user_repo.get_user_by_email(request.email)
+        if existing_user_by_email and existing_user_by_email.id != user_id:
+            raise HTTPException(status_code=400, detail="이미 존재하는 이메일입니다.")
+        
+        # Update user information
+        user.username = request.username
+        user.email = request.email
+        user.role = UserRole(request.role)
+        user.is_active = request.is_active
+        user.updated_at = datetime.now()
+        
+        # Save updated user
+        if user_repo.update_user(user):
+            return {
+                "success": True,
+                "message": "사용자 정보가 성공적으로 업데이트되었습니다.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role.value,
+                    "is_active": user.is_active,
+                    "updated_at": user.updated_at.isoformat() if user.updated_at else None
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail="사용자 정보 업데이트 중 오류가 발생했습니다.")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: str, current_user = Depends(auth_controller.get_current_user)):
+    """Delete user (admin only)"""
+    try:
+        # Check if user is admin (only admin ID has admin permission)
+        if current_user.id != settings.ADMIN_USER_ID:
+            raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+        
+        # Prevent admin from deleting themselves
+        if current_user.id == user_id:
+            raise HTTPException(status_code=400, detail="자신의 계정을 삭제할 수 없습니다.")
+        
+        from backend.repositories.user_repository import UserRepository
+        user_repo = UserRepository()
+        
+        # Check if user exists
+        user = user_repo.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        
+        # Delete user
+        if user_repo.delete_user(user_id):
+            return {
+                "success": True,
+                "message": "사용자가 성공적으로 삭제되었습니다."
+            }
+        else:
+            raise HTTPException(status_code=500, detail="사용자 삭제 중 오류가 발생했습니다.")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete user: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Test endpoint

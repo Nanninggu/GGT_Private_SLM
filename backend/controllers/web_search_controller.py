@@ -3,10 +3,10 @@ from pydantic import BaseModel
 from typing import List, Optional
 import logging
 
-from services.web_search_service import WebSearchService
-from services.vector_service import VectorService
-from services.langchain_vector_service import LangChainVectorService
-from models.chat import ChatMessage
+from backend.services.web_search_service import WebSearchService
+from backend.services.vector_service import VectorService
+from backend.services.langchain_vector_service import LangChainVectorService
+from backend.models.chat import ChatMessage
 # from utils.helpers import get_current_user_id  # Not needed for web search
 
 logger = logging.getLogger(__name__)

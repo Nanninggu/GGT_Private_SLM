@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from controllers.chat_controller import ChatController
 from components.chat_components import ChatComponents, StatusComponents
+from config import ADMIN_USER_ID
 
 # Page configuration will be set dynamically based on current page
 
@@ -93,6 +94,16 @@ def main():
         )
         from pages.configuration import main as configuration_main
         configuration_main()
+        return
+    elif current_page == "user_management":
+        st.set_page_config(
+            page_title="사용자 관리 - HAI Portal",
+            page_icon="👥",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        from pages.user_management import main as user_management_main
+        user_management_main()
         return
     elif current_page == "main":
         # Main page configuration
@@ -393,9 +404,9 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Service card - centered
+    # Service cards - centered
     st.markdown("""
-    <div style="display: flex; justify-content: center; margin: 2rem 0;">
+    <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem;">
         <div class="service-card">
             <div class="service-icon">💬</div>
             <div class="service-title">HAI-Chat</div>
@@ -403,6 +414,29 @@ def main():
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Admin features (only for admin users)
+    user_info = st.session_state.get("user_info")
+    if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
+        st.markdown("---")
+        st.markdown("### 🔧 관리자 기능")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("👥 사용자 관리", key="admin_user_management", use_container_width=True):
+                st.session_state.current_page = "user_management"
+                st.rerun()
+        
+        with col2:
+            if st.button("⚙️ 시스템 설정", key="admin_configuration", use_container_width=True):
+                st.session_state.current_page = "configuration"
+                st.rerun()
+        
+        with col3:
+            if st.button("📁 파일 업로드", key="admin_file_upload", use_container_width=True):
+                st.session_state.current_page = "file_upload"
+                st.rerun()
 
     # Chat interface section
     st.markdown("---")

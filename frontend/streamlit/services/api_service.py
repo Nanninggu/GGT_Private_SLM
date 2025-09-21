@@ -885,3 +885,126 @@ class APIService:
                 return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
+    
+    # User Management Methods
+    def get_all_users(self) -> Dict[str, Any]:
+        """Get all users (admin only)"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.get(
+                f"{self.base_url}/api/users",
+                headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_user(self, user_id: str) -> Dict[str, Any]:
+        """Get user by ID (admin only)"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.get(
+                f"{self.base_url}/api/users/{user_id}",
+                headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new user (admin only)"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.post(
+                f"{self.base_url}/api/users",
+                json=user_data,
+                headers=headers,
+                timeout=self.timeout
+            )
+            
+            # Handle different response status codes
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 400:
+                # Bad request - try to get error details
+                try:
+                    error_data = response.json()
+                    return {"success": False, "error": error_data.get("detail", "잘못된 요청입니다.")}
+                except:
+                    return {"success": False, "error": f"400 Bad Request: {response.text}"}
+            elif response.status_code == 403:
+                return {"success": False, "error": "관리자 권한이 필요합니다."}
+            else:
+                response.raise_for_status()
+                return response.json()
+                
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def update_user(self, user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update user (admin only)"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.put(
+                f"{self.base_url}/api/users/{user_id}",
+                json=user_data,
+                headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def delete_user(self, user_id: str) -> Dict[str, Any]:
+        """Delete user (admin only)"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.delete(
+                f"{self.base_url}/api/users/{user_id}",
+                headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}

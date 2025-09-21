@@ -11,7 +11,7 @@ import json
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from config.settings import settings
+from backend.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

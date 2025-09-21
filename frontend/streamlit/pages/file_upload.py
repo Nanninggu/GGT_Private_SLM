@@ -103,12 +103,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # Breadcrumb navigation
-    st.markdown("""
-    <div class="breadcrumb">
-        <a href="/">대시보드</a> > <strong>파일 업로드</strong>
-    </div>
-    """, unsafe_allow_html=True)
+    # Breadcrumb navigation removed - clean top layout
 
     # Page header
     st.markdown("""
@@ -118,14 +113,6 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Navigation buttons
-    col1, col2, col3 = st.columns([1, 1, 4])
-    with col1:
-        if st.button("🏠 홈으로", use_container_width=True):
-            st.switch_page("main.py")
-    with col2:
-        if st.button("🔄 새로고침", use_container_width=True):
-            st.rerun()
     
     # Initialize API service
     api_service = APIService()

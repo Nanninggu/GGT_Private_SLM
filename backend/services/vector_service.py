@@ -192,8 +192,11 @@ class VectorService:
                     return []
             
             async with db_service.get_session() as session:
-                # Apply PostgreSQL optimization settings
+                # Apply PostgreSQL optimization settings (추가 최적화)
                 await session.execute(text(f"SET hnsw.ef_search = {settings.VECTOR_DB_EF_SEARCH}"))
+                await session.execute(text("SET enable_seqscan = off"))  # Force index usage
+                await session.execute(text("SET random_page_cost = 1.1"))  # SSD 최적화
+                await session.execute(text("SET effective_cache_size = '4GB'"))  # 캐시 크기 최적화
                 
                 # 최적화된 벡터 검색 쿼리 - 인덱스 힌트와 성능 최적화
                 result = await session.execute(
@@ -227,7 +230,7 @@ class VectorService:
                 # Cache the results
                 await cache_service.set_search_results(query, top_k, similarity_threshold, documents)
                 
-                logger.info(f"Found {len(documents)} similar documents (optimized)")
+                logger.info(f"Found {len(documents)} similar documents (ultra-optimized)")
                 return documents
                 
         except Exception as e:

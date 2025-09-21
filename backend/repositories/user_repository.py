@@ -11,7 +11,7 @@ from backend.models.user import User, UserRole
 class UserRepository:
     """Repository for user data operations"""
     
-    def __init__(self, data_dir: str = "backend/backend/data"):
+    def __init__(self, data_dir: str = "backend/data"):
         self.data_dir = data_dir
         self.users_file = os.path.join(data_dir, "users.json")
         self._ensure_data_directory()
@@ -44,7 +44,11 @@ class UserRepository:
     def create_user(self, user: User) -> bool:
         """Create a new user"""
         try:
+            print(f"Creating user: {user.username}, {user.email}")
+            print(f"Data directory: {self.data_dir}")
+            print(f"Users file: {self.users_file}")
             users = self._load_users()
+            print(f"Loaded {len(users)} existing users")
             
             # Check if username or email already exists
             for existing_user in users:
@@ -71,7 +75,7 @@ class UserRepository:
             return True
             
         except Exception as e:
-            print(f"Error creating user: {e}")
+            print(f"Error creating user: {e}", exc_info=True)
             return False
     
     def get_user_by_username(self, username: str) -> Optional[User]:
@@ -156,6 +160,23 @@ class UserRepository:
     
     def _dict_to_user(self, user_dict: dict) -> User:
         """Convert dictionary to User object"""
+        try:
+            created_at = datetime.fromisoformat(user_dict.get('created_at', datetime.now().isoformat()))
+        except (ValueError, TypeError):
+            created_at = datetime.now()
+        
+        try:
+            updated_at = datetime.fromisoformat(user_dict.get('updated_at', datetime.now().isoformat()))
+        except (ValueError, TypeError):
+            updated_at = datetime.now()
+        
+        last_login = None
+        if user_dict.get('last_login'):
+            try:
+                last_login = datetime.fromisoformat(user_dict.get('last_login'))
+            except (ValueError, TypeError):
+                last_login = None
+        
         return User(
             id=user_dict.get('id'),
             username=user_dict.get('username'),
@@ -163,7 +184,7 @@ class UserRepository:
             password_hash=user_dict.get('password_hash'),
             role=UserRole(user_dict.get('role', 'user')),
             is_active=user_dict.get('is_active', True),
-            created_at=datetime.fromisoformat(user_dict.get('created_at', datetime.now().isoformat())),
-            updated_at=datetime.fromisoformat(user_dict.get('updated_at', datetime.now().isoformat())),
-            last_login=datetime.fromisoformat(user_dict.get('last_login')) if user_dict.get('last_login') else None
+            created_at=created_at,
+            updated_at=updated_at,
+            last_login=last_login
         )

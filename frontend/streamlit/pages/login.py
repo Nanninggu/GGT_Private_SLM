@@ -42,7 +42,7 @@ def register_user(username: str, email: str, password: str, confirm_password: st
 def main():
     """Main login page function"""
     
-    # Custom CSS for login page
+    # HAI Portal styling - Login page
     st.markdown("""
     <style>
     /* Hide Streamlit default UI elements */
@@ -56,7 +56,38 @@ def main():
     .stApp > div[data-testid="stDecoration"] {display:none;}
     .stApp > div[data-testid="stStatusWidget"] {display:none;}
     
-    /* Login page styling */
+    /* Hide the hamburger menu */
+    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    
+    /* Hide the top bar completely */
+    .stApp > div[data-testid="stHeader"] {display:none;}
+    
+    /* Adjust main content padding */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
     .login-container {
         max-width: 400px;
         margin: 0 auto;
@@ -64,23 +95,6 @@ def main():
         background: white;
         border-radius: 15px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-    
-    .login-header {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .login-title {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #8B5CF6;
-        margin-bottom: 0.5rem;
-    }
-    
-    .login-subtitle {
-        color: #666;
-        font-size: 1rem;
     }
     
     .login-form {
@@ -163,6 +177,14 @@ def main():
         border-color: #8B5CF6;
     }
     </style>
+    """, unsafe_allow_html=True)
+    
+    # Page header
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-title">🔐 로그인</div>
+        <div class="page-subtitle">HAI Portal에 로그인하여 AI 채팅 서비스를 이용하세요</div>
+    </div>
     """, unsafe_allow_html=True)
     
     # Initialize session state

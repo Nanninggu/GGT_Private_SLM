@@ -78,7 +78,7 @@ class PerformanceController:
             }
 
     async def get_database_stats(self) -> Dict[str, Any]:
-        """Get database performance statistics"""
+        """Get database performance statistics (enhanced)"""
         try:
             if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
                 return {

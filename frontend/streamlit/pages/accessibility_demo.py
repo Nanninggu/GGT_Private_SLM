@@ -29,7 +29,7 @@ def check_auth_status():
         return False
 
 def main():
-    """Accessibility demo page"""
+    """Accessibility demo page with unified design"""
     # Check authentication
     if not check_auth_status():
         st.warning("로그인이 필요합니다.")
@@ -38,8 +38,87 @@ def main():
             st.rerun()
         return
     
-    st.title("♿ 접근성 데모 페이지")
-    st.markdown("---")
+    # HAI Portal styling
+    st.markdown("""
+    <style>
+    /* Hide Streamlit default UI elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    .stDecoration {display:none;}
+    .stApp > header {display:none;}
+    .stApp > div[data-testid="stToolbar"] {display:none;}
+    .stApp > div[data-testid="stDecoration"] {display:none;}
+    .stApp > div[data-testid="stStatusWidget"] {display:none;}
+    
+    /* Hide the hamburger menu */
+    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    
+    /* Hide the top bar completely */
+    .stApp > div[data-testid="stHeader"] {display:none;}
+    
+    /* Adjust main content padding */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .config-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .status-card {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #8B5CF6;
+        margin-bottom: 1rem;
+    }
+    
+    .status-online {
+        border-left-color: #10B981;
+        background: #f0fdf4;
+    }
+    
+    .status-offline {
+        border-left-color: #EF4444;
+        background: #fef2f2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Page header
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-title">♿ 접근성 데모</div>
+        <div class="page-subtitle">접근성 표준에 따른 UI/UX 기능을 테스트하고 데모할 수 있습니다</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     
     # Inject accessibility scripts
     ChatComponents._inject_accessibility_scripts()
@@ -904,10 +983,6 @@ def main():
                         except Exception as e:
                             st.error(f"❌ 시스템 상태 확인 중 오류가 발생했습니다: {str(e)}")
 
-    # Back to main page
-    st.markdown("---")
-    if st.button("🏠 메인 페이지로 돌아가기", use_container_width=True):
-        st.switch_page("main.py")
 
 if __name__ == "__main__":
     main()

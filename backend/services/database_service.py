@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 import json
 
-from config.settings import settings
+from backend.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -104,11 +104,11 @@ class DatabaseService:
                     )
                 """))
                 
-                # Create HNSW index for vector similarity search
+                # Create HNSW index for vector similarity search (최적화된 설정)
                 await conn.execute(text("""
                     CREATE INDEX IF NOT EXISTS documents_embedding_idx 
                     ON documents USING hnsw (embedding vector_cosine_ops)
-                    WITH (m = 16, ef_construction = 200)
+                    WITH (m = 12, ef_construction = 100)
                 """))
                 
                 # Create index for collection_name for faster filtering
@@ -213,11 +213,11 @@ class DatabaseService:
                 ON documents USING gin (metadata)
             """))
             
-            # 2. Composite index for collection + embedding search (HNSW)
+            # 2. Composite index for collection + embedding search (HNSW) - 최적화된 설정
             await conn.execute(text("""
                 CREATE INDEX IF NOT EXISTS documents_collection_embedding_idx 
                 ON documents USING hnsw (embedding vector_cosine_ops)
-                WITH (m = 16, ef_construction = 200)
+                WITH (m = 12, ef_construction = 100)
             """))
             
             # 3. Index for created_at for time-based queries

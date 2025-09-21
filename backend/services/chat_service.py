@@ -132,6 +132,10 @@ class ChatService:
             logger.error(f"LangChain RAG processing failed: {e}")
             response_content = f"죄송합니다. RAG 시스템에 오류가 발생했습니다. 먼저 관련 문서를 업로드해 주세요. 오류: {str(e)}"
 
+        # Get model info from RAG result
+        model_info = rag_result.get("model_info", {}) if rag_result.get("success") else {}
+        model_name = model_info.get("model", "exaone3.5:2.4b")
+        
         # Create assistant message with source and accuracy information
         assistant_msg = ChatMessage(
             id=str(uuid.uuid4()),
@@ -143,8 +147,9 @@ class ChatService:
             accuracy=accuracy_info,
             metadata={
                 "model_type": model_type,
-                "model_name": rag_result.get("model_info", {}).get("model", "unknown") if rag_result.get("success") else "unknown",
-                "rag_mode": "LangChain RAG"
+                "model_name": model_name,
+                "rag_mode": "LangChain RAG",
+                "model_info": model_info
             }
         )
 

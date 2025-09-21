@@ -78,32 +78,48 @@ class RagService:
             # Return empty list to allow fallback to basic chat
             return []
     
-    async def generate_response(self, query: str, context: List[Dict[str, Any]] = None, chat_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
-        """Generate response using RAG with enhanced prompting"""
+    async def generate_response(self, query: str, context: List[Dict[str, Any]] = None, chat_history: List[Dict[str, str]] = None, model_type: str = "fast") -> Dict[str, Any]:
+        """Generate response using RAG with enhanced prompting and optimized processing"""
         try:
             # Search context if not provided
             if context is None:
                 context = await self.search_context(query)
             
-            # Build enhanced prompt using prompt service
+            # Build enhanced prompt using prompt service (optimized)
             enhanced_prompt = prompt_service.build_rag_prompt(query, context)
             
-            # Generate response using the enhanced prompt
-            response = await self.ollama_service.generate(enhanced_prompt)
+            # Pre-validate prompt length to avoid unnecessary processing (추가 최적화)
+            max_prompt_length = settings.OLLAMA_CHAT_NUM_CTX * 3  # 더 엄격한 길이 제한
+            if len(enhanced_prompt) > max_prompt_length:
+                logger.warning(f"Prompt too long ({len(enhanced_prompt)} chars), truncating context")
+                # Truncate context to fit within limits (더 공격적인 축소)
+                context = context[:max(1, len(context) // 3)]
+                enhanced_prompt = prompt_service.build_rag_prompt(query, context)
             
-            # Force Korean response if the response is in English
-            if self._is_english_response(response):
+            # Generate response using the enhanced prompt with optimized settings
+            llm_response = await self.ollama_service.generate(enhanced_prompt, model_type=model_type)
+            
+            # Get model info from settings
+            model_config = settings.MODEL_CONFIGS.get(model_type, {})
+            model_name = model_config.get("model", settings.MODEL_NAME)
+            
+            # Optimized Korean response validation (reduce false positives)
+            if len(llm_response) > 20 and self._is_english_response(llm_response):
                 logger.warning("Detected English response in RAG, forcing Korean response")
-                response = self._force_korean_response(response, query)
+                llm_response = self._force_korean_response(llm_response, query)
             
-            # Format response with metadata
+            # Format response with metadata including model info
             formatted_response = {
-                "response": response,
+                "response": llm_response,
                 "context": context,
                 "metadata": {
                     "context_count": len(context),
                     "prompt_length": len(enhanced_prompt),
                     "enhanced_prompting": True
+                },
+                "model_info": {
+                    "model_type": model_type,
+                    "model": model_name
                 }
             }
             
@@ -113,7 +129,7 @@ class RagService:
             logger.error(f"Failed to generate RAG response: {e}")
             raise
     
-    async def rag_query(self, query: str, session_id: str = None) -> Dict[str, Any]:
+    async def rag_query(self, query: str, session_id: str = None, model_type: str = "fast") -> Dict[str, Any]:
         """Main RAG query method"""
         try:
             # Search for relevant context
@@ -137,7 +153,11 @@ class RagService:
                 logger.info("No context found, falling back to basic chat")
                 from backend.services.prompt_service import prompt_service
                 enhanced_prompt = prompt_service.build_basic_chat_prompt(query)
-                response_text = await self.ollama_service.generate(enhanced_prompt)
+                response_text = await self.ollama_service.generate(enhanced_prompt, model_type=model_type)
+                
+                # Get model info for fallback mode
+                model_config = settings.MODEL_CONFIGS.get(model_type, {})
+                model_name = model_config.get("model", settings.MODEL_NAME)
                 
                 return {
                     "success": True,
@@ -149,11 +169,15 @@ class RagService:
                         "fallback_mode": True,
                         "enhanced_prompting": True,
                         "rag_mode": "기본 RAG"
+                    },
+                    "model_info": {
+                        "model_type": model_type,
+                        "model": model_name
                     }
                 }
             
             # Generate response with context
-            response = await self.generate_response(query, context)
+            response = await self.generate_response(query, context, model_type=model_type)
             
             # Add metadata with file information
             context_files = []
@@ -182,12 +206,22 @@ class RagService:
                 "rag_mode": "기본 RAG"
             }
             
+            # Get model info from response or settings
+            model_info = response.get("model_info", {})
+            if not model_info:
+                model_config = settings.MODEL_CONFIGS.get(model_type, {})
+                model_name = model_config.get("model", settings.MODEL_NAME)
+                model_info = {
+                    "model_type": model_type,
+                    "model": model_name
+                }
+            
             return {
                 "success": True,
                 "response": response["response"],
                 "context": context,
                 "metadata": metadata,
-                "model_info": response.get("model_info", {})
+                "model_info": model_info
             }
             
         except Exception as e:
@@ -309,16 +343,24 @@ class RagService:
         return formatted
     
     def _is_english_response(self, text: str) -> bool:
-        """Check if the response is primarily in English"""
+        """Check if the response is primarily in English (optimized)"""
         if not text or len(text.strip()) < 10:
             return False
         
-        # Count Korean characters vs English characters
-        korean_chars = sum(1 for char in text if '\uac00' <= char <= '\ud7af')
-        english_chars = sum(1 for char in text if char.isalpha() and ord(char) < 128)
+        # Sample first 200 characters for faster processing
+        sample_text = text[:200]
         
-        # If there are more English characters than Korean, consider it English
-        return english_chars > korean_chars
+        # Count Korean characters vs English characters
+        korean_chars = sum(1 for char in sample_text if '\uac00' <= char <= '\ud7af')
+        english_chars = sum(1 for char in sample_text if char.isalpha() and ord(char) < 128)
+        
+        # More strict threshold to reduce false positives
+        total_chars = korean_chars + english_chars
+        if total_chars == 0:
+            return False
+        
+        # Consider English if English chars are more than 70% of total
+        return (english_chars / total_chars) > 0.7
     
     def _force_korean_response(self, english_text: str, original_query: str) -> str:
         """Force a Korean response by re-querying with Korean enforcement"""

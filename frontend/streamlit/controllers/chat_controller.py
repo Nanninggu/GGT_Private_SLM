@@ -378,7 +378,7 @@ class ChatController:
             return None
     
     def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
-        """Create a new collection"""
+        """Create a new personal collection"""
         if not self.check_backend_connection():
             return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
         
@@ -386,6 +386,31 @@ class ChatController:
             return {"success": False, "error": "컬렉션 이름을 입력해주세요."}
         
         response = self.api_service.create_collection(collection_name, description)
+        return response
+    
+    def create_shared_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
+        """Create a new shared collection"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+        
+        if not collection_name or collection_name.strip() == "":
+            return {"success": False, "error": "컬렉션 이름을 입력해주세요."}
+        
+        response = self.api_service.create_shared_collection(collection_name, description)
+        return response
+    
+    def change_collection_type(self, collection_name: str, new_type: str) -> Dict[str, Any]:
+        """Change collection type between personal and shared"""
+        if not self.check_backend_connection():
+            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
+        
+        if not collection_name or collection_name.strip() == "":
+            return {"success": False, "error": "컬렉션 이름을 입력해주세요."}
+        
+        if new_type not in ["personal", "shared"]:
+            return {"success": False, "error": "타입은 'personal' 또는 'shared'여야 합니다."}
+        
+        response = self.api_service.change_collection_type(collection_name, new_type)
         return response
     
     def switch_collection(self, collection_name: str) -> Dict[str, Any]:

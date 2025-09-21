@@ -14,6 +14,20 @@ st.set_page_config(
 # API 기본 URL
 API_BASE_URL = "http://localhost:8000"
 
+def check_auth_status():
+    """Check if user is authenticated"""
+    if not st.session_state.get("auth_token"):
+        return False
+    
+    # Verify token with backend
+    try:
+        from services.api_service import APIService
+        api_service = APIService()
+        result = api_service.verify_token(st.session_state.auth_token)
+        return result.get("valid", False)
+    except:
+        return False
+
 def search_web(query: str, num_results: int = 10) -> Dict[str, Any]:
     """웹 검색을 수행합니다."""
     try:
@@ -57,7 +71,16 @@ def get_collections(force_refresh: bool = False) -> List[Dict[str, Any]]:
         return st.session_state.web_search_collections
     
     try:
-        response = requests.get(f"{API_BASE_URL}/api/web-search/collections")
+        # Get authentication token from session state
+        token = st.session_state.get("auth_token")
+        if not token:
+            st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+            return []
+        
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+        response = requests.get(f"{API_BASE_URL}/api/web-search/collections", headers=headers)
         response.raise_for_status()
         data = response.json()
         if data.get("success"):
@@ -66,7 +89,8 @@ def get_collections(force_refresh: bool = False) -> List[Dict[str, Any]]:
             st.session_state.web_search_collections = collections
             return collections
         return []
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        st.error(f"컬렉션 목록을 가져올 수 없습니다: {str(e)}")
         return []
 
 def display_search_result(result: Dict[str, Any], index: int):
@@ -91,8 +115,96 @@ def display_search_result(result: Dict[str, Any], index: int):
                 st.link_button("🔗 링크 열기", result['url'])
 
 def main():
-    st.title("🔍 웹 검색 및 컬렉션 저장")
-    st.markdown("구글 웹 검색을 수행하고 결과를 컬렉션에 저장할 수 있습니다.")
+    """Web search page with unified design"""
+    # Check authentication
+    if not check_auth_status():
+        st.warning("로그인이 필요합니다.")
+        if st.button("로그인 페이지로 이동"):
+            st.session_state.current_page = "login"
+            st.rerun()
+        return
+    
+    # HAI Portal styling
+    st.markdown("""
+    <style>
+    /* Hide Streamlit default UI elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    .stDecoration {display:none;}
+    .stApp > header {display:none;}
+    .stApp > div[data-testid="stToolbar"] {display:none;}
+    .stApp > div[data-testid="stDecoration"] {display:none;}
+    .stApp > div[data-testid="stStatusWidget"] {display:none;}
+    
+    /* Hide the hamburger menu */
+    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    
+    /* Hide the top bar completely */
+    .stApp > div[data-testid="stHeader"] {display:none;}
+    
+    /* Adjust main content padding */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .config-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .status-card {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #8B5CF6;
+        margin-bottom: 1rem;
+    }
+    
+    .status-online {
+        border-left-color: #10B981;
+        background: #f0fdf4;
+    }
+    
+    .status-offline {
+        border-left-color: #EF4444;
+        background: #fef2f2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Page header
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-title">🔍 웹 검색</div>
+        <div class="page-subtitle">구글 웹 검색을 수행하고 결과를 컬렉션에 저장할 수 있습니다</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     
     # 사이드바 - 검색 설정
     with st.sidebar:
@@ -270,6 +382,14 @@ def main():
             st.markdown("---")
             st.subheader("➕ 새 컬렉션 생성")
             
+            # 컬렉션 타입 선택
+            collection_type = st.radio(
+                "컬렉션 타입",
+                ["개인 컬렉션", "공유 컬렉션"],
+                help="개인 컬렉션: 나만 접근 가능\n공유 컬렉션: 모든 사용자가 접근 가능",
+                key="web_search_collection_type"
+            )
+            
             new_collection_name = st.text_input(
                 "새 컬렉션 이름",
                 placeholder="새 컬렉션 이름을 입력하세요...",
@@ -277,21 +397,47 @@ def main():
                 key="new_collection_name_input"
             )
             
+            # 컬렉션 타입에 따른 안내 메시지
+            if collection_type == "개인 컬렉션":
+                st.info("👤 **개인 컬렉션**: 나만 접근할 수 있는 개인 전용 컬렉션입니다.")
+            else:
+                st.warning("🌐 **공유 컬렉션**: 모든 사용자가 접근할 수 있는 공유 컬렉션입니다.")
+            
             col1, col2, col3 = st.columns([1, 1, 1])
             
             with col1:
                 if st.button("✅ 생성", type="primary", use_container_width=True) and new_collection_name:
                     with st.spinner("컬렉션 생성 중..."):
                         try:
+                            # 컬렉션 타입에 따라 다른 API 엔드포인트 사용
+                            if collection_type == "개인 컬렉션":
+                                api_endpoint = f"{API_BASE_URL}/api/collections/create"
+                                collection_type_icon = "👤"
+                                collection_type_text = "개인"
+                            else:  # 공유 컬렉션
+                                api_endpoint = f"{API_BASE_URL}/api/collections/create-shared"
+                                collection_type_icon = "🌐"
+                                collection_type_text = "공유"
+                            
+                            # Get authentication token from session state
+                            token = st.session_state.get("auth_token")
+                            if not token:
+                                st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+                                return
+                            
+                            headers = {
+                                "Authorization": f"Bearer {token}"
+                            }
                             response = requests.post(
-                                f"{API_BASE_URL}/api/collections/create",
+                                api_endpoint,
                                 json={
                                     "collection_name": new_collection_name,
-                                    "description": f"웹 검색 결과를 위한 컬렉션: {new_collection_name}"
-                                }
+                                    "description": f"웹 검색 결과를 위한 {collection_type_text} 컬렉션: {new_collection_name}"
+                                },
+                                headers=headers
                             )
                             if response.status_code == 200:
-                                st.success(f"컬렉션 '{new_collection_name}'이 생성되었습니다!")
+                                st.success(f"✅ {collection_type_text} 컬렉션 '{new_collection_name}'이 생성되었습니다! {collection_type_icon}")
                                 # 캐시된 컬렉션 목록 삭제하여 새로고침
                                 if "web_search_collections" in st.session_state:
                                     del st.session_state.web_search_collections
@@ -304,7 +450,7 @@ def main():
                                 # 컬렉션이 이미 존재하는 경우
                                 error_data = response.json()
                                 if "already exists" in error_data.get("detail", ""):
-                                    st.warning(f"컬렉션 '{new_collection_name}'이 이미 존재합니다. 기존 컬렉션을 사용합니다.")
+                                    st.warning(f"⚠️ {collection_type_text} 컬렉션 '{new_collection_name}'이 이미 존재합니다. 기존 컬렉션을 사용합니다. {collection_type_icon}")
                                     # 캐시된 컬렉션 목록 삭제하여 새로고침
                                     if "web_search_collections" in st.session_state:
                                         del st.session_state.web_search_collections

@@ -29,7 +29,18 @@
     "role": "user",
     "is_active": true,
     "created_at": "2025-09-17T23:57:59.373492",
-    "updated_at": "2025-09-17T23:57:59.373500",
-    "last_login": null
+    "updated_at": "2025-09-22T00:56:44.271397",
+    "last_login": "2025-09-22T00:56:44.271299"
+  },
+  {
+    "id": "fc44f501-a160-47cf-8962-276b391a0642",
+    "username": "newuser",
+    "email": "new@example.com",
+    "password_hash": "37751f47ad97d57bd76e9dc9c06f9cd9:dc10feff62cdcca092b6e1fe074e5fd2a9704c5cf7222da44c75f17abe8d22d8",
+    "role": "user",
+    "is_active": true,
+    "created_at": "2025-09-22T00:35:13.952341",
+    "updated_at": "2025-09-22T00:35:16.334848",
+    "last_login": "2025-09-22T00:35:16.334805"
   }
 ]

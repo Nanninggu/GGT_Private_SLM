@@ -30,11 +30,14 @@ class CacheService:
             "cache_size": 0
         }
         self.max_cache_size = settings.VECTOR_DB_CACHE_SIZE
-        self.cache_ttl = 3600  # 1 hour TTL
-        self.chat_cache_ttl = 1800  # 30 minutes for chat responses
+        self.cache_ttl = 1800  # 30 minutes TTL (더 짧은 캐시)
+        self.chat_cache_ttl = 900  # 15 minutes for chat responses (더 짧은 채팅 캐시)
         
     def _generate_cache_key(self, text: str, prefix: str = "") -> str:
-        """Generate cache key for text"""
+        """Generate cache key for text (optimized)"""
+        # Truncate very long text to avoid memory issues
+        if len(text) > 1000:
+            text = text[:1000] + "..."
         content = f"{prefix}:{text}"
         return hashlib.md5(content.encode()).hexdigest()
     
@@ -131,8 +134,10 @@ class CacheService:
         self.cache_stats["cache_size"] = len(self.embedding_cache) + len(self.search_cache)
     
     async def get_chat_response(self, query: str, rag_mode: str) -> Optional[str]:
-        """Get cached chat response with dedicated cache"""
-        cache_key = self._generate_cache_key(f"{query}:{rag_mode}", "chat")
+        """Get cached chat response with dedicated cache (optimized)"""
+        # Normalize query for better cache hits
+        normalized_query = query.strip().lower()
+        cache_key = self._generate_cache_key(f"{normalized_query}:{rag_mode}", "chat")
         
         if cache_key in self.chat_response_cache:
             response, timestamp = self.chat_response_cache[cache_key]
@@ -147,8 +152,10 @@ class CacheService:
         return None
     
     async def set_chat_response(self, query: str, rag_mode: str, response: str):
-        """Store chat response in dedicated cache"""
-        cache_key = self._generate_cache_key(f"{query}:{rag_mode}", "chat")
+        """Store chat response in dedicated cache (optimized)"""
+        # Normalize query for consistency
+        normalized_query = query.strip().lower()
+        cache_key = self._generate_cache_key(f"{normalized_query}:{rag_mode}", "chat")
         timestamp = time.time()
         
         # Cleanup if needed

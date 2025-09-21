@@ -24,12 +24,12 @@ class ChatComponents:
         if "selected_model_type" not in st.session_state:
             st.session_state.selected_model_type = "fast"
         
-        # Model configurations
+        # Model configurations (백엔드 settings.py와 일치)
         model_configs = {
             "fast": {
                 "name": "⚡ 빠른 응답",
-                "description": "exaone3.5:2.4b (1.6GB, Q4_K_M)",
-                "use_case": "일반적인 질문, 빠른 응답이 필요한 경우",
+                "description": "exaone3.5:2.4b-instruct-q4_K_M (1.6GB, Q4_K_M)",
+                "use_case": "일반적인 질문, 초고속 응답이 필요한 경우",
                 "color": "#10B981"
             },
             "quality": {
@@ -164,6 +164,28 @@ class ChatComponents:
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Display model information
+                model_info = message.get("model_info", {})
+                if model_info:
+                    model_type = model_info.get("model_type", "fast")
+                    model_name = model_info.get("model", "exaone3.5:2.4b")
+                    
+                    # Model type to display name mapping
+                    model_display_names = {
+                        "fast": "⚡ 빠른 응답",
+                        "quality": "🎯 고품질 응답", 
+                        "complex": "🧠 복잡한 작업"
+                    }
+                    
+                    display_name = model_display_names.get(model_type, "⚡ 빠른 응답")
+                    
+                    st.markdown(f"""
+                    <div style="background: #e3f2fd; padding: 0.5rem 1rem; border-radius: 5px; 
+                                margin: 0.5rem 0; border-left: 3px solid #2196f3; font-size: 0.9rem;">
+                        <strong>{display_name}</strong> • {model_name}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
                 # Display sources and accuracy information
                 sources = message.get("sources", [])
                 accuracy = message.get("accuracy", {})
@@ -185,22 +207,7 @@ class ChatComponents:
                 col1, col2 = st.columns([1, 0.08])
                 with col1:
                     if timestamp:
-                        # Display model information based on selected model type
-                        model_info = ""
-                        selected_model_type = st.session_state.get("selected_model_type", "fast")
-                        
-                        # Get model name from settings based on selected type
-                        if selected_model_type == "fast":
-                            model_name = "exaone3.5:2.4b"
-                        elif selected_model_type == "quality":
-                            model_name = "exaone3.5:2.4b-instruct-q8_0"
-                        elif selected_model_type == "complex":
-                            model_name = "exaone3.5:7.8b"
-                        else:
-                            model_name = "exaone3.5:2.4b"
-                        
-                        model_info = f" • {model_name}"
-                        st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}{model_info}")
+                        st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
                 with col2:
                     # PDF and Markdown export buttons
                     col2_1, col2_2 = st.columns(2)

@@ -382,8 +382,20 @@ class APIService:
     def get_collections(self) -> Dict[str, Any]:
         """Get list of available vector database collections"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                # Debug: Check what's in session state
+                st.error(f"디버그: 세션 상태 키들: {list(st.session_state.keys())}")
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            
             response = requests.get(
                 f"{self.base_url}/api/collections",
+                headers=headers,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -394,8 +406,17 @@ class APIService:
     def get_current_collection(self) -> Dict[str, Any]:
         """Get the currently active collection"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             response = requests.get(
                 f"{self.base_url}/api/collections/active",
+                headers=headers,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -406,10 +427,19 @@ class APIService:
     def switch_collection(self, collection_name: str) -> Dict[str, Any]:
         """Switch the active collection for RAG queries"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
             payload = {"collection_name": collection_name}
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             response = requests.post(
                 f"{self.base_url}/api/collections/switch",
                 json=payload,
+                headers=headers,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -430,15 +460,66 @@ class APIService:
             return {"success": False, "error": str(e)}
     
     def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
-        """Create a new collection"""
+        """Create a new personal collection"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
             payload = {
                 "collection_name": collection_name,
                 "description": description
             }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             response = requests.post(
                 f"{self.base_url}/api/collections/create",
                 json=payload,
+                headers=headers,
+                timeout=self.timeout
+            )
+            
+            # Handle HTTP 400 (Bad Request) as a normal response, not an exception
+            if response.status_code == 400:
+                try:
+                    error_detail = response.json()
+                    return {"success": False, "error": error_detail.get('detail', 'Bad Request')}
+                except:
+                    return {"success": False, "error": "Bad Request"}
+            
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            # Get detailed error information for other HTTP errors
+            try:
+                error_detail = response.json()
+                return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
+            except:
+                return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def create_shared_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
+        """Create a new shared collection"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            payload = {
+                "collection_name": collection_name,
+                "description": description
+            }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.post(
+                f"{self.base_url}/api/collections/create-shared",
+                json=payload,
+                headers=headers,
                 timeout=self.timeout
             )
             
@@ -761,5 +842,46 @@ class APIService:
             )
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def change_collection_type(self, collection_name: str, new_type: str) -> Dict[str, Any]:
+        """Change collection type between personal and shared"""
+        try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            payload = {
+                "type": new_type  # "personal" or "shared"
+            }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            response = requests.put(
+                f"{self.base_url}/api/collections/{collection_name}/change-type",
+                json=payload,
+                headers=headers,
+                timeout=self.timeout
+            )
+            
+            # Handle HTTP 400 (Bad Request) as a normal response, not an exception
+            if response.status_code == 400:
+                try:
+                    error_detail = response.json()
+                    return {"success": False, "error": error_detail.get('detail', 'Bad Request')}
+                except:
+                    return {"success": False, "error": "Bad Request"}
+            
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            # Get detailed error information for other HTTP errors
+            try:
+                error_detail = response.json()
+                return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
+            except:
+                return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}

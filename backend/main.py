@@ -26,6 +26,7 @@ from backend.controllers.auth_controller import auth_controller
 from backend.controllers.web_search_controller import router as web_search_router
 from backend.controllers.accuracy_controller import AccuracyController
 from backend.controllers.performance_controller import PerformanceController
+from backend.models.user import User
 from backend.config.settings import settings
 from backend.services.database_service import db_service
 from backend.services.vector_service import vector_service
@@ -331,17 +332,21 @@ async def benchmark_chat(request: dict):
         max_time = max(response_times)
         avg_cache_hit_rate = sum(cache_hit_rates) / len(cache_hit_rates)
         
-        # Performance grade
-        if avg_time < 2.0:
-            performance_grade = "A+ (Excellent)"
+        # Enhanced performance grade with more granular levels
+        if avg_time < 1.0:
+            performance_grade = "A+ (Excellent - <1s)"
+        elif avg_time < 2.0:
+            performance_grade = "A (Very Good - <2s)"
+        elif avg_time < 3.0:
+            performance_grade = "B+ (Good - <3s)"
         elif avg_time < 5.0:
-            performance_grade = "A (Very Good)"
+            performance_grade = "B (Acceptable - <5s)"
         elif avg_time < 10.0:
-            performance_grade = "B (Good)"
+            performance_grade = "C (Fair - <10s)"
         elif avg_time < 20.0:
-            performance_grade = "C (Fair)"
+            performance_grade = "D (Poor - <20s)"
         else:
-            performance_grade = "D (Needs Improvement)"
+            performance_grade = "F (Needs Improvement - >20s)"
         
         return {
             "success": True,
@@ -467,8 +472,17 @@ async def send_message(request: MessageRequest):
             logger.info(f"Cache hit for {rag_mode} query: {request.message[:100]}...")
             
             # Add model info to cached response
-            model_name = settings.MODEL_NAME
-            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 답변 방식: 캐시된 답변\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+            if request.model_type and request.model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[request.model_type]
+                model_name = model_config["model"]
+                model_description = model_config["description"]
+                model_use_case = model_config["use_case"]
+            else:
+                model_name = settings.MODEL_NAME
+                model_description = settings.MODEL_CONFIGS.get(request.model_type, {}).get("description", f"{request.model_type} 모델")
+                model_use_case = settings.MODEL_CONFIGS.get(request.model_type, {}).get("use_case", "일반적인 사용")
+            
+            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {request.model_type}\n- 설명: {model_description}\n- 답변 방식: 캐시된 답변\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
             final_cached_response = cached_response + ending_message
             
             return {
@@ -526,15 +540,29 @@ async def send_message(request: MessageRequest):
         
         # Add ending message to response with model and RAG info
         model_info = result.get("model_info", {})
-        model_name = model_info.get("model", settings.MODEL_NAME)
-        model_type = model_info.get("model_type", request.model_type)
+        
+        # Get model information from settings based on request.model_type
+        if request.model_type and request.model_type in settings.MODEL_CONFIGS:
+            model_config = settings.MODEL_CONFIGS[request.model_type]
+            model_name = model_config["model"]
+            model_type = request.model_type
+            model_description = model_config["description"]
+            model_use_case = model_config["use_case"]
+            logger.info(f"Using model from settings: {model_name} (type: {model_type})")
+        else:
+            model_name = settings.MODEL_NAME
+            model_type = request.model_type or "fast"
+            model_description = settings.MODEL_CONFIGS.get(model_type, {}).get("description", f"{model_type} 모델")
+            model_use_case = settings.MODEL_CONFIGS.get(model_type, {}).get("use_case", "일반적인 사용")
+            logger.info(f"Using default model: {model_name} (type: {model_type})")
+        
         rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
         fallback_used = result.get("metadata", {}).get("fallback_mode", False)
         
         if fallback_used:
             rag_status = "기본 모델 (RAG 컨텍스트 없음)"
         
-        ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+        ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
         final_response = result["response"] + ending_message
         
         # Format response for frontend
@@ -597,19 +625,31 @@ async def stream_chat(request: ChatRequest):
                     
                     # Add ending message to response with model and RAG info
                     model_info = result.get("model_info", {})
-                    model_name = model_info.get("model", settings.MODEL_NAME)
-                    model_type = model_info.get("model_type", request.model_type)
+                    
+                    # Get model information from settings based on request.model_type
+                    if request.model_type and request.model_type in settings.MODEL_CONFIGS:
+                        model_config = settings.MODEL_CONFIGS[request.model_type]
+                        model_name = model_config["model"]
+                        model_type = request.model_type
+                        model_description = model_config["description"]
+                        model_use_case = model_config["use_case"]
+                    else:
+                        model_name = settings.MODEL_NAME
+                        model_type = request.model_type or "fast"
+                        model_description = settings.MODEL_CONFIGS.get(model_type, {}).get("description", f"{model_type} 모델")
+                        model_use_case = settings.MODEL_CONFIGS.get(model_type, {}).get("use_case", "일반적인 사용")
+                    
                     rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
                     fallback_used = result.get("metadata", {}).get("fallback_mode", False)
                     
                     if fallback_used:
                         rag_status = "기본 모델 (RAG 컨텍스트 없음)"
                     
-                    ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+                    ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
                     final_response_text = response_text + ending_message
                     
-                    # Stream the response text with improved chunking
-                    chunk_size = 5  # Smaller chunks for smoother effect
+                    # Stream the response text with optimized chunking
+                    chunk_size = 8  # Slightly larger chunks for better performance
                     for i in range(0, len(final_response_text), chunk_size):
                         chunk = final_response_text[i:i+chunk_size]
                         yield {
@@ -619,7 +659,9 @@ async def stream_chat(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)  # Slightly slower for better readability
+                        # Dynamic delay based on chunk size for optimal performance
+                        delay = 0.005 if len(chunk) > 5 else 0.01
+                        await asyncio.sleep(delay)
                     
                     # Send completion signal
                     yield {
@@ -707,19 +749,31 @@ async def stream_chat_langchain(request: ChatRequest):
                     
                     # Add ending message to response with model and RAG info
                     model_info = result.get("model_info", {})
-                    model_name = model_info.get("model", settings.MODEL_NAME)
-                    model_type = model_info.get("model_type", request.model_type)
+                    
+                    # Get model information from settings based on request.model_type
+                    if request.model_type and request.model_type in settings.MODEL_CONFIGS:
+                        model_config = settings.MODEL_CONFIGS[request.model_type]
+                        model_name = model_config["model"]
+                        model_type = request.model_type
+                        model_description = model_config["description"]
+                        model_use_case = model_config["use_case"]
+                    else:
+                        model_name = settings.MODEL_NAME
+                        model_type = request.model_type or "fast"
+                        model_description = settings.MODEL_CONFIGS.get(model_type, {}).get("description", f"{model_type} 모델")
+                        model_use_case = settings.MODEL_CONFIGS.get(model_type, {}).get("use_case", "일반적인 사용")
+                    
                     rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
                     fallback_used = result.get("metadata", {}).get("fallback_mode", False)
                     
                     if fallback_used:
                         rag_status = "기본 모델 (RAG 컨텍스트 없음)"
                     
-                    ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+                    ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
                     final_response_text = response_text + ending_message
                     
-                    # Stream the response text with improved chunking
-                    chunk_size = 5  # Smaller chunks for smoother effect
+                    # Stream the response text with optimized chunking
+                    chunk_size = 8  # Slightly larger chunks for better performance
                     for i in range(0, len(final_response_text), chunk_size):
                         chunk = final_response_text[i:i+chunk_size]
                         yield {
@@ -729,7 +783,9 @@ async def stream_chat_langchain(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)  # Slightly slower for better readability
+                        # Dynamic delay based on chunk size for optimal performance
+                        delay = 0.005 if len(chunk) > 5 else 0.01
+                        await asyncio.sleep(delay)
                     
                     # Send completion signal
                     yield {
@@ -894,10 +950,14 @@ async def langchain_chat_message(request: MessageRequest):
                 model_config = settings.MODEL_CONFIGS[request.model_type]
                 model_name = model_config["model"]
                 model_type = request.model_type
+                model_description = model_config["description"]
+                model_use_case = model_config["use_case"]
                 logger.info(f"Using model from settings: {model_name} (type: {model_type})")
             else:
                 model_name = settings.MODEL_NAME
                 model_type = request.model_type or "fast"
+                model_description = settings.MODEL_CONFIGS.get(model_type, {}).get("description", f"{model_type} 모델")
+                model_use_case = settings.MODEL_CONFIGS.get(model_type, {}).get("use_case", "일반적인 사용")
                 logger.info(f"Using default model: {model_name} (type: {model_type})")
             
             rag_status = "RAG 기반" if rag_result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
@@ -906,7 +966,7 @@ async def langchain_chat_message(request: MessageRequest):
             if fallback_used:
                 rag_status = "기본 모델 (RAG 컨텍스트 없음)"
             
-            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
             final_response = rag_result["response"] + ending_message
             
             # Create proper model_info
@@ -1317,32 +1377,33 @@ async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), c
 
 # Vector DB Collection Management endpoints
 @app.get("/api/collections")
-async def get_collections():
-    """Get list of available vector database collections"""
+async def get_collections(current_user: User = Depends(auth_controller.get_current_user)):
+    """Get list of available vector database collections for the current user"""
     try:
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        # Get LangChain RAG collections
-        langchain_collections = await langchain_rag_service.get_available_collections()
+        # Get LangChain RAG collections for the current user
+        langchain_collections = await langchain_rag_service.get_available_collections(current_user.id)
         
-        # Get basic RAG collections (documents table)
+        # Get basic RAG collections (documents table) - shared for all users
         basic_collections = await rag_service.get_available_collections()
         
         # Combine all collections
         all_collections = []
         
-        # Add basic RAG collections first
+        # Add basic RAG collections first (shared)
         for collection in basic_collections:
             all_collections.append({
                 "id": collection.get("id", "basic_rag"),
                 "name": collection.get("name", "Unknown"),
                 "metadata": collection.get("metadata", {}),
                 "created_at": collection.get("created_at"),
-                "document_count": collection.get("document_count", 0)
+                "document_count": collection.get("document_count", 0),
+                "user_id": None  # Shared collection
             })
         
-        # Add LangChain RAG collections
+        # Add LangChain RAG collections (user-specific)
         for collection in langchain_collections:
             # Skip if already exists in basic collections
             if not any(c["name"] == collection.get("name") for c in all_collections):
@@ -1351,7 +1412,8 @@ async def get_collections():
                     "name": collection.get("name", "Unknown"),
                     "metadata": collection.get("metadata", {}),
                     "created_at": collection.get("created_at"),
-                    "document_count": collection.get("document_count", 0)
+                    "document_count": collection.get("document_count", 0),
+                    "user_id": collection.get("user_id")
                 })
         
         current_collection = getattr(langchain_rag_service, 'current_collection', 'langchain_documents')
@@ -1434,20 +1496,21 @@ async def get_collection_info(collection_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/collections/create")
-async def create_collection(request: CreateCollectionRequest):
-    """Create a new collection"""
+async def create_collection(request: CreateCollectionRequest, current_user: User = Depends(auth_controller.get_current_user)):
+    """Create a new personal collection for the current user"""
     try:
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
         result = await langchain_rag_service.create_collection(
             request.collection_name, 
-            request.description
+            request.description,
+            current_user.id
         )
         
         return {
             "success": True,
-            "message": f"Collection '{request.collection_name}' created successfully",
+            "message": f"Personal collection '{request.collection_name}' created successfully",
             "collection": result
         }
         
@@ -1455,6 +1518,78 @@ async def create_collection(request: CreateCollectionRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to create collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/collections/create-shared")
+async def create_shared_collection(request: CreateCollectionRequest, current_user: User = Depends(auth_controller.get_current_user)):
+    """Create a new shared collection accessible by all users"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        # Create shared collection (user_id = None)
+        result = await langchain_rag_service.create_collection(
+            request.collection_name, 
+            request.description,
+            None  # None means shared collection
+        )
+        
+        return {
+            "success": True,
+            "message": f"Shared collection '{request.collection_name}' created successfully",
+            "collection": result
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to create shared collection: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/collections/{collection_name}/change-type")
+async def change_collection_type(collection_name: str, request: dict, current_user: User = Depends(auth_controller.get_current_user)):
+    """Change collection type between personal and shared"""
+    try:
+        if not services_initialized:
+            raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        new_type = request.get("type")  # "personal" or "shared"
+        if new_type not in ["personal", "shared"]:
+            raise HTTPException(status_code=400, detail="Type must be 'personal' or 'shared'")
+        
+        # Get current collection info
+        collections = await langchain_rag_service.get_available_collections(current_user.id)
+        current_collection = None
+        for collection in collections:
+            if collection.get("name") == collection_name:
+                current_collection = collection
+                break
+        
+        if not current_collection:
+            raise HTTPException(status_code=404, detail="Collection not found")
+        
+        # Check if user owns the collection or if it's a shared collection
+        current_user_id = current_collection.get("user_id")
+        if current_user_id is not None and current_user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="You don't have permission to modify this collection")
+        
+        # Determine new user_id based on type
+        new_user_id = current_user.id if new_type == "personal" else None
+        
+        # Update collection type
+        result = await langchain_rag_service.change_collection_type(collection_name, new_user_id)
+        
+        type_text = "개인" if new_type == "personal" else "공유"
+        return {
+            "success": True,
+            "message": f"Collection '{collection_name}' changed to {type_text} collection successfully",
+            "collection": result
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to change collection type: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/collections/{collection_name}")
@@ -1649,7 +1784,7 @@ async def register(request: RegisterRequest):
             raise HTTPException(status_code=400, detail=result.message)
         return result
     except Exception as e:
-        logger.error(f"Registration failed: {e}")
+        logger.error(f"Registration failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/auth/login")
@@ -1664,7 +1799,7 @@ async def login(request: LoginRequest):
         return result
     except Exception as e:
         logger.error(f"Login failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e) if str(e) else "Login failed")
 
 @app.post("/api/auth/refresh")
 async def refresh_token(request: TokenRefreshRequest):

@@ -157,13 +157,13 @@ async def test_configuration():
         logger.info("✅ Ollama configuration test passed")
         
         # Test RAG settings
-        assert settings.RAG_CONTEXT_MAX_DOCS == 5
-        assert settings.RAG_VECTOR_SEARCH_TOP_K == 5
+        assert settings.RAG_CONTEXT_MAX_DOCS == 3
+        assert settings.RAG_VECTOR_SEARCH_TOP_K == 3
         logger.info("✅ RAG configuration test passed")
         
         # Test vector DB settings
         assert settings.VECTOR_DB_DIMENSIONS == 1024
-        assert settings.VECTOR_DB_SIMILARITY_THRESHOLD == 0.3  # Updated threshold
+        assert settings.VECTOR_DB_SIMILARITY_THRESHOLD == 0.4  # Updated threshold
         logger.info("✅ Vector DB configuration test passed")
         
         logger.info("✅ All configuration tests passed")

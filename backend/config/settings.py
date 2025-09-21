@@ -49,9 +49,9 @@ class Settings:
     OLLAMA_READ_TIMEOUT: int = 60  # seconds (성능 최적화)
     OLLAMA_CONNECTION_TIMEOUT: int = 90  # seconds (성능 최적화)
     
-    # Ollama Chat 옵션 - 성능 최적화
-    OLLAMA_CHAT_NUM_CTX: int = 4096  # 컨텍스트 크기 50% 감소 (속도 향상)
-    OLLAMA_CHAT_NUM_PREDICT: int = 512  # 응답 길이 대폭 최적화 (75% 감소)
+    # Ollama Chat 옵션 - 성능 최적화 (추가 최적화)
+    OLLAMA_CHAT_NUM_CTX: int = 2048  # 컨텍스트 크기 75% 감소 (속도 향상)
+    OLLAMA_CHAT_NUM_PREDICT: int = 256  # 응답 길이 대폭 최적화 (87% 감소)
     OLLAMA_CHAT_TEMPERATURE: float = 0.5  # 창의성 감소로 속도 향상
     OLLAMA_CHAT_TOP_P: float = 0.7  # 다양성 감소로 속도 향상
     OLLAMA_CHAT_TOP_K: int = 10  # 토큰 선택 대폭 최적화 (75% 감소)
@@ -67,12 +67,17 @@ class Settings:
     VECTOR_DB_INDEX_TYPE: str = "HNSW"
     VECTOR_DB_DISTANCE_TYPE: str = "COSINE_DISTANCE"
     VECTOR_DB_DIMENSIONS: int = 1024
-    VECTOR_DB_SIMILARITY_THRESHOLD: float = 0.3  # 유사도 임계값 조정 (RAG 정확도 향상)
-    VECTOR_DB_TOP_K: int = 5  # 검색 문서 수 대폭 감소 (62% 감소)
+    VECTOR_DB_SIMILARITY_THRESHOLD: float = 0.4  # 유사도 임계값 상향 조정 (정확도 향상)
+    VECTOR_DB_TOP_K: int = 3  # 검색 문서 수 대폭 감소 (80% 감소)
     
-    # HNSW 인덱스 고성능 최적화 파라미터
+    # ===== 성능 최적화 추가 설정 =====
+    VECTOR_DB_QUERY_TIMEOUT: int = 10  # 벡터 검색 타임아웃 (초)
+    VECTOR_DB_CONNECTION_POOL_SIZE: int = 5  # 벡터 검색 전용 연결 풀 크기
+    VECTOR_DB_PRELOAD_COMMON_QUERIES: bool = True  # 일반적인 쿼리 사전 로드
+    
+    # HNSW 인덱스 고성능 최적화 파라미터 (추가 최적화)
     VECTOR_DB_EF_CONSTRUCTION: int = 100  # 인덱스 구축 속도 향상 (50% 감소)
-    VECTOR_DB_EF_SEARCH: int = 32  # 검색 속도 대폭 향상 (43% 감소)
+    VECTOR_DB_EF_SEARCH: int = 16  # 검색 속도 대폭 향상 (75% 감소)
     VECTOR_DB_M: int = 12  # 메모리 사용량 최적화 (25% 감소)
     
     # PostgreSQL 벡터 최적화 설정
@@ -113,9 +118,9 @@ class Settings:
     RAG_CHUNK_OVERLAP: int = 100  # 오버랩 대폭 최적화 (33% 추가 감소)
     RAG_SEARCH_FILTER_DUPLICATES: bool = True
     RAG_VECTOR_SEARCH_MIN_RESULTS: int = 1  # 최소 결과 수 유지
-    RAG_CONTEXT_MAX_DOCS: int = 5  # 컨텍스트 문서 수 대폭 감소 (37% 추가 감소)
-    RAG_VECTOR_SEARCH_TOP_K: int = 5  # 검색 문서 수 대폭 감소 (37% 추가 감소)
-    RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD: float = 0.3  # 유사도 임계값 조정 (RAG 정확도 향상)
+    RAG_CONTEXT_MAX_DOCS: int = 3  # 컨텍스트 문서 수 대폭 감소 (62% 추가 감소)
+    RAG_VECTOR_SEARCH_TOP_K: int = 3  # 검색 문서 수 대폭 감소 (62% 추가 감소)
+    RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD: float = 0.4  # 유사도 임계값 상향 조정 (정확도 향상)
     RAG_SEARCH_EXPANSION_ENABLED: bool = False
     RAG_SEARCH_RERANK_ENABLED: bool = False
     RAG_TECH_SEARCH_ENABLED: bool = False
@@ -127,7 +132,7 @@ class Settings:
     RAG_CONTEXT_REQUIRED: bool = True
     RAG_VECTOR_ONLY_MODE: bool = True
     RAG_EXTERNAL_KNOWLEDGE_BLOCKED: bool = True
-    RAG_CONTEXT_MAX_LENGTH: int = 150  # 컨텍스트 길이 대폭 최적화 (25% 추가 감소)
+    RAG_CONTEXT_MAX_LENGTH: int = 100  # 컨텍스트 길이 대폭 최적화 (50% 추가 감소)
     
     # ===== Google Custom Search API 설정 =====
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "AIzaSyD9308788888888888888888888888888")
@@ -153,7 +158,13 @@ class Settings:
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # ===== 기존 설정 유지 =====
-    MODEL_NAME: str = "exaone3.5:2.4b"
+    # Model configurations for different types
+    MODEL_FAST: str = "exaone3.5:2.4b-instruct-q4_K_M"
+    MODEL_QUALITY: str = "exaone3.5:2.4b-instruct-q8_0"
+    MODEL_COMPLEX: str = "exaone3.5:7.8b"
+    MODEL_NAME: str = "exaone3.5:2.4b"  # Default model
+    
+    # Model configurations dictionary (제거 - 중복 정의)
     MODEL_PATH: str = os.getenv("MODEL_PATH", "./models/exaone3.5-2.4")
     MAX_TOKENS: int = 2048
     TEMPERATURE: float = 0.7
@@ -170,15 +181,15 @@ class Settings:
     # 모델별 최적화된 파라미터
     MODEL_CONFIGS: dict = field(default_factory=lambda: {
         "fast": {
-            "model": "exaone3.5:2.4b",
-            "num_ctx": 4096,
-            "num_predict": 512,
+            "model": "exaone3.5:2.4b-instruct-q4_K_M",
+            "num_ctx": 2048,
+            "num_predict": 256,
             "temperature": 0.5,
             "top_p": 0.7,
             "top_k": 10,
             "repeat_penalty": 1.05,
-            "description": "⚡ 빠른 응답 (1.6GB, Q4_K_M)",
-            "use_case": "일반적인 질문, 빠른 응답이 필요한 경우"
+            "description": "⚡ 초고속 응답 (1.6GB, Q4_K_M)",
+            "use_case": "일반적인 질문, 초고속 응답이 필요한 경우"
         },
         "quality": {
             "model": "exaone3.5:2.4b-instruct-q8_0",

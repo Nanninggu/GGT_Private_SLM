@@ -16,9 +16,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 # from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import PGVector
 
-from backend.config.settings import settings
-from backend.services.langchain_vector_service import langchain_vector_service
-from backend.services.prompt_service import prompt_service
+from config.settings import settings
+from services.langchain_vector_service import langchain_vector_service
+from services.prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
 
@@ -35,18 +35,14 @@ class LangChainRagService:
         """Initialize LangChain RAG service"""
         try:
             # Initialize Ollama LLM with Korean response enforcement
-            # Use fast model as default for initialization
-            fast_config = settings.MODEL_CONFIGS["fast"]
             self.llm = ChatOllama(
-                model=fast_config["model"],
+                model=settings.MODEL_NAME,
                 base_url=settings.OLLAMA_BASE_URL,
-                temperature=fast_config["temperature"],
-                top_p=fast_config["top_p"],
-                top_k=fast_config["top_k"],
-                repeat_penalty=fast_config["repeat_penalty"],
-                num_predict=fast_config["num_predict"],
-                num_ctx=fast_config["num_ctx"],
-                system=settings.KOREAN_SYSTEM_PROMPT
+                temperature=settings.OLLAMA_CHAT_TEMPERATURE,
+                top_p=settings.OLLAMA_CHAT_TOP_P,
+                top_k=settings.OLLAMA_CHAT_TOP_K,
+                repeat_penalty=settings.OLLAMA_CHAT_REPEAT_PENALTY,
+                num_predict=settings.OLLAMA_CHAT_NUM_PREDICT
             )
             
             # Initialize vector store
@@ -91,10 +87,10 @@ class LangChainRagService:
             logger.error(f"Failed to set collection '{collection_name}': {e}")
             return False
     
-    async def get_available_collections(self) -> List[Dict[str, Any]]:
+    async def get_available_collections(self, user_id: str = None) -> List[Dict[str, Any]]:
         """Get list of available collections"""
         try:
-            return await langchain_vector_service.get_collections()
+            return await langchain_vector_service.get_collections(user_id)
         except Exception as e:
             logger.error(f"Failed to get collections: {e}")
             return []
@@ -143,6 +139,16 @@ class LangChainRagService:
             return result
         except Exception as e:
             logger.error(f"Failed to rename collection: {e}")
+            raise
+    
+    async def change_collection_type(self, collection_name: str, new_user_id: str = None) -> Dict[str, Any]:
+        """Change collection type between personal and shared"""
+        try:
+            result = await langchain_vector_service.change_collection_type(collection_name, new_user_id)
+            logger.info(f"Collection '{collection_name}' type changed successfully")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to change collection type: {e}")
             raise
     
     async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
@@ -216,10 +222,8 @@ class LangChainRagService:
     async def _setup_llm_for_model_type(self, model_type: str):
         """Set up LLM based on model type"""
         try:
-            logger.info(f"Setting up LLM for model type: {model_type}")
             if model_type in settings.MODEL_CONFIGS:
                 model_config = settings.MODEL_CONFIGS[model_type]
-                logger.info(f"Found model config for {model_type}: {model_config['model']}")
                 
                 # Create new LLM instance with model-specific configuration
                 self.llm = ChatOllama(
@@ -347,20 +351,14 @@ class LangChainRagService:
             # Format response without source information
             formatted_response = response_text
             
-            # Get current model info from the configured LLM
-            if model_type in settings.MODEL_CONFIGS:
-                current_model = settings.MODEL_CONFIGS[model_type]["model"]
-            else:
-                current_model = self.llm.model if hasattr(self.llm, 'model') else "unknown"
-            
             return {
                 "success": True,
                 "response": formatted_response,
                 "context": context_docs,
                 "metadata": metadata,
                 "model_info": {
-                    "model": current_model,
                     "model_type": model_type,
+                    "model": settings.MODEL_CONFIGS.get(model_type, {}).get("model", settings.MODEL_NAME),
                     "langchain": True
                 }
             }

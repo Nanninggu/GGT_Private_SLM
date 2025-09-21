@@ -141,24 +141,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # Navigation buttons
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col1:
-        if st.button("🏠 메인으로", key="back_to_main", use_container_width=True):
-            st.session_state.current_page = "main"
-            st.rerun()
-    
-    with col2:
-        st.markdown("""
-        <div class="breadcrumb" style="text-align: center; margin: 0;">
-            <strong>시스템 설정</strong>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        if st.button("🔄 새로고침", key="refresh_page", use_container_width=True):
-            st.rerun()
+    # Navigation section removed - clean top layout
 
     # Page header
     st.markdown("""
@@ -230,7 +213,8 @@ def render_vector_db_management(chat_controller):
         col_title, col_refresh = st.columns([4, 1])
         
         with col_title:
-            st.markdown("#### 📚 컬렉션 목록")
+            st.markdown("#### 📚 내 컬렉션 목록")
+            st.caption("💡 각 사용자는 자신만의 개인 컬렉션을 관리할 수 있습니다")
         
         with col_refresh:
             # 새로고침 버튼 클릭 처리
@@ -258,15 +242,27 @@ def render_vector_db_management(chat_controller):
             for idx, (name, collection) in enumerate(unique_collections.items()):
                 doc_count = collection.get("document_count", 0)
                 is_current = name == current_collection
+                user_id = collection.get("user_id")
+                is_shared = user_id is None
                 
                 with st.container():
                     col_name, col_count, col_actions = st.columns([3, 1, 2])
                     
                     with col_name:
                         if is_current:
-                            st.markdown(f"**{name}** (현재 활성) 🟢")
+                            if is_shared:
+                                st.markdown(f"**{name}** (현재 활성) 🟢 🌐")
+                                st.caption("공유 컬렉션")
+                            else:
+                                st.markdown(f"**{name}** (현재 활성) 🟢 👤")
+                                st.caption("개인 컬렉션")
                         else:
-                            st.markdown(f"**{name}**")
+                            if is_shared:
+                                st.markdown(f"**{name}** 🌐")
+                                st.caption("공유 컬렉션")
+                            else:
+                                st.markdown(f"**{name}** 👤")
+                                st.caption("개인 컬렉션")
                     
                     with col_count:
                         st.markdown(f"📄 {doc_count}개")
@@ -299,6 +295,14 @@ def render_vector_db_management(chat_controller):
         st.markdown("#### ➕ 새 컬렉션 생성")
         
         with st.form("create_collection_form"):
+            # 컬렉션 타입 선택
+            collection_type = st.radio(
+                "컬렉션 타입",
+                ["개인 컬렉션", "공유 컬렉션"],
+                help="개인 컬렉션: 나만 접근 가능\n공유 컬렉션: 모든 사용자가 접근 가능",
+                key="collection_type_input"
+            )
+            
             collection_name = st.text_input(
                 "컬렉션 이름",
                 placeholder="예: my_documents",
@@ -312,6 +316,12 @@ def render_vector_db_management(chat_controller):
                 key="collection_description_input"
             )
             
+            # 컬렉션 타입에 따른 안내 메시지
+            if collection_type == "개인 컬렉션":
+                st.info("👤 **개인 컬렉션**: 나만 접근할 수 있는 개인 전용 컬렉션입니다.")
+            else:
+                st.warning("🌐 **공유 컬렉션**: 모든 사용자가 접근할 수 있는 공유 컬렉션입니다.")
+            
             if st.form_submit_button("컬렉션 생성", type="primary"):
                 if collection_name and collection_name.strip():
                     # Validate collection name
@@ -319,10 +329,18 @@ def render_vector_db_management(chat_controller):
                         st.error("컬렉션 이름은 영문자, 숫자, 한글, 언더스코어(_), 하이픈(-)만 사용할 수 있습니다.")
                     else:
                         try:
-                            response = chat_controller.create_collection(collection_name, description)
+                            # 컬렉션 타입에 따라 다른 API 호출
+                            if collection_type == "개인 컬렉션":
+                                response = chat_controller.create_collection(collection_name, description)
+                                collection_type_icon = "👤"
+                                collection_type_text = "개인"
+                            else:  # 공유 컬렉션
+                                response = chat_controller.create_shared_collection(collection_name, description)
+                                collection_type_icon = "🌐"
+                                collection_type_text = "공유"
                             
                             if response.get("success", False):
-                                st.success(f"✅ 컬렉션 '{collection_name}'이 정상 생성되었습니다.")
+                                st.success(f"✅ {collection_type_text} 컬렉션 '{collection_name}'이 정상 생성되었습니다. {collection_type_icon}")
                                 # 컬렉션 데이터 새로고침
                                 if hasattr(chat_controller, '_collections_cache'):
                                     delattr(chat_controller, '_collections_cache')
@@ -331,16 +349,16 @@ def render_vector_db_management(chat_controller):
                             else:
                                 error_msg = response.get('error', '알 수 없는 오류')
                                 if "already exists" in error_msg:
-                                    st.success(f"✅ 컬렉션 '{collection_name}'이 정상 생성되었습니다.")
+                                    st.success(f"✅ {collection_type_text} 컬렉션 '{collection_name}'이 정상 생성되었습니다. {collection_type_icon}")
                                     # 컬렉션 데이터 새로고침
                                     if hasattr(chat_controller, '_collections_cache'):
                                         delattr(chat_controller, '_collections_cache')
                                     collections_response = chat_controller.get_collections_response()
                                     st.session_state.collections_data = collections_response
                                 else:
-                                    st.error(f"컬렉션 생성에 실패했습니다: {error_msg}")
+                                    st.error(f"{collection_type_text} 컬렉션 생성에 실패했습니다: {error_msg}")
                         except Exception as e:
-                            st.error(f"❌ 컬렉션 생성 중 오류가 발생했습니다: {str(e)}")
+                            st.error(f"❌ {collection_type_text} 컬렉션 생성 중 오류가 발생했습니다: {str(e)}")
                 else:
                     st.error("컬렉션 이름을 입력해주세요.")
         
@@ -349,6 +367,65 @@ def render_vector_db_management(chat_controller):
         st.markdown("#### ✏️ 컬렉션 수정")
         
         if unique_collections:
+            # 컬렉션 타입 변경 (중복 제거된 컬렉션 사용)
+            type_change_collections = [c for c in unique_collections.values() if c["name"] not in ["documents", "langchain_documents"]]
+            if type_change_collections:
+                with st.form("change_collection_type_form"):
+                    st.markdown("**🔄 컬렉션 타입 변경**")
+                    
+                    selected_collection = st.selectbox(
+                        "타입을 변경할 컬렉션",
+                        [c["name"] for c in type_change_collections],
+                        key="type_change_collection"
+                    )
+                    
+                    # 현재 컬렉션의 타입 확인
+                    current_collection_info = next((c for c in type_change_collections if c["name"] == selected_collection), None)
+                    current_type = "공유" if current_collection_info and current_collection_info.get("user_id") is None else "개인"
+                    
+                    st.info(f"현재 타입: **{current_type} 컬렉션** {'🌐' if current_type == '공유' else '👤'}")
+                    
+                    new_type = st.radio(
+                        "새 타입 선택",
+                        ["개인 컬렉션", "공유 컬렉션"],
+                        help="개인 컬렉션: 나만 접근 가능\n공유 컬렉션: 모든 사용자가 접근 가능",
+                        key="new_collection_type"
+                    )
+                    
+                    # 타입 변경 안내 메시지
+                    if new_type == "개인 컬렉션" and current_type == "공유":
+                        st.warning("⚠️ **공유 → 개인**: 모든 사용자가 접근할 수 없게 됩니다.")
+                    elif new_type == "공유 컬렉션" and current_type == "개인":
+                        st.warning("⚠️ **개인 → 공유**: 모든 사용자가 접근할 수 있게 됩니다.")
+                    elif new_type == current_type:
+                        st.info("현재와 동일한 타입입니다.")
+                    
+                    if st.form_submit_button("타입 변경", type="primary"):
+                        if new_type != current_type:
+                            try:
+                                # API 호출을 위한 타입 변환
+                                api_type = "personal" if new_type == "개인 컬렉션" else "shared"
+                                
+                                response = chat_controller.change_collection_type(selected_collection, api_type)
+                                
+                                if response.get("success", False):
+                                    new_type_icon = "👤" if new_type == "개인 컬렉션" else "🌐"
+                                    st.success(f"✅ 컬렉션 '{selected_collection}'이 {new_type}으로 변경되었습니다. {new_type_icon}")
+                                    # 컬렉션 데이터 새로고침
+                                    if hasattr(chat_controller, '_collections_cache'):
+                                        delattr(chat_controller, '_collections_cache')
+                                    collections_response = chat_controller.get_collections_response()
+                                    st.session_state.collections_data = collections_response
+                                else:
+                                    error_msg = response.get('error', '알 수 없는 오류')
+                                    st.error(f"컬렉션 타입 변경에 실패했습니다: {error_msg}")
+                            except Exception as e:
+                                st.error(f"❌ 컬렉션 타입 변경 중 오류가 발생했습니다: {str(e)}")
+                        else:
+                            st.info("현재와 동일한 타입입니다. 변경할 필요가 없습니다.")
+                
+                st.markdown("---")
+            
             # 컬렉션 이름 변경 (중복 제거된 컬렉션 사용)
             rename_collections = [c for c in unique_collections.values() if c["name"] not in ["documents", "langchain_documents"]]
             if rename_collections:

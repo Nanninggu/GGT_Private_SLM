@@ -248,8 +248,8 @@ class LangChainVectorService:
             logger.error(f"Failed to get document count: {e}")
             raise
     
-    async def get_collections(self) -> List[Dict[str, Any]]:
-        """Get list of available collections (tables) in vector database"""
+    async def get_collections(self, user_id: str = None) -> List[Dict[str, Any]]:
+        """Get list of available collections for a specific user"""
         try:
             # Ensure database service is initialized
             if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
@@ -260,13 +260,14 @@ class LangChainVectorService:
             async with session:
                 collections = []
                 
-                # Always include the default 'langchain_documents' collection
+                # Always include the default 'langchain_documents' collection (shared)
                 default_collection = {
                     "id": "default",
                     "name": "langchain_documents",
                     "metadata": {},
                     "created_at": None,
-                    "document_count": 0
+                    "document_count": 0,
+                    "user_id": None  # Shared collection
                 }
                 
                 # Count documents in default collection (all documents)
@@ -279,15 +280,28 @@ class LangChainVectorService:
                 # Add default collection
                 collections.append(default_collection)
                 
-                # Get collections from langchain_pg_collection table
-                result = await session.execute(text("""
-                    SELECT 
-                        uuid,
-                        name,
-                        cmetadata
-                    FROM langchain_pg_collection 
-                    ORDER BY name
-                """))
+                # Get collections from langchain_pg_collection table with user filter
+                if user_id:
+                    result = await session.execute(text("""
+                        SELECT 
+                            uuid,
+                            name,
+                            cmetadata,
+                            user_id
+                        FROM langchain_pg_collection 
+                        WHERE user_id = :user_id OR user_id IS NULL
+                        ORDER BY name
+                    """), {"user_id": user_id})
+                else:
+                    result = await session.execute(text("""
+                        SELECT 
+                            uuid,
+                            name,
+                            cmetadata,
+                            user_id
+                        FROM langchain_pg_collection 
+                        ORDER BY name
+                    """))
                 
                 for row in result:
                     collection = {
@@ -295,7 +309,8 @@ class LangChainVectorService:
                         "name": row.name,
                         "metadata": row.cmetadata or {},
                         "created_at": None,
-                        "document_count": 0
+                        "document_count": 0,
+                        "user_id": row.user_id
                     }
                     
                     # Count documents in this collection
@@ -308,7 +323,7 @@ class LangChainVectorService:
                     collection["document_count"] = doc_count_result.scalar() or 0
                     collections.append(collection)
                 
-                logger.info(f"Found {len(collections)} collections")
+                logger.info(f"Found {len(collections)} collections for user {user_id}")
                 return collections
                 
         except Exception as e:
@@ -420,8 +435,8 @@ class LangChainVectorService:
             logger.error(f"Failed to get collection info: {e}")
             raise
     
-    async def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
-        """Create a new collection"""
+    async def create_collection(self, collection_name: str, description: str = "", user_id: str = None) -> Dict[str, Any]:
+        """Create a new collection for a specific user"""
         try:
             if not collection_name or collection_name.strip() == "":
                 raise ValueError("Collection name cannot be empty")
@@ -431,25 +446,26 @@ class LangChainVectorService:
                 logger.info("Database not initialized, initializing...")
                 await db_service.initialize()
             
-            # Check if collection already exists
-            existing_collections = await self.get_collections()
+            # Check if collection already exists for this user
+            existing_collections = await self.get_collections(user_id)
             for collection in existing_collections:
                 if collection["name"] == collection_name:
                     raise ValueError(f"Collection '{collection_name}' already exists")
             
-            # Create collection in langchain_pg_collection table
+            # Create collection in langchain_pg_collection table with user_id
             collection_uuid = str(uuid.uuid4())
             async with db_service.get_session() as session:
                 result = await session.execute(
                     text("""
-                        INSERT INTO langchain_pg_collection (uuid, name, cmetadata)
-                        VALUES (:uuid, :name, :metadata)
-                        RETURNING uuid, name, cmetadata
+                        INSERT INTO langchain_pg_collection (uuid, name, cmetadata, user_id)
+                        VALUES (:uuid, :name, :metadata, :user_id)
+                        RETURNING uuid, name, cmetadata, user_id
                     """),
                     {
                         "uuid": collection_uuid,
                         "name": collection_name,
-                        "metadata": json.dumps({"description": description, "created_by": "user"})
+                        "metadata": json.dumps({"description": description, "created_by": user_id or "system"}),
+                        "user_id": user_id
                     }
                 )
                 row = result.fetchone()
@@ -583,6 +599,45 @@ class LangChainVectorService:
                 
         except Exception as e:
             logger.error(f"Failed to rename collection from '{old_name}' to '{new_name}': {e}")
+            raise
+    
+    async def change_collection_type(self, collection_name: str, new_user_id: str = None) -> Dict[str, Any]:
+        """Change collection type between personal and shared"""
+        try:
+            if collection_name == "langchain_documents":
+                raise ValueError("Cannot change type of the default 'langchain_documents' collection")
+            
+            # Ensure database service is initialized
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.info("Database not initialized, initializing...")
+                await db_service.initialize()
+            
+            async with db_service.get_session() as session:
+                # Update collection user_id
+                result = await session.execute(text("""
+                    UPDATE langchain_pg_collection 
+                    SET user_id = :new_user_id 
+                    WHERE name = :collection_name
+                """), {"new_user_id": new_user_id, "collection_name": collection_name})
+                
+                if result.rowcount == 0:
+                    raise ValueError(f"Collection '{collection_name}' not found")
+                
+                await session.commit()
+                
+                type_text = "개인" if new_user_id else "공유"
+                logger.info(f"Collection '{collection_name}' changed to {type_text} collection")
+                
+                return {
+                    "success": True,
+                    "message": f"Collection '{collection_name}' changed to {type_text} collection",
+                    "collection_name": collection_name,
+                    "user_id": new_user_id,
+                    "type": type_text
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to change collection type: {e}")
             raise
     
     async def set_collection(self, collection_name: str) -> bool:

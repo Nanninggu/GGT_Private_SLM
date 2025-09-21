@@ -62,6 +62,9 @@ class ChatController:
                     "fallback_used": assistant_msg.accuracy.fallback_used
                 }
             
+            # Get model info from metadata
+            model_info = assistant_msg.metadata.get("model_info", {}) if assistant_msg.metadata else {}
+            
             return {
                 "success": True,
                 "user_message": {
@@ -75,7 +78,8 @@ class ChatController:
                     "timestamp": assistant_msg.timestamp.isoformat(),
                     "sources": sources_data,
                     "accuracy": accuracy_data,
-                    "metadata": assistant_msg.metadata
+                    "metadata": assistant_msg.metadata,
+                    "model_info": model_info
                 }
             }
         except Exception as e:

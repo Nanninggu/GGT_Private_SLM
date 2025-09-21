@@ -90,6 +90,47 @@ class LangChainVectorService:
             logger.error(f"Failed to add document: {e}")
             raise
     
+    async def search_similar_optimized(self, query: str, top_k: int = None, similarity_threshold: float = None) -> List[Dict[str, Any]]:
+        """최적화된 벡터 검색 with 캐싱 (LangChain 버전)"""
+        try:
+            if not self.documents:
+                raise Exception("Vector store not initialized")
+            
+            # Use settings defaults if not provided
+            top_k = top_k or settings.VECTOR_DB_TOP_K
+            similarity_threshold = similarity_threshold or settings.VECTOR_DB_SIMILARITY_THRESHOLD
+            
+            # Search similar documents
+            docs_with_scores = await self.documents.asimilarity_search_with_score(
+                query=query,
+                k=top_k
+            )
+            
+            # Filter by similarity threshold and format results
+            documents = []
+            for doc, score in docs_with_scores:
+                # Convert distance to similarity (1 - distance for cosine similarity)
+                # For cosine distance, score ranges from 0 to 2, where 0 means identical
+                similarity = 1 - (score / 2)
+                
+                # Ensure similarity is between 0 and 1
+                similarity = max(0.0, min(1.0, similarity))
+                
+                if similarity >= similarity_threshold:
+                    documents.append({
+                        "id": doc.metadata.get("id", ""),
+                        "content": doc.page_content,
+                        "metadata": doc.metadata,
+                        "similarity": similarity
+                    })
+            
+            logger.info(f"Found {len(documents)} similar documents (LangChain optimized)")
+            return documents
+            
+        except Exception as e:
+            logger.error(f"Failed to search similar documents (LangChain optimized): {e}")
+            raise
+
     async def search_similar(self, query: str, top_k: int = None, similarity_threshold: float = None) -> List[Dict[str, Any]]:
         """Search for similar documents using LangChain"""
         try:

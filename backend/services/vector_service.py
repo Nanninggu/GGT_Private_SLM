@@ -12,6 +12,7 @@ import json
 
 from backend.config.settings import settings
 from backend.services.database_service import db_service
+from backend.services.cache_service import cache_service
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +35,15 @@ class VectorService:
             raise
     
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding using Ollama"""
+        """Generate embedding using Ollama with caching"""
         try:
+            # Check cache first
+            cached_embedding = await cache_service.get_embedding(text)
+            if cached_embedding:
+                logger.debug("Embedding cache hit")
+                return cached_embedding
+            
+            # Generate new embedding
             response = await self.ollama_client.post(
                 "/api/embeddings",
                 json={
@@ -48,11 +56,74 @@ class VectorService:
             )
             response.raise_for_status()
             data = response.json()
-            return data["embedding"]
+            embedding = data["embedding"]
+            
+            # Cache the embedding
+            await cache_service.set_embedding(text, embedding)
+            
+            return embedding
         except Exception as e:
             logger.error(f"Failed to generate embedding: {e}")
             raise
     
+    async def add_documents_batch(self, documents: List[Dict[str, Any]], 
+                                batch_size: int = None) -> List[str]:
+        """배치 처리로 문서 추가 최적화"""
+        try:
+            batch_size = batch_size or settings.VECTOR_DB_BATCH_SIZE
+            doc_ids = []
+            
+            # Ensure service is initialized
+            if not self.ollama_client:
+                await self.initialize()
+            
+            # Process documents in batches
+            for i in range(0, len(documents), batch_size):
+                batch = documents[i:i + batch_size]
+                logger.info(f"Processing batch {i//batch_size + 1}/{(len(documents) + batch_size - 1)//batch_size}")
+                
+                # Generate embeddings for batch
+                embeddings = await asyncio.gather(*[
+                    self.generate_embedding(doc['content']) for doc in batch
+                ])
+                
+                # Batch insert to database
+                if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                    await db_service.initialize()
+                
+                async with db_service.get_session() as session:
+                    values = []
+                    for doc, embedding in zip(batch, embeddings):
+                        values.append({
+                            "content": doc['content'],
+                            "metadata": json.dumps(doc.get('metadata', {})),
+                            "embedding": str(embedding),
+                            "collection_name": doc.get('collection_name')
+                        })
+                    
+                    # Use executemany for batch insert
+                    result = await session.execute(
+                        text("""
+                            INSERT INTO documents (content, metadata, embedding, collection_name)
+                            VALUES (:content, :metadata, :embedding, :collection_name)
+                            RETURNING id
+                        """),
+                        values
+                    )
+                    
+                    batch_ids = [str(row.id) for row in result]
+                    doc_ids.extend(batch_ids)
+                    await session.commit()
+                    
+                    logger.info(f"Added {len(batch_ids)} documents in batch")
+            
+            logger.info(f"Successfully added {len(doc_ids)} documents in batches")
+            return doc_ids
+                
+        except Exception as e:
+            logger.error(f"Failed to add documents in batch: {e}")
+            raise
+
     async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None) -> str:
         """Add document to vector database"""
         try:
@@ -95,6 +166,74 @@ class VectorService:
             logger.error(f"Failed to add document: {e}")
             raise
     
+    async def search_similar_optimized(self, query: str, top_k: int = None, similarity_threshold: float = None) -> List[Dict[str, Any]]:
+        """최적화된 벡터 검색 with PostgreSQL 설정 적용 및 캐싱"""
+        try:
+            # Use settings defaults if not provided
+            top_k = top_k or settings.VECTOR_DB_TOP_K
+            similarity_threshold = similarity_threshold or settings.VECTOR_DB_SIMILARITY_THRESHOLD
+            
+            # Check cache first
+            cached_results = await cache_service.get_search_results(query, top_k, similarity_threshold)
+            if cached_results:
+                logger.debug("Search cache hit")
+                return cached_results
+            
+            # Generate query embedding with caching
+            query_embedding = await self.generate_embedding(query)
+            
+            # Search similar documents with optimization
+            if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                logger.error(f"Database not initialized. async_session_factory: {getattr(db_service, 'async_session_factory', 'Not found')}")
+                # Try to initialize database service
+                await db_service.initialize()
+                if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
+                    logger.warning("Database not available, returning empty results")
+                    return []
+            
+            async with db_service.get_session() as session:
+                # Apply PostgreSQL optimization settings
+                await session.execute(text(f"SET hnsw.ef_search = {settings.VECTOR_DB_EF_SEARCH}"))
+                
+                # 최적화된 벡터 검색 쿼리 - 인덱스 힌트와 성능 최적화
+                result = await session.execute(
+                    text("""
+                        SELECT 
+                            id,
+                            content,
+                            metadata,
+                            1 - (embedding <=> :query_embedding) as similarity
+                        FROM documents
+                        WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
+                        ORDER BY embedding <=> :query_embedding
+                        LIMIT :top_k
+                    """),
+                    {
+                        "query_embedding": str(query_embedding),
+                        "similarity_threshold": similarity_threshold,
+                        "top_k": top_k
+                    }
+                )
+                
+                documents = []
+                for row in result:
+                    documents.append({
+                        "id": str(row.id),
+                        "content": row.content,
+                        "metadata": row.metadata if isinstance(row.metadata, dict) else (json.loads(row.metadata) if row.metadata else {}),
+                        "similarity": float(row.similarity)
+                    })
+                
+                # Cache the results
+                await cache_service.set_search_results(query, top_k, similarity_threshold, documents)
+                
+                logger.info(f"Found {len(documents)} similar documents (optimized)")
+                return documents
+                
+        except Exception as e:
+            logger.error(f"Failed to search similar documents (optimized): {e}")
+            raise
+
     async def search_similar(self, query: str, top_k: int = None, similarity_threshold: float = None) -> List[Dict[str, Any]]:
         """Search for similar documents using vector similarity"""
         try:
@@ -139,7 +278,7 @@ class VectorService:
                     documents.append({
                         "id": str(row.id),
                         "content": row.content,
-                        "metadata": json.loads(row.metadata) if row.metadata else {},
+                        "metadata": row.metadata if isinstance(row.metadata, dict) else (json.loads(row.metadata) if row.metadata else {}),
                         "similarity": float(row.similarity)
                     })
                 
@@ -367,7 +506,7 @@ class VectorService:
                     documents.append({
                         "id": str(row.id),
                         "content": row.content,
-                        "metadata": json.loads(row.metadata) if row.metadata else {},
+                        "metadata": row.metadata if isinstance(row.metadata, dict) else (json.loads(row.metadata) if row.metadata else {}),
                         "collection_name": row.collection_name,
                         "similarity": float(row.similarity)
                     })
@@ -434,6 +573,70 @@ class VectorService:
                 "created_at": None,
                 "document_count": 0
             }]
+    
+    async def get_performance_stats(self) -> Dict[str, Any]:
+        """벡터 DB 성능 통계 및 캐시 통계"""
+        try:
+            # Get cache statistics
+            cache_stats = cache_service.get_cache_stats()
+            
+            # Get database statistics
+            db_stats = {}
+            if hasattr(db_service, 'async_session_factory') and db_service.async_session_factory:
+                async with db_service.get_session() as session:
+                    # Document count
+                    result = await session.execute(text("SELECT COUNT(*) FROM documents"))
+                    db_stats["total_documents"] = result.scalar()
+                    
+                    # Index usage statistics
+                    index_result = await session.execute(text("""
+                        SELECT 
+                            schemaname,
+                            tablename,
+                            indexname,
+                            idx_scan,
+                            idx_tup_read,
+                            idx_tup_fetch
+                        FROM pg_stat_user_indexes 
+                        WHERE indexname LIKE '%embedding%' OR indexname LIKE '%documents%'
+                    """))
+                    db_stats["index_usage"] = [dict(row._mapping) for row in index_result]
+                    
+                    # Table size information
+                    size_result = await session.execute(text("""
+                        SELECT 
+                            pg_size_pretty(pg_total_relation_size('documents')) as table_size,
+                            pg_size_pretty(pg_relation_size('documents_embedding_idx')) as index_size
+                    """))
+                    size_row = size_result.fetchone()
+                    if size_row:
+                        db_stats["table_size"] = size_row.table_size
+                        db_stats["index_size"] = size_row.index_size
+            
+            return {
+                "cache_stats": cache_stats,
+                "database_stats": db_stats,
+                "vector_settings": {
+                    "ef_construction": settings.VECTOR_DB_EF_CONSTRUCTION,
+                    "ef_search": settings.VECTOR_DB_EF_SEARCH,
+                    "m": settings.VECTOR_DB_M,
+                    "similarity_threshold": settings.VECTOR_DB_SIMILARITY_THRESHOLD,
+                    "top_k": settings.VECTOR_DB_TOP_K,
+                    "batch_size": settings.VECTOR_DB_BATCH_SIZE
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get performance stats: {e}")
+            return {"error": str(e)}
+    
+    async def preload_common_embeddings(self, texts: List[str]):
+        """일반적인 텍스트들의 임베딩 사전 로드"""
+        try:
+            await cache_service.preload_embeddings(texts, self.generate_embedding)
+            logger.info(f"Preloaded {len(texts)} common embeddings")
+        except Exception as e:
+            logger.error(f"Failed to preload embeddings: {e}")
     
     async def close(self):
         """Close vector service"""

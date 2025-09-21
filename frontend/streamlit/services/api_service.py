@@ -27,12 +27,13 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def send_message(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None) -> Dict[str, Any]:
+    def send_message(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None, model_type: str = "fast") -> Dict[str, Any]:
         """Send a message to the chatbot"""
         try:
             payload = {
                 "message": message,
-                "use_rag": use_rag
+                "use_rag": use_rag,
+                "model_type": model_type
             }
             if session_id:
                 payload["session_id"] = session_id
@@ -122,12 +123,13 @@ class APIService:
         except:
             return False
     
-    def send_message_langchain(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None) -> Dict[str, Any]:
+    def send_message_langchain(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None, model_type: str = "fast") -> Dict[str, Any]:
         """Send a message using LangChain RAG"""
         try:
             payload = {
                 "message": message,
-                "use_rag": use_rag
+                "use_rag": use_rag,
+                "model_type": model_type
             }
             if session_id:
                 payload["session_id"] = session_id
@@ -283,7 +285,7 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
-    def send_message_stream(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None) -> Generator[Dict[str, Any], None, None]:
+    def send_message_stream(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None, model_type: str = "fast") -> Generator[Dict[str, Any], None, None]:
         """Send a message to the chatbot with streaming response"""
         max_retries = 3
         retry_count = 0
@@ -296,7 +298,8 @@ class APIService:
                 
                 payload = {
                     "message": message,
-                    "session_id": session_id
+                    "session_id": session_id,
+                    "model_type": model_type
                 }
                 if rag_mode:
                     payload["rag_mode"] = rag_mode

@@ -12,9 +12,74 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.pdf_service import PDFService
+from services.api_service import APIService
 
 class ChatComponents:
     """Reusable chat UI components"""
+
+    @staticmethod
+    def render_model_selection():
+        """Render model selection UI"""
+        # Initialize model type in session state
+        if "selected_model_type" not in st.session_state:
+            st.session_state.selected_model_type = "fast"
+        
+        # Model configurations
+        model_configs = {
+            "fast": {
+                "name": "⚡ 빠른 응답",
+                "description": "exaone3.5:2.4b (1.6GB, Q4_K_M)",
+                "use_case": "일반적인 질문, 빠른 응답이 필요한 경우",
+                "color": "#10B981"
+            },
+            "quality": {
+                "name": "🎯 고품질 응답",
+                "description": "exaone3.5:2.4b-instruct-q8_0 (2.8GB, Q8_0)",
+                "use_case": "정확한 답변이 필요한 경우, 창의적 작업",
+                "color": "#3B82F6"
+            },
+            "complex": {
+                "name": "🧠 복잡한 작업",
+                "description": "exaone3.5:7.8b (4.8GB, 7.8B 파라미터)",
+                "use_case": "복잡한 추론, 창의적 글쓰기, 전문적 분석",
+                "color": "#8B5CF6"
+            }
+        }
+        
+        # Create model selection UI
+        st.markdown("""
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #e9ecef;">
+            <h4 style="margin: 0 0 1rem 0; color: #495057;">🤖 AI 모델 선택</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Model selection tabs
+        selected_model = st.radio(
+            "모델 유형을 선택하세요:",
+            options=list(model_configs.keys()),
+            format_func=lambda x: model_configs[x]["name"],
+            horizontal=True,
+            key="model_selection_radio"
+        )
+        
+        # Update session state
+        st.session_state.selected_model_type = selected_model
+        
+        # Display selected model info
+        selected_config = model_configs[selected_model]
+        
+        # Display selected model info (full width)
+        st.markdown(f"""
+        <div style="background: {selected_config['color']}15; padding: 1.5rem; border-radius: 8px; 
+                    border-left: 4px solid {selected_config['color']}; margin: 0.5rem 0;">
+            <h5 style="margin: 0 0 0.5rem 0; color: {selected_config['color']};">{selected_config['name']}</h5>
+            <p style="margin: 0 0 0.5rem 0; color: #6c757d; font-size: 0.9rem;">{selected_config['description']}</p>
+            <p style="margin: 0; color: #495057; font-size: 0.85rem;">{selected_config['use_case']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Add info about model switching
+        st.info("💡 **팁**: 모델을 변경하면 다음 메시지부터 새로운 모델이 적용됩니다. 현재 대화의 맥락은 유지됩니다.")
 
     @staticmethod
     def render_message(message: Dict[str, Any]):
@@ -120,7 +185,22 @@ class ChatComponents:
                 col1, col2 = st.columns([1, 0.08])
                 with col1:
                     if timestamp:
-                        st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
+                        # Display model information based on selected model type
+                        model_info = ""
+                        selected_model_type = st.session_state.get("selected_model_type", "fast")
+                        
+                        # Get model name from settings based on selected type
+                        if selected_model_type == "fast":
+                            model_name = "exaone3.5:2.4b"
+                        elif selected_model_type == "quality":
+                            model_name = "exaone3.5:2.4b-instruct-q8_0"
+                        elif selected_model_type == "complex":
+                            model_name = "exaone3.5:7.8b"
+                        else:
+                            model_name = "exaone3.5:2.4b"
+                        
+                        model_info = f" • {model_name}"
+                        st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}{model_info}")
                 with col2:
                     # PDF and Markdown export buttons
                     col2_1, col2_2 = st.columns(2)

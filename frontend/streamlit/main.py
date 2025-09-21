@@ -447,8 +447,14 @@ def main():
         ChatComponents.render_message(message)
     
 
-    # Add spacing before chat input
+    # Model selection section
     st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
+    
+    # Model selection UI
+    ChatComponents.render_model_selection()
+    
+    # Add spacing before chat input
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     
     # Chat input
     if prompt := st.chat_input("HAI-Chat에게 메시지를 입력하세요..."):
@@ -470,22 +476,25 @@ def main():
                 # Check if streaming is enabled
                 streaming_enabled = st.session_state.get("streaming_enabled", True)
                 
+                # Get selected model type
+                selected_model_type = st.session_state.get("selected_model_type", "fast")
+                
                 if streaming_enabled:
                     # Use streaming response with enhanced loading
                     rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
                     with st.spinner(f"🤖 {rag_mode}로 답변을 생성하고 있습니다..."):
-                        response = chat_controller.send_message_stream(prompt)
+                        response = chat_controller.send_message_stream(prompt, selected_model_type)
                 else:
                     # Use regular response with enhanced spinner
-                    rag_mode = st.session_state.get("rag_mode", "기본 RAG")
+                    rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
                     
                     # Generate response with spinner
                     if rag_mode == "LangChain RAG":
                         with st.spinner("🤖 LangChain RAG로 답변을 생성하고 있습니다..."):
-                            response = chat_controller.send_message_langchain(prompt)
+                            response = chat_controller.send_message_langchain(prompt, selected_model_type)
                     else:
                         with st.spinner("🤖 RAG로 답변을 생성하고 있습니다..."):
-                            response = chat_controller.send_message(prompt)
+                            response = chat_controller.send_message(prompt, selected_model_type)
                 
                 if response:
                     # Handle different response types

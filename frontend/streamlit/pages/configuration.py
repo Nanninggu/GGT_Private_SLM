@@ -855,5 +855,6 @@ def render_connection_status(chat_controller):
     
     st.markdown('</div>', unsafe_allow_html=True)
 
+
 if __name__ == "__main__":
     main()

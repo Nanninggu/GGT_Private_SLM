@@ -28,14 +28,26 @@ class DatabaseService:
     async def initialize(self):
         """Initialize database connection and create tables"""
         try:
-            # Create async engine for PostgreSQL
+            # Create async engine for PostgreSQL with vector optimization
             self.async_engine = create_async_engine(
                 settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
                 pool_size=settings.DB_POOL_MAX_SIZE,
-                max_overflow=0,
+                max_overflow=5,  # 추가 연결 허용
                 pool_pre_ping=True,
                 pool_recycle=settings.DB_POOL_MAX_LIFETIME,
-                echo=settings.LOG_LEVEL_APP == "DEBUG"
+                pool_timeout=30,  # 연결 타임아웃
+                echo=settings.LOG_LEVEL_APP == "DEBUG",
+                # 벡터 연산 최적화를 위한 연결 인수
+                connect_args={
+                    "server_settings": {
+                        "jit": "off",  # JIT 컴파일 비활성화 (벡터 연산에 불리)
+                        "enable_seqscan": "off" if settings.VECTOR_DB_ENABLE_SEQSCAN else "on",
+                        "random_page_cost": str(settings.VECTOR_DB_RANDOM_PAGE_COST),
+                        "effective_cache_size": settings.VECTOR_DB_EFFECTIVE_CACHE_SIZE,
+                        "max_parallel_workers_per_gather": "4",
+                        "parallel_tuple_cost": "0.1"
+                    }
+                }
             )
             
             # Create session factory
@@ -105,6 +117,9 @@ class DatabaseService:
                     ON documents (collection_name)
                 """))
                 
+                # Create additional performance indexes
+                await self._create_performance_indexes(conn)
+                
                 logger.info("Database tables created successfully")
             else:
                 # Check if existing table has correct schema
@@ -157,6 +172,9 @@ class DatabaseService:
                             ON documents (collection_name)
                         """))
                         
+                        # Create additional performance indexes
+                        await self._create_performance_indexes(conn)
+                        
                         logger.info("Added collection_name column to existing documents table")
                     else:
                         logger.info("Using existing documents table with correct schema")
@@ -185,6 +203,47 @@ class DatabaseService:
             """))
             
             logger.info("Database tables created successfully")
+    
+    async def _create_performance_indexes(self, conn):
+        """Create additional performance indexes for vector database optimization"""
+        try:
+            # 1. GIN index for JSONB metadata for faster filtering
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS documents_metadata_gin_idx 
+                ON documents USING gin (metadata)
+            """))
+            
+            # 2. Composite index for collection + embedding search (HNSW)
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS documents_collection_embedding_idx 
+                ON documents USING hnsw (embedding vector_cosine_ops)
+                WITH (m = 16, ef_construction = 200)
+            """))
+            
+            # 3. Index for created_at for time-based queries
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS documents_created_at_idx 
+                ON documents (created_at DESC)
+            """))
+            
+            # 4. Index for content length for filtering by document size
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS documents_content_length_idx 
+                ON documents (length(content))
+            """))
+            
+            # 5. Partial index for active documents (non-null collection_name)
+            await conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS documents_active_collection_idx 
+                ON documents (collection_name, created_at DESC) 
+                WHERE collection_name IS NOT NULL
+            """))
+            
+            logger.info("Performance indexes created successfully")
+            
+        except Exception as e:
+            logger.warning(f"Failed to create some performance indexes: {e}")
+            # Continue execution even if some indexes fail
     
     def get_session(self):
         """Get database session context manager"""

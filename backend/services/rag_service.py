@@ -52,8 +52,8 @@ class RagService:
         try:
             max_docs = max_docs or settings.RAG_CONTEXT_MAX_DOCS
             
-            # Search similar documents
-            documents = await self.vector_service.search_similar(
+            # Search similar documents using optimized method
+            documents = await self.vector_service.search_similar_optimized(
                 query=query,
                 top_k=settings.RAG_VECTOR_SEARCH_TOP_K,
                 similarity_threshold=settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD

@@ -29,10 +29,32 @@ class OllamaService:
             logger.error(f"Failed to initialize Ollama service: {e}")
             raise
     
-    async def chat_completion(self, messages: List[Dict[str, str]], model: str = None) -> Dict[str, Any]:
-        """Generate chat completion using Ollama"""
+    async def chat_completion(self, messages: List[Dict[str, str]], model: str = None, model_type: str = "fast") -> Dict[str, Any]:
+        """Generate chat completion using Ollama with model selection"""
         try:
-            model = model or settings.MODEL_NAME
+            # Get model configuration based on model_type
+            if model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[model_type]
+                model = model or model_config["model"]
+                options = {
+                    "num_ctx": model_config["num_ctx"],
+                    "num_predict": model_config["num_predict"],
+                    "temperature": model_config["temperature"],
+                    "top_p": model_config["top_p"],
+                    "top_k": model_config["top_k"],
+                    "repeat_penalty": model_config["repeat_penalty"]
+                }
+            else:
+                # Fallback to default settings
+                model = model or settings.MODEL_NAME
+                options = {
+                    "num_ctx": settings.OLLAMA_CHAT_NUM_CTX,
+                    "num_predict": settings.OLLAMA_CHAT_NUM_PREDICT,
+                    "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
+                    "top_p": settings.OLLAMA_CHAT_TOP_P,
+                    "top_k": settings.OLLAMA_CHAT_TOP_K,
+                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
+                }
             
             # Convert messages to prompt
             prompt = self._messages_to_prompt(messages)
@@ -42,14 +64,7 @@ class OllamaService:
                 json={
                     "model": model,
                     "prompt": prompt,
-                    "options": {
-                        "num_ctx": settings.OLLAMA_CHAT_NUM_CTX,
-                        "num_predict": settings.OLLAMA_CHAT_NUM_PREDICT,
-                        "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
-                        "top_p": settings.OLLAMA_CHAT_TOP_P,
-                        "top_k": settings.OLLAMA_CHAT_TOP_K,
-                        "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
-                    }
+                    "options": options
                 }
             )
             response.raise_for_status()
@@ -71,10 +86,32 @@ class OllamaService:
             logger.error(f"Failed to generate chat completion: {e}")
             raise
     
-    async def generate(self, prompt: str, model: str = None) -> str:
-        """Generate text completion using Ollama"""
+    async def generate(self, prompt: str, model: str = None, model_type: str = "fast") -> str:
+        """Generate text completion using Ollama with model selection"""
         try:
-            model = model or settings.MODEL_NAME
+            # Get model configuration based on model_type
+            if model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[model_type]
+                model = model or model_config["model"]
+                options = {
+                    "num_ctx": model_config["num_ctx"],
+                    "num_predict": model_config["num_predict"],
+                    "temperature": model_config["temperature"],
+                    "top_p": model_config["top_p"],
+                    "top_k": model_config["top_k"],
+                    "repeat_penalty": model_config["repeat_penalty"]
+                }
+            else:
+                # Fallback to default settings
+                model = model or settings.MODEL_NAME
+                options = {
+                    "num_ctx": settings.OLLAMA_CHAT_NUM_CTX,
+                    "num_predict": settings.OLLAMA_CHAT_NUM_PREDICT,
+                    "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
+                    "top_p": settings.OLLAMA_CHAT_TOP_P,
+                    "top_k": settings.OLLAMA_CHAT_TOP_K,
+                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
+                }
             
             response = await self.client.post(
                 "/api/generate",
@@ -82,14 +119,7 @@ class OllamaService:
                     "model": model,
                     "prompt": prompt,
                     "stream": False,
-                    "options": {
-                        "num_ctx": settings.OLLAMA_CHAT_NUM_CTX,
-                        "num_predict": settings.OLLAMA_CHAT_NUM_PREDICT,
-                        "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
-                        "top_p": settings.OLLAMA_CHAT_TOP_P,
-                        "top_k": settings.OLLAMA_CHAT_TOP_K,
-                        "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
-                    }
+                    "options": options
                 }
             )
             response.raise_for_status()
@@ -163,10 +193,32 @@ class OllamaService:
         
         return "\n\n".join(prompt_parts) + "\n\nAssistant:"
     
-    async def generate_stream(self, prompt: str, model: str = None) -> AsyncGenerator[str, None]:
-        """Generate streaming text completion using Ollama"""
+    async def generate_stream(self, prompt: str, model: str = None, model_type: str = "fast") -> AsyncGenerator[str, None]:
+        """Generate streaming text completion using Ollama with model selection"""
         try:
-            model = model or settings.MODEL_NAME
+            # Get model configuration based on model_type
+            if model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[model_type]
+                model = model or model_config["model"]
+                options = {
+                    "num_ctx": model_config["num_ctx"],
+                    "num_predict": model_config["num_predict"],
+                    "temperature": model_config["temperature"],
+                    "top_p": model_config["top_p"],
+                    "top_k": model_config["top_k"],
+                    "repeat_penalty": model_config["repeat_penalty"]
+                }
+            else:
+                # Fallback to default settings
+                model = model or settings.MODEL_NAME
+                options = {
+                    "num_ctx": settings.OLLAMA_CHAT_NUM_CTX,
+                    "num_predict": settings.OLLAMA_CHAT_NUM_PREDICT,
+                    "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
+                    "top_p": settings.OLLAMA_CHAT_TOP_P,
+                    "top_k": settings.OLLAMA_CHAT_TOP_K,
+                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
+                }
             
             async with self.client.stream(
                 "POST",
@@ -175,14 +227,7 @@ class OllamaService:
                     "model": model,
                     "prompt": prompt,
                     "stream": True,
-                    "options": {
-                        "num_ctx": settings.OLLAMA_CHAT_NUM_CTX,
-                        "num_predict": settings.OLLAMA_CHAT_NUM_PREDICT,
-                        "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
-                        "top_p": settings.OLLAMA_CHAT_TOP_P,
-                        "top_k": settings.OLLAMA_CHAT_TOP_K,
-                        "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
-                    }
+                    "options": options
                 }
             ) as response:
                 response.raise_for_status()
@@ -202,20 +247,71 @@ class OllamaService:
             logger.error(f"Failed to generate streaming text: {e}")
             yield f"❌ 오류가 발생했습니다: {str(e)}"
     
-    async def chat_completion_stream(self, messages: List[Dict[str, str]], model: str = None) -> AsyncGenerator[str, None]:
-        """Generate streaming chat completion using Ollama"""
+    async def chat_completion_stream(self, messages: List[Dict[str, str]], model: str = None, model_type: str = "fast") -> AsyncGenerator[str, None]:
+        """Generate streaming chat completion using Ollama with model selection"""
         try:
-            model = model or settings.MODEL_NAME
+            # Get model configuration based on model_type
+            if model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[model_type]
+                model = model or model_config["model"]
+            else:
+                model = model or settings.MODEL_NAME
             
             # Convert messages to prompt
             prompt = self._messages_to_prompt(messages)
             
-            async for chunk in self.generate_stream(prompt, model):
+            async for chunk in self.generate_stream(prompt, model, model_type):
                 yield chunk
                 
         except Exception as e:
             logger.error(f"Failed to generate streaming chat completion: {e}")
             yield f"❌ 오류가 발생했습니다: {str(e)}"
+    
+    async def get_available_models(self) -> List[Dict[str, Any]]:
+        """Get available models with their configurations"""
+        try:
+            models = await self.list_models()
+            available_models = []
+            
+            for model_info in models:
+                model_name = model_info.get("name", "")
+                if "exaone3.5" in model_name:
+                    # Determine model type based on name
+                    if "q8_0" in model_name:
+                        model_type = "quality"
+                    elif "7.8b" in model_name:
+                        model_type = "complex"
+                    else:
+                        model_type = "fast"
+                    
+                    # Get configuration
+                    if model_type in settings.MODEL_CONFIGS:
+                        config = settings.MODEL_CONFIGS[model_type]
+                        available_models.append({
+                            "name": model_name,
+                            "type": model_type,
+                            "description": config["description"],
+                            "use_case": config["use_case"],
+                            "size": model_info.get("size", "Unknown"),
+                            "modified": model_info.get("modified", "Unknown")
+                        })
+            
+            return available_models
+            
+        except Exception as e:
+            logger.error(f"Failed to get available models: {e}")
+            return []
+    
+    async def get_model_config(self, model_type: str) -> Dict[str, Any]:
+        """Get configuration for a specific model type"""
+        if model_type in settings.MODEL_CONFIGS:
+            return settings.MODEL_CONFIGS[model_type]
+        else:
+            return {
+                "model": settings.MODEL_NAME,
+                "description": "기본 모델",
+                "use_case": "일반적인 사용"
+            }
     
     async def close(self):
         """Close Ollama service"""

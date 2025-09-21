@@ -35,7 +35,7 @@ class ChatController:
         st.session_state.backend_connected = connected
         return connected
 
-    def send_message(self, message: str) -> Optional[Dict[str, Any]]:
+    def send_message(self, message: str, model_type: str = "fast") -> Optional[Dict[str, Any]]:
         """Send a message and return response with context"""
         if not message.strip():
             st.error("메시지를 입력해주세요.")
@@ -48,7 +48,7 @@ class ChatController:
 
         # Send message to backend with RAG mode
         rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
-        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode)
+        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode, model_type=model_type)
 
         if response["success"]:
             return {
@@ -145,7 +145,7 @@ class ChatController:
         
         return response
     
-    def send_message_langchain(self, message: str, use_rag: bool = True) -> Optional[Dict[str, Any]]:
+    def send_message_langchain(self, message: str, model_type: str = "fast", use_rag: bool = True) -> Optional[Dict[str, Any]]:
         """Send a message using LangChain RAG"""
         if not message.strip():
             st.error("메시지를 입력해주세요.")
@@ -158,7 +158,7 @@ class ChatController:
 
         # Send message to backend using LangChain
         rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
-        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag, rag_mode)
+        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag, rag_mode, model_type)
 
         if response["success"]:
             return {
@@ -170,7 +170,7 @@ class ChatController:
             st.error(f"LangChain RAG 오류가 발생했습니다: {response.get('error', '알 수 없는 오류')}")
             return None
     
-    def send_message_stream(self, message: str, use_rag: bool = True) -> Optional[str]:
+    def send_message_stream(self, message: str, model_type: str = "fast", use_rag: bool = True) -> Optional[str]:
         """Send message with streaming response"""
         if not message.strip():
             st.error("메시지를 입력해주세요.")
@@ -189,7 +189,7 @@ class ChatController:
         
         try:
             # Get streaming response
-            rag_mode = st.session_state.get("rag_mode", "기본 RAG")
+            rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
             use_langchain = (rag_mode == "LangChain RAG")
             
             # Show initial status with enhanced styling
@@ -214,7 +214,7 @@ class ChatController:
                 </style>
                 """, unsafe_allow_html=True)
             
-            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode):
+            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode, model_type):
                 if "error" in chunk:
                     if chunk.get("retrying", False):
                         # Show retry status

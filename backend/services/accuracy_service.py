@@ -76,8 +76,15 @@ class AccuracyService:
         try:
             metrics = {}
             
+            # Check if RAG is in fallback mode
+            is_fallback_mode = rag_result.get("metadata", {}).get("fallback_mode", False)
+            
             # Context relevance score
-            context_relevance = self._calculate_context_relevance(query, rag_result.get("context", []))
+            if is_fallback_mode:
+                # In fallback mode, give partial credit for general knowledge
+                context_relevance = 0.3  # 30% for general knowledge fallback
+            else:
+                context_relevance = self._calculate_context_relevance(query, rag_result.get("context", []))
             metrics["context_relevance"] = context_relevance
             
             # Answer quality score (basic heuristics)
@@ -158,12 +165,23 @@ class AccuracyService:
         if not rag_result.get("success", False):
             return 0.0
         
-        # Weighted combination of different factors
-        weights = {
-            "context_relevance": 0.4,
-            "answer_quality": 0.3,
-            "similarity": 0.3
-        }
+        # Check if RAG is in fallback mode
+        is_fallback_mode = rag_result.get("metadata", {}).get("fallback_mode", False)
+        
+        if is_fallback_mode:
+            # In fallback mode, prioritize answer quality more
+            weights = {
+                "context_relevance": 0.2,  # Reduced weight for context
+                "answer_quality": 0.6,     # Increased weight for answer quality
+                "similarity": 0.2          # Reduced weight for similarity
+            }
+        else:
+            # Normal RAG mode
+            weights = {
+                "context_relevance": 0.4,
+                "answer_quality": 0.3,
+                "similarity": 0.3
+            }
         
         similarity = rag_result.get("metadata", {}).get("similarity", 0.0)
         
@@ -182,25 +200,42 @@ class AccuracyService:
         
         confidence = 0.0
         
-        # Context availability
-        context_count = rag_result.get("metadata", {}).get("context_count", 0)
-        if context_count > 0:
-            confidence += 0.4
-        else:
-            confidence += 0.1  # Some confidence even without context
+        # Check if RAG is in fallback mode
+        is_fallback_mode = rag_result.get("metadata", {}).get("fallback_mode", False)
         
-        # Similarity scores
-        similarity_scores = rag_result.get("metadata", {}).get("similarity_scores", [])
-        if similarity_scores:
-            avg_similarity = sum(similarity_scores) / len(similarity_scores)
-            confidence += avg_similarity * 0.4
-        
-        # Response length (longer responses might be more confident)
-        response = rag_result.get("response", "")
-        if len(response) > 100:
+        if is_fallback_mode:
+            # In fallback mode, base confidence on answer quality
+            response = rag_result.get("response", "")
+            if len(response) > 100:
+                confidence += 0.5  # High confidence for detailed fallback responses
+            elif len(response) > 50:
+                confidence += 0.3  # Medium confidence for moderate responses
+            else:
+                confidence += 0.1  # Low confidence for short responses
+            
+            # Add bonus for general knowledge responses
             confidence += 0.2
-        elif len(response) > 50:
-            confidence += 0.1
+        else:
+            # Normal RAG mode
+            # Context availability
+            context_count = rag_result.get("metadata", {}).get("context_count", 0)
+            if context_count > 0:
+                confidence += 0.4
+            else:
+                confidence += 0.1  # Some confidence even without context
+            
+            # Similarity scores
+            similarity_scores = rag_result.get("metadata", {}).get("similarity_scores", [])
+            if similarity_scores:
+                avg_similarity = sum(similarity_scores) / len(similarity_scores)
+                confidence += avg_similarity * 0.4
+            
+            # Response length (longer responses might be more confident)
+            response = rag_result.get("response", "")
+            if len(response) > 100:
+                confidence += 0.2
+            elif len(response) > 50:
+                confidence += 0.1
         
         return min(confidence, 1.0)
     

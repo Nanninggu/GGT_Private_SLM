@@ -5,7 +5,8 @@ import asyncio
 from typing import Dict, Any
 
 from backend.services.chat_service import ChatService
-from backend.models.chat import ChatMessage
+from backend.services.ollama_service import ollama_service
+from backend.models.chat import ChatMessage, MessageRole
 
 
 class ChatController:
@@ -29,8 +30,8 @@ class ChatController:
                 "error": str(e)
             }
 
-    async def send_message(self, session_id: str, message: str) -> Dict[str, Any]:
-        """Send a message and get response"""
+    async def send_message(self, session_id: str, message: str, model_type: str = "fast") -> Dict[str, Any]:
+        """Send a message and get response with model selection"""
         try:
             if not message.strip():
                 return {
@@ -38,7 +39,7 @@ class ChatController:
                     "error": "Message cannot be empty"
                 }
 
-            user_msg, assistant_msg = await self.chat_service.send_message(session_id, message)
+            user_msg, assistant_msg = await self.chat_service.send_message(session_id, message, model_type)
 
             # Format sources for response
             sources_data = []
@@ -131,6 +132,34 @@ class ChatController:
             return {
                 "success": True,
                 "messages": formatted_messages
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    async def get_available_models(self) -> Dict[str, Any]:
+        """Get available models for selection"""
+        try:
+            models = await ollama_service.get_available_models()
+            return {
+                "success": True,
+                "models": models
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    async def get_model_config(self, model_type: str) -> Dict[str, Any]:
+        """Get configuration for a specific model type"""
+        try:
+            config = await ollama_service.get_model_config(model_type)
+            return {
+                "success": True,
+                "config": config
             }
         except Exception as e:
             return {

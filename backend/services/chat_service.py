@@ -50,7 +50,7 @@ class ChatService:
                 logger.error(f"Failed to initialize RAG service: {e}")
                 raise
 
-    async def send_message(self, session_id: str, user_message: str) -> tuple[ChatMessage, ChatMessage]:
+    async def send_message(self, session_id: str, user_message: str, model_type: str = "fast") -> tuple[ChatMessage, ChatMessage]:
         """Send a message and get AI response using RAG"""
         # Initialize RAG service if not already done
         if not self._initialized:
@@ -84,8 +84,8 @@ class ChatService:
         
         try:
             # Use LangChain RAG service to generate response
-            logger.info(f"Processing LangChain RAG query: {user_message[:100]}...")
-            rag_result = await self.rag_service.rag_query(user_message, session_id)
+            logger.info(f"Processing LangChain RAG query with model type {model_type}: {user_message[:100]}...")
+            rag_result = await self.rag_service.rag_query(user_message, session_id, model_type)
             
             if rag_result["success"]:
                 # RAG-based response
@@ -140,7 +140,12 @@ class ChatService:
             timestamp=datetime.now(),
             session_id=session_id,
             sources=sources,
-            accuracy=accuracy_info
+            accuracy=accuracy_info,
+            metadata={
+                "model_type": model_type,
+                "model_name": rag_result.get("model_info", {}).get("model", "unknown") if rag_result.get("success") else "unknown",
+                "rag_mode": "LangChain RAG"
+            }
         )
 
         # Add assistant message to session

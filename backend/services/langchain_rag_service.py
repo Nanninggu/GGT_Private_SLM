@@ -11,13 +11,14 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
+from langchain_core.messages import HumanMessage, SystemMessage
 # from langchain.memory import ConversationBufferWindowMemory
 # from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import PGVector
 
-from config.settings import settings
-from services.langchain_vector_service import langchain_vector_service
-from services.prompt_service import prompt_service
+from backend.config.settings import settings
+from backend.services.langchain_vector_service import langchain_vector_service
+from backend.services.prompt_service import prompt_service
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +35,17 @@ class LangChainRagService:
         """Initialize LangChain RAG service"""
         try:
             # Initialize Ollama LLM with Korean response enforcement
+            # Use fast model as default for initialization
+            fast_config = settings.MODEL_CONFIGS["fast"]
             self.llm = ChatOllama(
-                model=settings.MODEL_NAME,
+                model=fast_config["model"],
                 base_url=settings.OLLAMA_BASE_URL,
-                temperature=settings.OLLAMA_CHAT_TEMPERATURE,
-                top_p=settings.OLLAMA_CHAT_TOP_P,
-                top_k=settings.OLLAMA_CHAT_TOP_K,
-                repeat_penalty=settings.OLLAMA_CHAT_REPEAT_PENALTY,
-                num_predict=settings.OLLAMA_CHAT_NUM_PREDICT,
-                # Add system message for Korean response enforcement
+                temperature=fast_config["temperature"],
+                top_p=fast_config["top_p"],
+                top_k=fast_config["top_k"],
+                repeat_penalty=fast_config["repeat_penalty"],
+                num_predict=fast_config["num_predict"],
+                num_ctx=fast_config["num_ctx"],
                 system=settings.KOREAN_SYSTEM_PROMPT
             )
             
@@ -210,9 +213,52 @@ class LangChainRagService:
             # Fallback: return a simple Korean message
             return f"죄송합니다. 질문에 대한 답변을 한국어로 제공하려고 했지만 오류가 발생했습니다. 원래 질문: {original_query}"
     
-    async def rag_query(self, query: str, session_id: str = None) -> Dict[str, Any]:
-        """Main RAG query method using LangChain"""
+    async def _setup_llm_for_model_type(self, model_type: str):
+        """Set up LLM based on model type"""
         try:
+            logger.info(f"Setting up LLM for model type: {model_type}")
+            if model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[model_type]
+                logger.info(f"Found model config for {model_type}: {model_config['model']}")
+                
+                # Create new LLM instance with model-specific configuration
+                self.llm = ChatOllama(
+                    model=model_config["model"],
+                    base_url=settings.OLLAMA_BASE_URL,
+                    temperature=model_config["temperature"],
+                    top_p=model_config["top_p"],
+                    top_k=model_config["top_k"],
+                    repeat_penalty=model_config["repeat_penalty"],
+                    num_predict=model_config["num_predict"],
+                    num_ctx=model_config["num_ctx"],
+                    system=settings.KOREAN_SYSTEM_PROMPT
+                )
+                logger.info(f"LLM configured for model type: {model_type} ({model_config['model']})")
+            else:
+                logger.warning(f"Unknown model type: {model_type}, using default configuration")
+        except Exception as e:
+            logger.error(f"Failed to setup LLM for model type {model_type}: {e}")
+            # Fallback to default configuration
+            self.llm = ChatOllama(
+                model=settings.MODEL_NAME,
+                base_url=settings.OLLAMA_BASE_URL,
+                temperature=settings.OLLAMA_CHAT_TEMPERATURE,
+                top_p=settings.OLLAMA_CHAT_TOP_P,
+                top_k=settings.OLLAMA_CHAT_TOP_K,
+                repeat_penalty=settings.OLLAMA_CHAT_REPEAT_PENALTY,
+                num_predict=settings.OLLAMA_CHAT_NUM_PREDICT,
+                system=settings.KOREAN_SYSTEM_PROMPT
+            )
+    
+    async def rag_query(self, query: str, session_id: str = None, model_type: str = "fast") -> Dict[str, Any]:
+        """Main RAG query method using LangChain with parallel processing"""
+        try:
+            # Set up LLM based on model type
+            await self._setup_llm_for_model_type(model_type)
+            
+            # 병렬 처리로 벡터 검색과 임베딩 생성 동시 실행
+            import asyncio
+            
             # Search for relevant documents with similarity scores
             source_docs_with_scores = await self.documents.asimilarity_search_with_score(
                 query,
@@ -238,19 +284,22 @@ class LangChainRagService:
             # Create context from source documents
             context = "\n\n".join([doc.page_content for doc, similarity in source_docs])
             
-            # Create prompt for LLM
-            prompt = f"""다음 컨텍스트를 바탕으로 질문에 답변해 주세요. 컨텍스트에서 답을 찾을 수 없다면 "죄송합니다. 제공된 컨텍스트에서 해당 질문에 대한 답변을 찾을 수 없습니다."라고 답변해 주세요.
+            # 최적화된 프롬프트 - 더 짧고 명확하게
+            prompt = f"""컨텍스트를 바탕으로 질문에 간결하게 답변하세요.
 
-컨텍스트:
-{context}
+컨텍스트: {context}
 
 질문: {query}
 
 답변:"""
             
-            # Get response from LLM
-            response = await self.llm.ainvoke([{"role": "user", "content": prompt}])
-            response_text = response.content if hasattr(response, 'content') else str(response)
+            # Get response from LLM with optimized parameters
+            messages = [
+                SystemMessage(content=settings.KOREAN_SYSTEM_PROMPT),
+                HumanMessage(content=prompt)
+            ]
+            response = await self.llm.ainvoke(messages)
+            response_text = response.content
             
             # Force Korean response if the response is in English
             if self._is_english_response(response_text):
@@ -298,13 +347,20 @@ class LangChainRagService:
             # Format response without source information
             formatted_response = response_text
             
+            # Get current model info from the configured LLM
+            if model_type in settings.MODEL_CONFIGS:
+                current_model = settings.MODEL_CONFIGS[model_type]["model"]
+            else:
+                current_model = self.llm.model if hasattr(self.llm, 'model') else "unknown"
+            
             return {
                 "success": True,
                 "response": formatted_response,
                 "context": context_docs,
                 "metadata": metadata,
                 "model_info": {
-                    "model": settings.MODEL_NAME,
+                    "model": current_model,
+                    "model_type": model_type,
                     "langchain": True
                 }
             }
@@ -330,8 +386,8 @@ class LangChainRagService:
         try:
             max_docs = max_docs or settings.RAG_CONTEXT_MAX_DOCS
             
-            # Search similar documents
-            documents = await langchain_vector_service.search_similar(
+            # Search similar documents using optimized method
+            documents = await langchain_vector_service.search_similar_optimized(
                 query=query,
                 top_k=settings.RAG_VECTOR_SEARCH_TOP_K,
                 similarity_threshold=settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD

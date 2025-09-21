@@ -45,7 +45,7 @@ def main():
     ChatComponents._inject_accessibility_scripts()
     
     # Create tabs for different demo sections
-    tab1, tab2, tab3 = st.tabs(["📋 신뢰도 표시", "📊 정확도 측정", "🔍 시스템 상태"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📋 신뢰도 표시", "📊 정확도 측정", "🔍 시스템 상태", "🎯 고급 정확도 측정"])
     
     with tab1:
         # Demo explanation
@@ -467,6 +467,443 @@ def main():
                 except Exception as e:
                     st.error(f"시스템 상태 확인 중 오류가 발생했습니다: {str(e)}")
     
+    with tab4:
+        st.markdown("""
+        ## 🎯 고급 정확도 측정
+        
+        RAG 시스템의 정확도를 컬렉션별로 측정하고 분석할 수 있는 고급 기능입니다.
+        
+        ### 🚀 주요 기능:
+        
+        1. **컬렉션별 정확도 측정**
+           - 다양한 컬렉션에서 정확도 비교
+           - 컬렉션 전환 및 실시간 측정
+        
+        2. **단일 질문 정확도 측정**
+           - 개별 질문에 대한 상세 분석
+           - 예상 답변과의 유사도 비교
+        
+        3. **테스트 스위트 실행**
+           - 여러 질문에 대한 종합 테스트
+           - 정확도 분포 및 성능 분석
+        
+        4. **시스템 상태 모니터링**
+           - 실시간 시스템 상태 확인
+           - 문서 데이터베이스 상태 점검
+        """)
+        
+        # Import here to avoid circular imports
+        from controllers.chat_controller import ChatController
+        chat_controller = ChatController()
+        
+        # Create sub-tabs for different accuracy measurement features
+        sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🔍 단일 질문 측정", "🧪 테스트 스위트", "📈 시스템 상태"])
+        
+        with sub_tab1:
+            st.markdown("### 🔍 단일 질문 정확도 측정")
+            st.write("개별 질문에 대한 RAG 시스템의 정확도를 측정합니다.")
+            
+            # Collection selection section
+            st.markdown("#### 📚 컬렉션 선택")
+            
+            # Get current collections
+            collections_response = chat_controller.get_collections_response()
+            if collections_response.get("success", False):
+                collections = collections_response.get("collections", [])
+                current_collection = collections_response.get("current_collection", "documents")
+                
+                # Remove duplicates and create collection options
+                unique_collections = {}
+                for collection in collections:
+                    name = collection.get("name", "Unknown")
+                    if name not in unique_collections:
+                        unique_collections[name] = collection
+                    else:
+                        unique_collections[name]["document_count"] += collection.get("document_count", 0)
+                
+                # Display current collection
+                st.info(f"현재 활성 컬렉션: **{current_collection}** ({unique_collections.get(current_collection, {}).get('document_count', 0)}개 문서)")
+                
+                # Collection selector
+                collection_names = list(unique_collections.keys())
+                selected_collection = st.selectbox(
+                    "측정할 컬렉션 선택:",
+                    collection_names,
+                    index=collection_names.index(current_collection) if current_collection in collection_names else 0,
+                    help="정확도 측정에 사용할 컬렉션을 선택하세요."
+                )
+                
+                # Show collection info
+                if selected_collection in unique_collections:
+                    collection_info = unique_collections[selected_collection]
+                    st.write(f"선택된 컬렉션: **{selected_collection}** ({collection_info.get('document_count', 0)}개 문서)")
+                    
+                    # Switch collection if different from current
+                    if selected_collection != current_collection:
+                        if st.button("🔄 컬렉션 전환", key="switch_collection_for_accuracy"):
+                            try:
+                                switch_response = chat_controller.switch_collection(selected_collection)
+                                if switch_response.get("success", False):
+                                    st.success(f"✅ 컬렉션이 '{selected_collection}'로 전환되었습니다.")
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ 컬렉션 전환 실패: {switch_response.get('error', '알 수 없는 오류')}")
+                            except Exception as e:
+                                st.error(f"❌ 컬렉션 전환 중 오류가 발생했습니다: {str(e)}")
+            else:
+                st.error(f"❌ 컬렉션 목록을 가져올 수 없습니다: {collections_response.get('error', '알 수 없는 오류')}")
+                selected_collection = "documents"  # Fallback to default
+            
+            st.markdown("---")
+            
+            with st.form("single_accuracy_form"):
+                query = st.text_area(
+                    "질문을 입력하세요:",
+                    value="근로기준법에 대해 설명해주세요.",
+                    help="정확도를 측정할 질문을 입력하세요.",
+                    height=100
+                )
+                
+                expected_answer = st.text_area(
+                    "예상 답변 (선택사항):",
+                    value="근로기준법은 근로자의 기본적 권리를 보장하고 근로조건의 기준을 정한 법률입니다.",
+                    help="정확도 비교를 위한 예상 답변을 입력하세요.",
+                    height=100
+                )
+                
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    submitted = st.form_submit_button("정확도 측정", use_container_width=True, type="primary")
+                with col2:
+                    if st.form_submit_button("샘플 질문 사용", use_container_width=True):
+                        query = "머신러닝과 딥러닝의 차이점은 무엇인가요?"
+                        expected_answer = "머신러닝은 데이터로부터 패턴을 학습하는 알고리즘의 총칭이고, 딥러닝은 신경망을 사용하는 머신러닝의 한 분야입니다."
+                
+                if submitted:
+                    if query.strip():
+                        with st.spinner("정확도를 측정하는 중..."):
+                            try:
+                                api_service = APIService()
+                                result = api_service.measure_query_accuracy(query, expected_answer)
+                                
+                                if result.get("success"):
+                                    accuracy_data = result.get("result", {})
+                                    
+                                    # Display success message
+                                    st.success("✅ 정확도 측정이 완료되었습니다!")
+                                    
+                                    # Create columns for main metrics
+                                    col1, col2, col3, col4 = st.columns(4)
+                                    
+                                    with col1:
+                                        overall_accuracy = accuracy_data.get('overall_accuracy', 0)
+                                        st.metric(
+                                            "전체 정확도",
+                                            f"{overall_accuracy:.1%}",
+                                            help="여러 메트릭의 가중 평균"
+                                        )
+                                    
+                                    with col2:
+                                        context_relevance = accuracy_data.get('context_relevance', 0)
+                                        st.metric(
+                                            "컨텍스트 관련성",
+                                            f"{context_relevance:.1%}",
+                                            help="검색된 문서의 관련성"
+                                        )
+                                    
+                                    with col3:
+                                        answer_quality = accuracy_data.get('answer_quality', 0)
+                                        st.metric(
+                                            "답변 품질",
+                                            f"{answer_quality:.1%}",
+                                            help="생성된 답변의 품질"
+                                        )
+                                    
+                                    with col4:
+                                        confidence = accuracy_data.get('confidence', 0)
+                                        st.metric(
+                                            "신뢰도",
+                                            f"{confidence:.1%}",
+                                            help="시스템의 신뢰도"
+                                        )
+                                    
+                                    # Additional metrics section
+                                    st.markdown("### 📈 상세 메트릭")
+                                    
+                                    col1, col2 = st.columns(2)
+                                    
+                                    with col1:
+                                        st.markdown("**응답 정보:**")
+                                        st.write(f"- 응답 시간: {accuracy_data.get('response_time', 0):.2f}초")
+                                        st.write(f"- 컨텍스트 수: {accuracy_data.get('context_count', 0)}개")
+                                        st.write(f"- 평균 유사도: {accuracy_data.get('average_similarity', 0):.3f}")
+                                        st.write(f"- 폴백 모드: {'사용됨' if accuracy_data.get('fallback_mode', False) else '사용 안됨'}")
+                                    
+                                    with col2:
+                                        st.markdown("**시스템 상태:**")
+                                        st.write(f"- 성공 여부: {'성공' if accuracy_data.get('success', False) else '실패'}")
+                                        st.write(f"- 컨텍스트 파일: {len(accuracy_data.get('context_files', []))}개")
+                                        if accuracy_data.get('similarity_scores'):
+                                            st.write(f"- 유사도 점수: {[f'{s:.3f}' for s in accuracy_data['similarity_scores']]}")
+                                    
+                                    # Display generated response
+                                    if accuracy_data.get('response'):
+                                        st.markdown("### 💬 생성된 답변")
+                                        st.info(f"측정 컬렉션: **{selected_collection}**")
+                                        st.text_area("답변 내용", accuracy_data['response'], height=200, disabled=True)
+                                    
+                                    # Expected answer comparison
+                                    if expected_answer and accuracy_data.get('similarity_to_expected'):
+                                        st.markdown("### 🎯 예상 답변과의 유사도")
+                                        similarity_to_expected = accuracy_data.get('similarity_to_expected', 0)
+                                        st.metric(
+                                            "유사도",
+                                            f"{similarity_to_expected:.1%}",
+                                            help="생성된 답변과 예상 답변 간의 유사도"
+                                        )
+                                    
+                                else:
+                                    st.error(f"❌ 정확도 측정 실패: {result.get('error', '알 수 없는 오류')}")
+                            
+                            except Exception as e:
+                                st.error(f"❌ 정확도 측정 중 오류가 발생했습니다: {str(e)}")
+                    else:
+                        st.warning("⚠️ 질문을 입력해주세요.")
+        
+        with sub_tab2:
+            st.markdown("### 🧪 정확도 테스트 스위트")
+            st.write("여러 질문에 대한 종합적인 정확도 테스트를 실행합니다.")
+            
+            # Collection selection for test suite
+            st.markdown("#### 📚 테스트 스위트 컬렉션 선택")
+            
+            # Get current collections for test suite
+            collections_response = chat_controller.get_collections_response()
+            if collections_response.get("success", False):
+                collections = collections_response.get("collections", [])
+                current_collection = collections_response.get("current_collection", "documents")
+                
+                # Remove duplicates and create collection options
+                unique_collections = {}
+                for collection in collections:
+                    name = collection.get("name", "Unknown")
+                    if name not in unique_collections:
+                        unique_collections[name] = collection
+                    else:
+                        unique_collections[name]["document_count"] += collection.get("document_count", 0)
+                
+                # Display current collection
+                st.info(f"현재 활성 컬렉션: **{current_collection}** ({unique_collections.get(current_collection, {}).get('document_count', 0)}개 문서)")
+                
+                # Collection selector for test suite
+                collection_names = list(unique_collections.keys())
+                test_selected_collection = st.selectbox(
+                    "테스트 스위트에 사용할 컬렉션 선택:",
+                    collection_names,
+                    index=collection_names.index(current_collection) if current_collection in collection_names else 0,
+                    help="테스트 스위트 실행에 사용할 컬렉션을 선택하세요.",
+                    key="test_suite_collection_selector"
+                )
+                
+                # Show collection info
+                if test_selected_collection in unique_collections:
+                    collection_info = unique_collections[test_selected_collection]
+                    st.write(f"선택된 컬렉션: **{test_selected_collection}** ({collection_info.get('document_count', 0)}개 문서)")
+                    
+                    # Switch collection if different from current
+                    if test_selected_collection != current_collection:
+                        if st.button("🔄 테스트용 컬렉션 전환", key="switch_collection_for_test"):
+                            try:
+                                switch_response = chat_controller.switch_collection(test_selected_collection)
+                                if switch_response.get("success", False):
+                                    st.success(f"✅ 컬렉션이 '{test_selected_collection}'로 전환되었습니다.")
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ 컬렉션 전환 실패: {switch_response.get('error', '알 수 없는 오류')}")
+                            except Exception as e:
+                                st.error(f"❌ 컬렉션 전환 중 오류가 발생했습니다: {str(e)}")
+            else:
+                st.error(f"❌ 컬렉션 목록을 가져올 수 없습니다: {collections_response.get('error', '알 수 없는 오류')}")
+                test_selected_collection = "documents"  # Fallback to default
+            
+            st.markdown("---")
+            
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.markdown("**테스트 스위트 기능:**")
+                st.write("• 샘플 질문 세트로 자동 테스트")
+                st.write("• 전체 시스템 성능 평가")
+                st.write("• 정확도 분포 분석")
+                st.write("• 평균 응답 시간 측정")
+            
+            with col2:
+                if st.button("샘플 테스트 실행", use_container_width=True, type="primary"):
+                    with st.spinner(f"샘플 테스트를 실행하는 중... (컬렉션: {test_selected_collection})"):
+                        try:
+                            # Ensure the selected collection is active before running test
+                            if test_selected_collection != current_collection:
+                                switch_response = chat_controller.switch_collection(test_selected_collection)
+                                if not switch_response.get("success", False):
+                                    st.error(f"❌ 컬렉션 전환 실패: {switch_response.get('error', '알 수 없는 오류')}")
+                                    return
+                            
+                            api_service = APIService()
+                            result = api_service.run_accuracy_test_suite()
+                            
+                            if result.get("success"):
+                                test_data = result.get("result", {})
+                                aggregate = test_data.get("aggregate_metrics", {})
+                                
+                                st.success("✅ 테스트 스위트가 완료되었습니다!")
+                                
+                                # Display aggregate metrics
+                                st.markdown("### 📊 전체 테스트 결과")
+                                
+                                col1, col2, col3, col4 = st.columns(4)
+                                
+                                with col1:
+                                    st.metric(
+                                        "성공률",
+                                        f"{aggregate.get('success_rate', 0):.1%}",
+                                        help="성공한 테스트의 비율"
+                                    )
+                                
+                                with col2:
+                                    st.metric(
+                                        "평균 정확도",
+                                        f"{aggregate.get('average_accuracy', 0):.1%}",
+                                        help="전체 테스트의 평균 정확도"
+                                    )
+                                
+                                with col3:
+                                    st.metric(
+                                        "평균 응답 시간",
+                                        f"{aggregate.get('average_response_time', 0):.2f}초",
+                                        help="평균 응답 시간"
+                                    )
+                                
+                                with col4:
+                                    st.metric(
+                                        "평균 신뢰도",
+                                        f"{aggregate.get('average_confidence', 0):.1%}",
+                                        help="평균 신뢰도"
+                                    )
+                                
+                                # Accuracy distribution
+                                st.markdown("### 📈 정확도 분포")
+                                distribution = aggregate.get('accuracy_distribution', {})
+                                
+                                col1, col2, col3 = st.columns(3)
+                                
+                                with col1:
+                                    st.metric("높음 (80% 이상)", distribution.get('high', 0))
+                                
+                                with col2:
+                                    st.metric("보통 (50-79%)", distribution.get('medium', 0))
+                                
+                                with col3:
+                                    st.metric("낮음 (50% 미만)", distribution.get('low', 0))
+                                
+                                # Test details
+                                st.markdown("### 📋 개별 테스트 결과")
+                                st.info(f"테스트 실행 컬렉션: **{test_selected_collection}**")
+                                test_results = test_data.get("test_suite_results", [])
+                                
+                                for i, test_result in enumerate(test_results, 1):
+                                    with st.expander(f"테스트 {i}: {test_result.get('query', '')[:50]}..."):
+                                        col1, col2 = st.columns(2)
+                                        
+                                        with col1:
+                                            st.write(f"**정확도:** {test_result.get('overall_accuracy', 0):.1%}")
+                                            st.write(f"**응답 시간:** {test_result.get('response_time', 0):.2f}초")
+                                            st.write(f"**성공 여부:** {'성공' if test_result.get('success', False) else '실패'}")
+                                        
+                                        with col2:
+                                            st.write(f"**컨텍스트 관련성:** {test_result.get('context_relevance', 0):.1%}")
+                                            st.write(f"**답변 품질:** {test_result.get('answer_quality', 0):.1%}")
+                                            st.write(f"**신뢰도:** {test_result.get('confidence', 0):.1%}")
+                                        
+                                        if test_result.get('response'):
+                                            st.text_area("생성된 답변", test_result['response'], height=100, disabled=True)
+                            
+                            else:
+                                st.error(f"❌ 테스트 스위트 실행 실패: {result.get('error', '알 수 없는 오류')}")
+                        
+                        except Exception as e:
+                            st.error(f"❌ 테스트 스위트 실행 중 오류가 발생했습니다: {str(e)}")
+        
+        with sub_tab3:
+            st.markdown("### 📈 시스템 상태 모니터링")
+            st.write("RAG 시스템의 전반적인 상태와 성능을 모니터링합니다.")
+            
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.markdown("**모니터링 항목:**")
+                st.write("• 문서 데이터베이스 상태")
+                st.write("• 시스템 성능 지표")
+                st.write("• 정확도 및 신뢰도 통계")
+                st.write("• 서비스 연결 상태")
+            
+            with col2:
+                if st.button("시스템 상태 확인", use_container_width=True, type="primary"):
+                    with st.spinner("시스템 상태를 확인하는 중..."):
+                        try:
+                            api_service = APIService()
+                            result = api_service.get_system_health()
+                            
+                            if result.get("success"):
+                                health_data = result.get("result", {})
+                                
+                                st.success("✅ 시스템 상태 확인이 완료되었습니다!")
+                                
+                                # Document count
+                                st.markdown("### 📚 문서 데이터베이스")
+                                doc_count = health_data.get("document_count", 0)
+                                st.metric("총 문서 수", doc_count)
+                                
+                                # Collections info
+                                collections = health_data.get("collections", [])
+                                if collections:
+                                    st.markdown("#### 컬렉션 정보")
+                                    for collection in collections:
+                                        st.write(f"- **{collection.get('name', 'Unknown')}**: {collection.get('document_count', 0)}개 문서")
+                                
+                                # Test query result
+                                test_result = health_data.get("test_query_result", {})
+                                if test_result:
+                                    st.markdown("### 🧪 테스트 쿼리 결과")
+                                    
+                                    col1, col2, col3 = st.columns(3)
+                                    
+                                    with col1:
+                                        st.metric(
+                                            "응답 시간",
+                                            f"{test_result.get('response_time', 0):.2f}초"
+                                        )
+                                    
+                                    with col2:
+                                        st.metric(
+                                            "정확도",
+                                            f"{test_result.get('overall_accuracy', 0):.1%}"
+                                        )
+                                    
+                                    with col3:
+                                        st.metric(
+                                            "신뢰도",
+                                            f"{test_result.get('confidence', 0):.1%}"
+                                        )
+                                    
+                                    if test_result.get('response'):
+                                        st.text_area("테스트 응답", test_result['response'], height=100, disabled=True)
+                            
+                            else:
+                                st.error(f"❌ 시스템 상태 확인 실패: {result.get('error', '알 수 없는 오류')}")
+                        
+                        except Exception as e:
+                            st.error(f"❌ 시스템 상태 확인 중 오류가 발생했습니다: {str(e)}")
+
     # Back to main page
     st.markdown("---")
     if st.button("🏠 메인 페이지로 돌아가기", use_container_width=True):

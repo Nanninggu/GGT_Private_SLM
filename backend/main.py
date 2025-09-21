@@ -21,21 +21,23 @@ from contextlib import asynccontextmanager
 # Add parent directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from controllers.chat_controller import ChatController
-from controllers.auth_controller import auth_controller
-from controllers.web_search_controller import router as web_search_router
-from controllers.accuracy_controller import AccuracyController
-from config.settings import settings
-from services.database_service import db_service
-from services.vector_service import vector_service
-from services.ollama_service import ollama_service
-from services.rag_service import rag_service
-from services.search_service import search_service
-from services.langchain_rag_service import langchain_rag_service
-from services.prompt_service import prompt_service
-from services.file_processing_service import FileProcessingService
-from services.markdown_service import MarkdownService
-from services.accuracy_service import accuracy_service
+from backend.controllers.chat_controller import ChatController
+from backend.controllers.auth_controller import auth_controller
+from backend.controllers.web_search_controller import router as web_search_router
+from backend.controllers.accuracy_controller import AccuracyController
+from backend.controllers.performance_controller import PerformanceController
+from backend.config.settings import settings
+from backend.services.database_service import db_service
+from backend.services.vector_service import vector_service
+from backend.services.ollama_service import ollama_service
+from backend.services.rag_service import rag_service
+from backend.services.search_service import search_service
+from backend.services.langchain_rag_service import langchain_rag_service
+from backend.services.prompt_service import prompt_service
+from backend.services.file_processing_service import FileProcessingService
+from backend.services.markdown_service import MarkdownService
+from backend.services.accuracy_service import accuracy_service
+from backend.services.cache_service import cache_service
 
 # Configure logging
 logging.basicConfig(
@@ -49,6 +51,7 @@ class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     rag_mode: Optional[str] = "LangChain RAG"
+    model_type: Optional[str] = "fast"
 
 class CollectionRequest(BaseModel):
     collection_name: str
@@ -123,6 +126,7 @@ app.add_middleware(
 # Initialize controller and services
 chat_controller = ChatController()
 accuracy_controller = AccuracyController()
+performance_controller = PerformanceController()
 markdown_service = MarkdownService()
 
 # Include routers
@@ -135,6 +139,7 @@ class MessageRequest(BaseModel):
     use_rag: bool = True  # RAG is enabled by default
     use_search: bool = False
     rag_mode: Optional[str] = "LangChain RAG"  # RAG mode selection
+    model_type: Optional[str] = "fast"  # Model type selection
 
 class SessionRequest(BaseModel):
     session_id: str
@@ -218,6 +223,196 @@ async def health_check():
             }
         )
 
+# Performance monitoring endpoints
+@app.get("/api/performance/vector-stats")
+async def get_vector_performance_stats():
+    """Get vector database performance statistics"""
+    return await performance_controller.get_vector_performance_stats()
+
+@app.get("/api/performance/cache-stats")
+async def get_cache_stats():
+    """Get cache performance statistics"""
+    return await performance_controller.get_cache_stats()
+
+@app.post("/api/performance/clear-cache")
+async def clear_cache():
+    """Clear all caches"""
+    return await performance_controller.clear_cache()
+
+@app.post("/api/performance/preload-embeddings")
+async def preload_embeddings(request: dict):
+    """Preload common embeddings for better performance"""
+    texts = request.get("texts", [])
+    return await performance_controller.preload_embeddings(texts)
+
+@app.get("/api/performance/database-stats")
+async def get_database_stats():
+    """Get database performance statistics"""
+    return await performance_controller.get_database_stats()
+
+@app.post("/api/performance/optimize-database")
+async def optimize_database():
+    """Run database optimization tasks"""
+    return await performance_controller.optimize_database()
+
+@app.get("/api/performance/real-time")
+async def get_real_time_performance():
+    """Get real-time performance metrics"""
+    try:
+        # Get all performance metrics
+        cache_stats = cache_service.get_cache_stats()
+        vector_stats = await performance_controller.get_vector_performance_stats()
+        db_stats = await performance_controller.get_database_stats()
+        
+        # Calculate overall performance score
+        cache_score = cache_stats.get("chat_hit_rate", 0)
+        vector_score = 100 if vector_stats.get("success") else 0
+        db_score = 100 if db_stats.get("success") else 0
+        
+        overall_score = (cache_score + vector_score + db_score) / 3
+        
+        return {
+            "success": True,
+            "data": {
+                "overall_score": round(overall_score, 2),
+                "cache_performance": {
+                    "hit_rate": cache_stats.get("chat_hit_rate", 0),
+                    "total_requests": cache_stats.get("total_requests", 0),
+                    "cache_size": cache_stats.get("total_cache_size", 0)
+                },
+                "vector_performance": vector_stats.get("data", {}),
+                "database_performance": db_stats.get("data", {}),
+                "timestamp": datetime.now().isoformat(),
+                "status": "healthy" if overall_score > 70 else "needs_attention"
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/api/performance/benchmark-chat")
+async def benchmark_chat(request: dict):
+    """Benchmark chat response performance with detailed metrics"""
+    import time
+    
+    query = request.get("query", "안녕하세요")
+    rag_mode = request.get("rag_mode", "LangChain RAG")
+    iterations = request.get("iterations", 3)
+    
+    try:
+        # Clear cache for fair comparison
+        cache_service.clear_cache()
+        
+        # Test chat response times with detailed metrics
+        response_times = []
+        cache_hit_rates = []
+        
+        for i in range(iterations):
+            start_time = time.time()
+            
+            # Simulate chat request
+            if rag_mode == "기본 RAG":
+                result = await rag_service.rag_query(query, "benchmark_session")
+            else:
+                result = await langchain_rag_service.rag_query(query, "benchmark_session")
+            
+            response_time = time.time() - start_time
+            response_times.append(response_time)
+            
+            # Check cache hit rate
+            cache_stats = cache_service.get_cache_stats()
+            cache_hit_rates.append(cache_stats.get("chat_hit_rate", 0))
+        
+        # Calculate statistics
+        avg_time = sum(response_times) / len(response_times)
+        min_time = min(response_times)
+        max_time = max(response_times)
+        avg_cache_hit_rate = sum(cache_hit_rates) / len(cache_hit_rates)
+        
+        # Performance grade
+        if avg_time < 2.0:
+            performance_grade = "A+ (Excellent)"
+        elif avg_time < 5.0:
+            performance_grade = "A (Very Good)"
+        elif avg_time < 10.0:
+            performance_grade = "B (Good)"
+        elif avg_time < 20.0:
+            performance_grade = "C (Fair)"
+        else:
+            performance_grade = "D (Needs Improvement)"
+        
+        return {
+            "success": True,
+            "data": {
+                "query": query,
+                "rag_mode": rag_mode,
+                "iterations": iterations,
+                "avg_response_time": round(avg_time, 4),
+                "min_response_time": round(min_time, 4),
+                "max_response_time": round(max_time, 4),
+                "avg_cache_hit_rate": round(avg_cache_hit_rate, 2),
+                "performance_grade": performance_grade,
+                "response_times": [round(t, 4) for t in response_times],
+                "cache_hit_rates": [round(r, 2) for r in cache_hit_rates]
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/api/performance/benchmark-search")
+async def benchmark_search(request: dict):
+    """Benchmark search performance with and without optimization"""
+    import time
+    
+    query = request.get("query", "test query")
+    iterations = request.get("iterations", 5)
+    
+    try:
+        # Clear cache for fair comparison
+        cache_service.clear_cache()
+        
+        # Test optimized search
+        optimized_times = []
+        for i in range(iterations):
+            start_time = time.time()
+            await vector_service.search_similar_optimized(query)
+            optimized_times.append(time.time() - start_time)
+        
+        # Test regular search
+        regular_times = []
+        for i in range(iterations):
+            start_time = time.time()
+            await vector_service.search_similar(query)
+            regular_times.append(time.time() - start_time)
+        
+        # Calculate statistics
+        avg_optimized = sum(optimized_times) / len(optimized_times)
+        avg_regular = sum(regular_times) / len(regular_times)
+        improvement = ((avg_regular - avg_optimized) / avg_regular) * 100
+        
+        return {
+            "success": True,
+            "data": {
+                "query": query,
+                "iterations": iterations,
+                "optimized_avg_time": round(avg_optimized, 4),
+                "regular_avg_time": round(avg_regular, 4),
+                "improvement_percentage": round(improvement, 2),
+                "optimized_times": [round(t, 4) for t in optimized_times],
+                "regular_times": [round(t, 4) for t in regular_times]
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @app.get("/info")
 async def info():
     """Application info endpoint"""
@@ -266,6 +461,36 @@ async def send_message(request: MessageRequest):
     rag_mode = request.rag_mode or "LangChain RAG"
     
     try:
+        # Check cache first for faster response
+        cached_response = await cache_service.get_chat_response(request.message, rag_mode)
+        if cached_response:
+            logger.info(f"Cache hit for {rag_mode} query: {request.message[:100]}...")
+            
+            # Add model info to cached response
+            model_name = settings.MODEL_NAME
+            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 답변 방식: 캐시된 답변\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+            final_cached_response = cached_response + ending_message
+            
+            return {
+                "success": True,
+                "user_message": {
+                    "id": str(uuid.uuid4()),
+                    "content": request.message,
+                    "timestamp": datetime.now().isoformat()
+                },
+                "assistant_message": {
+                    "id": str(uuid.uuid4()),
+                    "content": final_cached_response,
+                    "timestamp": datetime.now().isoformat()
+                },
+                "context": [],
+                "metadata": {
+                    "context_count": 0,
+                    "cached": True,
+                    "rag_mode": rag_mode
+                }
+            }
+        
         # Use selected RAG mode
         logger.info(f"Processing {rag_mode} query: {request.message[:100]}...")
         
@@ -274,7 +499,7 @@ async def send_message(request: MessageRequest):
             result = await rag_service.rag_query(request.message, session_id)
         else:
             # Use LangChain RAG service (default)
-            result = await langchain_rag_service.rag_query(request.message, session_id)
+            result = await langchain_rag_service.rag_query(request.message, session_id, request.model_type)
         
         if not result["success"]:
             # If RAG fails, return error message instead of fallback
@@ -296,6 +521,22 @@ async def send_message(request: MessageRequest):
                 }
             }
         
+        # Cache the response for future use
+        await cache_service.set_chat_response(request.message, rag_mode, result["response"])
+        
+        # Add ending message to response with model and RAG info
+        model_info = result.get("model_info", {})
+        model_name = model_info.get("model", settings.MODEL_NAME)
+        model_type = model_info.get("model_type", request.model_type)
+        rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
+        fallback_used = result.get("metadata", {}).get("fallback_mode", False)
+        
+        if fallback_used:
+            rag_status = "기본 모델 (RAG 컨텍스트 없음)"
+        
+        ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+        final_response = result["response"] + ending_message
+        
         # Format response for frontend
         return {
             "success": True,
@@ -306,7 +547,7 @@ async def send_message(request: MessageRequest):
             },
             "assistant_message": {
                 "id": str(uuid.uuid4()),
-                "content": result["response"],
+                "content": final_response,
                 "timestamp": datetime.now().isoformat()
             },
             "context": result.get("context", []),
@@ -332,7 +573,7 @@ async def stream_chat(request: ChatRequest):
                     result = await rag_service.rag_query(request.message, request.session_id)
                 else:
                     # Use LangChain RAG service (default)
-                    result = await langchain_rag_service.rag_query(request.message, request.session_id)
+                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type)
                 
                 if result["success"] and result.get("response"):
                     # Stream the response
@@ -354,10 +595,23 @@ async def stream_chat(request: ChatRequest):
                             "data": json.dumps(context_info)
                         }
                     
+                    # Add ending message to response with model and RAG info
+                    model_info = result.get("model_info", {})
+                    model_name = model_info.get("model", settings.MODEL_NAME)
+                    model_type = model_info.get("model_type", request.model_type)
+                    rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
+                    fallback_used = result.get("metadata", {}).get("fallback_mode", False)
+                    
+                    if fallback_used:
+                        rag_status = "기본 모델 (RAG 컨텍스트 없음)"
+                    
+                    ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+                    final_response_text = response_text + ending_message
+                    
                     # Stream the response text with improved chunking
                     chunk_size = 5  # Smaller chunks for smoother effect
-                    for i in range(0, len(response_text), chunk_size):
-                        chunk = response_text[i:i+chunk_size]
+                    for i in range(0, len(final_response_text), chunk_size):
+                        chunk = final_response_text[i:i+chunk_size]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -365,7 +619,7 @@ async def stream_chat(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.03)  # Slightly slower for better readability
+                        await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)  # Slightly slower for better readability
                     
                     # Send completion signal
                     yield {
@@ -390,7 +644,7 @@ async def stream_chat(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.03)
+                        await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)
                     
                     # Send completion signal
                     yield {
@@ -432,7 +686,7 @@ async def stream_chat_langchain(request: ChatRequest):
                     result = await rag_service.rag_query(request.message, request.session_id)
                 else:
                     # Use LangChain RAG service (default)
-                    result = await langchain_rag_service.rag_query(request.message, request.session_id)
+                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type)
                 
                 if result["success"] and result.get("response"):
                     response_text = result["response"]
@@ -451,10 +705,23 @@ async def stream_chat_langchain(request: ChatRequest):
                             "data": json.dumps(context_info)
                         }
                     
+                    # Add ending message to response with model and RAG info
+                    model_info = result.get("model_info", {})
+                    model_name = model_info.get("model", settings.MODEL_NAME)
+                    model_type = model_info.get("model_type", request.model_type)
+                    rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
+                    fallback_used = result.get("metadata", {}).get("fallback_mode", False)
+                    
+                    if fallback_used:
+                        rag_status = "기본 모델 (RAG 컨텍스트 없음)"
+                    
+                    ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+                    final_response_text = response_text + ending_message
+                    
                     # Stream the response text with improved chunking
                     chunk_size = 5  # Smaller chunks for smoother effect
-                    for i in range(0, len(response_text), chunk_size):
-                        chunk = response_text[i:i+chunk_size]
+                    for i in range(0, len(final_response_text), chunk_size):
+                        chunk = final_response_text[i:i+chunk_size]
                         yield {
                             "event": "message",
                             "data": json.dumps({
@@ -462,7 +729,7 @@ async def stream_chat_langchain(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.03)  # Slightly slower for better readability
+                        await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)  # Slightly slower for better readability
                     
                     # Send completion signal
                     yield {
@@ -487,7 +754,7 @@ async def stream_chat_langchain(request: ChatRequest):
                                 "finished": False
                             })
                         }
-                        await asyncio.sleep(0.03)
+                        await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)
                     
                     # Send completion signal
                     yield {
@@ -611,13 +878,49 @@ async def langchain_chat_message(request: MessageRequest):
             rag_result = await rag_service.rag_query(request.message, request.session_id)
         else:
             # Use LangChain RAG service (default)
-            rag_result = await langchain_rag_service.rag_query(request.message, request.session_id)
+            rag_result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type)
         
         if rag_result["success"]:
+            # Add ending message to response with model and RAG info
+            model_info = rag_result.get("model_info", {})
+            logger.info(f"Request model_type: {request.model_type}")
+            logger.info(f"Request model_type type: {type(request.model_type)}")
+            logger.info(f"Request object: {request}")
+            logger.info(f"RAG result model_info: {model_info}")
+            logger.info(f"Available model configs: {list(settings.MODEL_CONFIGS.keys())}")
+            
+            # Get model information from settings based on request.model_type
+            if request.model_type and request.model_type in settings.MODEL_CONFIGS:
+                model_config = settings.MODEL_CONFIGS[request.model_type]
+                model_name = model_config["model"]
+                model_type = request.model_type
+                logger.info(f"Using model from settings: {model_name} (type: {model_type})")
+            else:
+                model_name = settings.MODEL_NAME
+                model_type = request.model_type or "fast"
+                logger.info(f"Using default model: {model_name} (type: {model_type})")
+            
+            rag_status = "RAG 기반" if rag_result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
+            fallback_used = rag_result.get("metadata", {}).get("fallback_mode", False)
+            
+            if fallback_used:
+                rag_status = "기본 모델 (RAG 컨텍스트 없음)"
+            
+            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+            final_response = rag_result["response"] + ending_message
+            
+            # Create proper model_info
+            proper_model_info = {
+                "model": model_name,
+                "model_type": model_type,
+                "langchain": True
+            }
+            
             assistant_message = {
                 "id": assistant_message_id,
-                "content": rag_result["response"],
-                "timestamp": datetime.now().isoformat()
+                "content": final_response,
+                "timestamp": datetime.now().isoformat(),
+                "model_info": proper_model_info
             }
             
             return {
@@ -747,9 +1050,9 @@ async def search(request: SearchRequest):
 # Vector search endpoints
 @app.get("/api/vector/search")
 async def vector_search(query: str, top_k: Optional[int] = None, similarity_threshold: Optional[float] = None):
-    """Search for similar documents using vector similarity"""
+    """Search for similar documents using optimized vector similarity with caching"""
     try:
-        results = await vector_service.search_similar(
+        results = await vector_service.search_similar_optimized(
             query=query,
             top_k=top_k,
             similarity_threshold=similarity_threshold
@@ -1470,6 +1773,31 @@ async def get_sample_test_queries():
         return result
     except Exception as e:
         logger.error(f"Failed to get sample queries: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Model management endpoints
+@app.get("/api/models/available")
+async def get_available_models():
+    """Get available models for selection"""
+    try:
+        result = await chat_controller.get_available_models()
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Failed to get available models: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/models/config/{model_type}")
+async def get_model_config(model_type: str):
+    """Get configuration for a specific model type"""
+    try:
+        result = await chat_controller.get_model_config(model_type)
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Failed to get model config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Test endpoint

@@ -153,17 +153,17 @@ async def test_configuration():
         
         # Test Ollama settings
         assert settings.OLLAMA_BASE_URL == "http://localhost:11435"
-        assert settings.OLLAMA_CHAT_TEMPERATURE == 0.3
+        assert settings.OLLAMA_CHAT_TEMPERATURE == 0.5
         logger.info("✅ Ollama configuration test passed")
         
         # Test RAG settings
-        assert settings.RAG_CONTEXT_MAX_DOCS == 15
-        assert settings.RAG_VECTOR_SEARCH_TOP_K == 15
+        assert settings.RAG_CONTEXT_MAX_DOCS == 5
+        assert settings.RAG_VECTOR_SEARCH_TOP_K == 5
         logger.info("✅ RAG configuration test passed")
         
         # Test vector DB settings
         assert settings.VECTOR_DB_DIMENSIONS == 1024
-        assert settings.VECTOR_DB_SIMILARITY_THRESHOLD == 0.6
+        assert settings.VECTOR_DB_SIMILARITY_THRESHOLD == 0.3  # Updated threshold
         logger.info("✅ Vector DB configuration test passed")
         
         logger.info("✅ All configuration tests passed")

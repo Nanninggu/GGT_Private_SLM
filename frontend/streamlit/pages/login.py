@@ -42,7 +42,7 @@ def register_user(username: str, email: str, password: str, confirm_password: st
 def main():
     """Main login page function"""
     
-    # HAI Portal styling - Login page
+    # Modern Enterprise UI - Pure White Login Theme
     st.markdown("""
     <style>
     /* Hide Streamlit default UI elements */
@@ -62,119 +62,229 @@ def main():
     /* Hide the top bar completely */
     .stApp > div[data-testid="stHeader"] {display:none;}
     
+    /* Global styling - Pure White Background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
     /* Adjust main content padding */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 1rem;
+        background-color: #ffffff;
     }
     
+    /* Modern Enterprise page header - Clean White Design */
     .page-header {
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        color: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 4rem 2rem;
+        border-radius: 24px;
+        margin-bottom: 3rem;
+        color: #212529;
         text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
     }
     
     .page-title {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        color: #212529;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .page-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
+        font-size: 1.3rem;
+        opacity: 0.8;
+        font-weight: 500;
+        color: #6c757d;
     }
     
+    /* Modern Enterprise login container - Pure White */
     .login-container {
-        max-width: 400px;
+        max-width: 500px;
         margin: 0 auto;
-        padding: 2rem;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 4rem;
+        background: #ffffff;
+        border-radius: 28px;
+        box-shadow: 0 12px 48px rgba(0,0,0,0.08);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
     }
     
     .login-form {
-        margin-bottom: 1.5rem;
+        margin-bottom: 2.5rem;
     }
     
-    .login-button {
+    /* Modern Enterprise button styling */
+    .stButton > button {
         width: 100%;
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        color: white;
-        border: none;
-        padding: 0.75rem;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 1rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        color: #495057;
+        border: 2px solid #e9ecef;
+        padding: 1.25rem 2rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1.1rem;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        text-transform: none;
+        letter-spacing: 0.01em;
     }
     
-    .login-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+    .stButton > button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-color: #6c757d;
+        color: #212529;
     }
     
     .register-link {
         text-align: center;
-        margin-top: 1rem;
+        margin-top: 2rem;
     }
     
     .register-link a {
-        color: #8B5CF6;
+        color: #6c757d;
         text-decoration: none;
-        font-weight: 500;
+        font-weight: 600;
+        transition: color 0.3s ease;
+        font-size: 1rem;
     }
     
     .register-link a:hover {
+        color: #495057;
         text-decoration: underline;
     }
     
-    .error-message {
-        background: #f8d7da;
-        color: #721c24;
-        padding: 0.75rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        border: 1px solid #f5c6cb;
-    }
-    
-    .success-message {
-        background: #d4edda;
-        color: #155724;
-        padding: 0.75rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        border: 1px solid #c3e6cb;
-    }
-    
-    .form-group {
-        margin-bottom: 1rem;
-    }
-    
-    .form-label {
-        display: block;
-        margin-bottom: 0.5rem;
+    /* Modern Enterprise form styling */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        padding: 1.25rem 1.5rem;
+        font-size: 1.1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
         font-weight: 500;
-        color: #333;
     }
     
-    .form-input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 2px solid #e1e5e9;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s ease;
-    }
-    
-    .form-input:focus {
+    .stTextInput > div > div > input:focus {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
         outline: none;
-        border-color: #8B5CF6;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise error/success messages */
+    .stAlert {
+        border-radius: 16px;
+        border: 2px solid;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        background: #ffffff;
+    }
+    
+    .stAlert[data-testid="alert"] {
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise form labels */
+    .stTextInput > label {
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    /* Modern Enterprise radio button styling */
+    .stRadio > div {
+        gap: 1.5rem;
+    }
+    
+    .stRadio > div > label {
+        background: #ffffff;
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    
+    .stRadio > div > label:hover {
+        border-color: #6c757d;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        background: #f8f9fa;
+    }
+    
+    /* Modern Enterprise selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise checkbox styling */
+    .stCheckbox > label {
+        font-weight: 600;
+        color: #212529;
+        font-size: 1rem;
+    }
+    
+    /* Form section styling */
+    .form-section {
+        background: #ffffff;
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 2rem;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .login-container {
+            padding: 3rem 2rem;
+            margin: 1rem;
+        }
+        
+        .page-header {
+            padding: 3rem 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+        }
+        
+        .form-section {
+            padding: 2rem 1.5rem;
+        }
     }
     </style>
     """, unsafe_allow_html=True)

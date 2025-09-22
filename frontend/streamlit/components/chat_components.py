@@ -25,32 +25,36 @@ class ChatComponents:
         if "selected_model_type" not in st.session_state:
             st.session_state.selected_model_type = "fast"
         
-        # Model configurations (백엔드 settings.py와 일치)
+        # Model configurations (백엔드 settings.py와 일치) - Modern Enterprise White theme
         model_configs = {
             "fast": {
                 "name": "⚡ 빠른 응답",
                 "description": "exaone3.5:2.4b-instruct-q4_K_M (1.6GB, Q4_K_M)",
                 "use_case": "일반적인 질문, 초고속 응답이 필요한 경우",
-                "color": "#10B981"
+                "color": "#6c757d"
             },
             "quality": {
                 "name": "🎯 고품질 응답",
                 "description": "exaone3.5:2.4b-instruct-q8_0 (2.8GB, Q8_0)",
                 "use_case": "정확한 답변이 필요한 경우, 창의적 작업",
-                "color": "#3B82F6"
+                "color": "#495057"
             },
             "complex": {
                 "name": "🧠 복잡한 작업",
                 "description": "exaone3.5:7.8b (4.8GB, 7.8B 파라미터)",
                 "use_case": "복잡한 추론, 창의적 글쓰기, 전문적 분석",
-                "color": "#8B5CF6"
+                "color": "#212529"
             }
         }
         
-        # Create model selection UI
+        # Create modern model selection UI
         st.markdown("""
-        <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #e9ecef;">
-            <h4 style="margin: 0 0 1rem 0; color: #495057;">🤖 AI 모델 선택</h4>
+        <div style="background: #ffffff; padding: 2rem; border-radius: 20px; margin-bottom: 1.5rem; 
+                    border: 2px solid #f1f3f4; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+                    position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; 
+                        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);"></div>
+            <h4 style="margin: 0 0 1rem 0; color: #212529; font-weight: 700; font-size: 1.2rem;">🤖 AI 모델 선택</h4>
         </div>
         """, unsafe_allow_html=True)
         
@@ -69,18 +73,30 @@ class ChatComponents:
         # Display selected model info
         selected_config = model_configs[selected_model]
         
-        # Display selected model info (full width)
+        # Display selected model info (full width) - Modern Enterprise card style
         st.markdown(f"""
-        <div style="background: {selected_config['color']}15; padding: 1.5rem; border-radius: 8px; 
-                    border-left: 4px solid {selected_config['color']}; margin: 0.5rem 0;">
-            <h5 style="margin: 0 0 0.5rem 0; color: {selected_config['color']};">{selected_config['name']}</h5>
-            <p style="margin: 0 0 0.5rem 0; color: #6c757d; font-size: 0.9rem;">{selected_config['description']}</p>
-            <p style="margin: 0; color: #495057; font-size: 0.85rem;">{selected_config['use_case']}</p>
+        <div style="background: #ffffff; padding: 2rem; border-radius: 20px; 
+                    border-left: 4px solid {selected_config['color']}; margin: 1rem 0;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 2px solid #f1f3f4;
+                    position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; 
+                        background: linear-gradient(90deg, {selected_config['color']} 0%, {selected_config['color']}80 100%);"></div>
+            <h5 style="margin: 0 0 0.75rem 0; color: {selected_config['color']}; font-weight: 700; font-size: 1.1rem;">{selected_config['name']}</h5>
+            <p style="margin: 0 0 0.75rem 0; color: #6c757d; font-size: 0.95rem; line-height: 1.5;">{selected_config['description']}</p>
+            <p style="margin: 0; color: #495057; font-size: 0.9rem; line-height: 1.4;">{selected_config['use_case']}</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Add info about model switching
-        st.info("💡 **팁**: 모델을 변경하면 다음 메시지부터 새로운 모델이 적용됩니다. 현재 대화의 맥락은 유지됩니다.")
+        # Add info about model switching - Modern Enterprise info box
+        st.markdown("""
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 16px; margin-top: 1rem; 
+                    border: 2px solid #f1f3f4; border-left: 4px solid #6c757d;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+            <p style="margin: 0; color: #495057; font-size: 0.9rem; font-weight: 500;">
+                💡 <strong>팁</strong>: 모델을 변경하면 다음 메시지부터 새로운 모델이 적용됩니다. 현재 대화의 맥락은 유지됩니다.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     @staticmethod
     def render_message(message: Dict[str, Any]):
@@ -95,12 +111,19 @@ class ChatComponents:
         if role == "user":
             with st.chat_message("user"):
                 st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); 
-                            color: white; padding: 1.5rem; border-radius: 10px; 
-                            margin: 1rem 0 2rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    {content}
-                </div>
+    <div style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
+                color: white; padding: 1.5rem; border-radius: 20px; 
+                margin: 1rem 0 2rem 0; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+                border: 2px solid rgba(255,255,255,0.1); 
+                position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; 
+                    background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.5) 100%);"></div>
+        <div style="position: relative; z-index: 1;">
+            {content}
+        </div>
+    </div>
                 """, unsafe_allow_html=True)
+                
                 # User message with PDF icon
                 col1, col2 = st.columns([1, 0.08])
                 with col1:
@@ -158,11 +181,16 @@ class ChatComponents:
         else:
             with st.chat_message("assistant"):
                 st.markdown(f"""
-                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; 
-                            border-left: 4px solid #8B5CF6; margin: 1rem 0 2rem 0; 
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    {content}
-                </div>
+    <div style="background: #ffffff; padding: 1.5rem; border-radius: 20px; 
+                border-left: 4px solid #6c757d; margin: 1rem 0 2rem 0; 
+                box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 2px solid #f1f3f4;
+                position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; 
+                    background: linear-gradient(90deg, #6c757d 0%, #495057 100%);"></div>
+        <div style="position: relative; z-index: 1;">
+            {content}
+        </div>
+    </div>
                 """, unsafe_allow_html=True)
                 
                 # Display model information
@@ -203,6 +231,14 @@ class ChatComponents:
                         st.info("기본 RAG 모드로 응답합니다.")
                     else:
                         st.info("LangChain RAG 모드로 응답합니다.")
+                
+                # Display quality metrics if available
+                quality_metrics = message.get("metadata", {}).get("quality_metrics", {})
+                if quality_metrics:
+                    ChatComponents._render_quality_metrics(quality_metrics)
+                
+                # Display feedback UI
+                ChatComponents._render_feedback_ui(message_id, message)
                 
                 # AI message with PDF and Markdown icons
                 col1, col2 = st.columns([1, 0.08])
@@ -366,6 +402,170 @@ class ChatComponents:
             st.info("📚 참조 문서 정보를 가져오는 중입니다...")
 
     @staticmethod
+    def _render_quality_metrics(quality_metrics: Dict[str, Any]):
+        """Render quality metrics with visual indicators"""
+        overall_score = quality_metrics.get("overall_score", 0.0)
+        quality_level = quality_metrics.get("quality_level", "fair")
+        issues = quality_metrics.get("issues", [])
+        suggestions = quality_metrics.get("suggestions", [])
+        
+        # Convert score to percentage
+        score_percent = round(overall_score * 100, 1)
+        
+        # Determine color and emoji based on quality level
+        quality_colors = {
+            "excellent": "#10B981",  # Green
+            "good": "#3B82F6",       # Blue
+            "fair": "#F59E0B",       # Yellow
+            "poor": "#EF4444"        # Red
+        }
+        
+        quality_emojis = {
+            "excellent": "🟢",
+            "good": "🔵", 
+            "fair": "🟡",
+            "poor": "🔴"
+        }
+        
+        color = quality_colors.get(quality_level, "#6B7280")
+        emoji = quality_emojis.get(quality_level, "⚪")
+        
+        # Render quality metrics
+        st.markdown(f"""
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 1rem 0;
+                    border-left: 3px solid {color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem; margin-right: 0.75rem;">{emoji}</span>
+                <strong style="color: {color}; font-size: 1.1rem;">응답 품질: {score_percent}%</strong>
+                <small style="color: #666; margin-left: 0.5rem; font-size: 0.9rem;">({quality_level})</small>
+            </div>
+            <div style="background: {color}; height: 8px; border-radius: 4px; 
+                        width: {score_percent}%; min-width: 20px; margin-bottom: 0.5rem;"></div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Show issues and suggestions if available
+        if issues or suggestions:
+            with st.expander("🔍 품질 분석 상세", expanded=False):
+                if issues:
+                    st.markdown("**⚠️ 발견된 문제점:**")
+                    for issue in issues:
+                        st.markdown(f"• {issue}")
+                
+                if suggestions:
+                    st.markdown("**💡 개선 제안:**")
+                    for suggestion in suggestions:
+                        st.markdown(f"• {suggestion}")
+
+    @staticmethod
+    def _render_feedback_ui(message_id: str, message: Dict[str, Any]):
+        """Render feedback UI for user interaction"""
+        st.markdown("---")
+        
+        # Feedback section header
+        st.markdown("**💬 이 응답이 도움이 되었나요?**")
+        
+        # Create columns for different feedback types
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            # Thumbs up/down
+            if st.button("👍", key=f"thumbs_up_{message_id}", help="도움이 되었습니다"):
+                ChatComponents._submit_feedback(message_id, "thumbs_up", True)
+                st.success("피드백을 주셔서 감사합니다!")
+        
+        with col2:
+            if st.button("👎", key=f"thumbs_down_{message_id}", help="도움이 되지 않았습니다"):
+                ChatComponents._submit_feedback(message_id, "thumbs_up", False)
+                st.success("피드백을 주셔서 감사합니다!")
+        
+        with col3:
+            # Star rating
+            rating = st.selectbox(
+                "별점",
+                [1, 2, 3, 4, 5],
+                index=4,  # Default to 5 stars
+                key=f"rating_{message_id}",
+                help="1-5점으로 평가해주세요"
+            )
+            if st.button("⭐ 평가", key=f"submit_rating_{message_id}"):
+                ChatComponents._submit_feedback(message_id, "rating", rating=rating)
+                st.success(f"{rating}점 평가를 주셔서 감사합니다!")
+        
+        with col4:
+            # Additional feedback
+            if st.button("💬 상세 피드백", key=f"detailed_feedback_{message_id}"):
+                st.session_state[f"show_feedback_form_{message_id}"] = True
+        
+        # Detailed feedback form
+        if st.session_state.get(f"show_feedback_form_{message_id}", False):
+            with st.form(key=f"feedback_form_{message_id}"):
+                st.markdown("**상세 피드백을 남겨주세요**")
+                
+                # Feedback type selection
+                feedback_type = st.selectbox(
+                    "피드백 유형",
+                    ["정확성", "완전성", "명확성", "관련성", "기타"],
+                    key=f"feedback_type_{message_id}"
+                )
+                
+                # Comment
+                comment = st.text_area(
+                    "의견을 남겨주세요",
+                    placeholder="응답에 대한 구체적인 의견을 남겨주세요...",
+                    key=f"comment_{message_id}"
+                )
+                
+                # Submit buttons
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.form_submit_button("제출", type="primary"):
+                        ChatComponents._submit_feedback(
+                            message_id, 
+                            feedback_type.lower(), 
+                            comment=comment
+                        )
+                        st.success("상세 피드백을 주셔서 감사합니다!")
+                        st.session_state[f"show_feedback_form_{message_id}"] = False
+                        st.rerun()
+                
+                with col2:
+                    if st.form_submit_button("취소"):
+                        st.session_state[f"show_feedback_form_{message_id}"] = False
+                        st.rerun()
+
+    @staticmethod
+    def _submit_feedback(message_id: str, feedback_type: str, is_positive: bool = None, rating: int = None, comment: str = None):
+        """Submit feedback to backend"""
+        try:
+            # Get user info from session state
+            user_info = st.session_state.get("user_info", {})
+            user_id = user_info.get("id", "anonymous")
+            session_id = st.session_state.get("session_id", "default")
+            
+            # Prepare feedback data
+            feedback_data = {
+                "user_id": user_id,
+                "session_id": session_id,
+                "message_id": message_id,
+                "feedback_type": feedback_type,
+                "is_positive": is_positive,
+                "rating": rating,
+                "comment": comment
+            }
+            
+            # Submit to backend (this would be an API call in real implementation)
+            # For now, we'll just log it
+            logger.info(f"Feedback submitted: {feedback_data}")
+            
+            # In a real implementation, you would call the backend API here
+            # response = api_service.submit_feedback(feedback_data)
+            
+        except Exception as e:
+            st.error(f"피드백 제출 중 오류가 발생했습니다: {str(e)}")
+            logger.error(f"Failed to submit feedback: {e}")
+
+    @staticmethod
     def _render_similarity_score(similarity: float):
         """Render similarity score with visual indicator (legacy method)"""
         # Convert similarity to percentage
@@ -489,20 +689,22 @@ class ChatComponents:
             # Get current session ID first
             current_session = st.session_state.get("session_id", "default")
             
-            # HAI Portal branding
+            # HAI Portal branding - Modern design
             st.markdown("""
-            <div style="text-align: center; padding: 1rem 0; border-bottom: 2px solid #8B5CF6;">
-                <h1 style="color: #8B5CF6; margin: 0; font-size: 1.8rem;">HAI Portal</h1>
+            <div style="text-align: center; padding: 1.5rem 0; border-bottom: 2px solid #6c757d; margin-bottom: 1rem;">
+                <h1 style="color: #495057; margin: 0; font-size: 1.8rem; font-weight: 700;">HAI Portal</h1>
+                <p style="color: #6c757d; margin: 0.5rem 0 0 0; font-size: 0.9rem;">AI 기반 지능형 서비스</p>
             </div>
             """, unsafe_allow_html=True)
             
-            # User info
+            # User info - Modern design
             user_info = st.session_state.get("user_info")
             if user_info:
                 st.markdown(f"""
-                <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0; border-left: 3px solid #0ea5e9;">
-                    <div style="font-weight: 500; color: #0c4a6e;">👤 {user_info.get('username', '사용자')}</div>
-                    <div style="font-size: 0.8rem; color: #64748b;">{user_info.get('email', '')}</div>
+                <div style="background: white; padding: 1rem; border-radius: 12px; margin: 0.5rem 0; 
+                            border-left: 3px solid #6c757d; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e9ecef;">
+                    <div style="font-weight: 600; color: #495057; font-size: 0.95rem;">👤 {user_info.get('username', '사용자')}</div>
+                    <div style="font-size: 0.8rem; color: #6c757d; margin-top: 0.25rem;">{user_info.get('email', '')}</div>
                 </div>
                 """, unsafe_allow_html=True)
             

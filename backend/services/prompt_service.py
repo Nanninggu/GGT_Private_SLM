@@ -14,25 +14,48 @@ class PromptService:
     
     def _build_base_prompt_template(self) -> str:
         """Build the base prompt template"""
-        return """AI 도우미입니다. 제공된 데이터를 바탕으로 한국어로 답변합니다.
+        return """당신은 전문적이고 신뢰할 수 있는 AI 어시스턴트입니다. 제공된 데이터를 바탕으로 정확하고 유용한 답변을 제공합니다.
 
-**규칙**:
-• 한국어로만 답변
-• 데이터에 없는 내용 추가 금지
-• 질문과 관련된 내용만 답변
+**핵심 원칙**:
+• 정확성: 제공된 데이터에 기반한 정확한 정보만 제공
+• 명확성: 이해하기 쉽고 구조화된 답변 작성
+• 완전성: 질문에 대한 포괄적이고 완전한 답변 제공
+• 신뢰성: 불확실한 정보는 명확히 표시
 
 {context_section}
 
-**답변 형식**:
-**핵심 요약** - 주요 포인트 정리
-**상세 설명** - 데이터 기반 설명
-**추가 정보** - 관련 맥락
-**정보 출처** - 참고 파일명과 내용
-**참고사항** - 데이터 한계나 주의점
+**답변 구조**:
+📋 **핵심 요약**
+질문의 핵심에 대한 간결한 요약 (2-3문장)
+
+📖 **상세 설명**
+구체적이고 상세한 설명 (데이터 기반)
+• 주요 포인트를 단계별로 설명
+• 구체적인 예시나 사례 제시
+• 관련된 세부사항 포함
+
+🔍 **추가 정보**
+질문과 관련된 추가 맥락이나 배경 정보
+• 관련 개념이나 용어 설명
+• 실무 적용 방법이나 주의사항
+• 다른 관점이나 대안 제시
+
+📚 **참조 정보**
+• 참고한 문서: {source_files}
+• 신뢰도 점수: {confidence_score}%
+• 데이터 출처: {data_sources}
+
+⚠️ **주의사항**
+데이터의 한계나 추가 확인이 필요한 사항
 
 {context_data}
 
-데이터 기반으로만 답변하고, 명확하고 간결하게 작성하세요."""
+**답변 가이드라인**:
+• 반드시 한국어로 답변하되 자연스럽게 작성
+• 제공된 데이터를 최대한 활용하여 답변
+• 데이터에 없는 내용은 "확인된 정보가 없습니다"로 명시
+• 각 섹션을 명확하게 구분하여 가독성 향상
+• 전문적이면서도 이해하기 쉬운 언어 사용"""
     
     def build_system_prompt(self, context: Optional[str] = None) -> str:
         """Build system prompt with context"""
@@ -165,13 +188,48 @@ class PromptService:
             # Format context from documents
             context = self.format_context_from_documents(context_documents)
             
-            # Build system prompt
+            # Extract metadata for prompt
+            source_files = []
+            confidence_scores = []
+            data_sources = []
+            
+            for doc in context_documents:
+                metadata = doc.get("metadata", {})
+                filename = metadata.get("filename", metadata.get("file_name", "Unknown"))
+                similarity = doc.get("similarity", 0.0)
+                source = metadata.get("source", "데이터베이스")
+                
+                source_files.append(filename)
+                confidence_scores.append(similarity)
+                data_sources.append(source)
+            
+            # Calculate average confidence
+            avg_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
+            confidence_percent = round(avg_confidence * 100, 1)
+            
+            # Build enhanced system prompt
             system_prompt = self.build_system_prompt(context)
             
-            # Combine with user question
-            full_prompt = f"{system_prompt}\n\n❓ 사용자 질문: {user_question}\n\n📝 **중요 지시사항**:\n• 반드시 위의 형식에 따라 완전한 답변을 작성하세요\n• 이모티콘을 풍부하게 사용하여 가독성을 높이세요\n• 각 섹션을 명확하게 구분하여 작성하세요\n• 응답을 중간에 끊지 말고 완전히 마무리하세요\n• 🚨 반드시 한국어로만 답변하세요! 영어나 다른 언어 사용 금지! 🚨\n\n답변:"
+            # Replace placeholders in system prompt
+            system_prompt = system_prompt.replace("{source_files}", ", ".join(set(source_files)))
+            system_prompt = system_prompt.replace("{confidence_score}", str(confidence_percent))
+            system_prompt = system_prompt.replace("{data_sources}", ", ".join(set(data_sources)))
             
-            logger.info(f"Built RAG prompt with {len(context_documents)} documents")
+            # Build complete prompt with enhanced instructions
+            full_prompt = f"""{system_prompt}
+
+**사용자 질문**: {user_question}
+
+**답변 요구사항**:
+1. 위의 구조에 따라 완전하고 체계적인 답변을 작성하세요
+2. 제공된 컨텍스트를 최대한 활용하여 정확한 정보를 제공하세요
+3. 각 섹션을 명확하게 구분하고 이모티콘을 적절히 사용하세요
+4. 답변의 품질과 완성도를 높이기 위해 충분한 내용을 포함하세요
+5. 불확실한 정보는 명확히 표시하고 추가 확인이 필요함을 알려주세요
+
+**답변**:"""
+            
+            logger.info(f"Built enhanced RAG prompt with {len(context_documents)} documents, avg confidence: {confidence_percent}%")
             return full_prompt
             
         except Exception as e:

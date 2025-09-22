@@ -53,7 +53,7 @@ def main():
     if not st.session_state.backend_connected:
         st.session_state.backend_connected = chat_controller.check_backend_connection()
     
-    # HAI Portal styling
+    # Modern Enterprise UI - Pure White Configuration Theme
     st.markdown("""
     <style>
     /* Hide Streamlit default UI elements */
@@ -73,60 +73,113 @@ def main():
     /* Hide the top bar completely */
     .stApp > div[data-testid="stHeader"] {display:none;}
     
+    /* Global styling - Pure White Background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
     /* Adjust main content padding */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 1rem;
+        background-color: #ffffff;
     }
     
+    /* Modern Enterprise page header - Clean White Design */
     .page-header {
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        color: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 4rem 2rem;
+        border-radius: 24px;
+        margin-bottom: 3rem;
+        color: #212529;
+        text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
     }
     
     .page-title {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        color: #212529;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .page-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
+        font-size: 1.3rem;
+        opacity: 0.8;
+        font-weight: 500;
+        color: #6c757d;
     }
     
     .breadcrumb {
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
+        color: #6c757d;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
     }
     
     .breadcrumb a {
-        color: #8B5CF6;
+        color: #6c757d;
         text-decoration: none;
+        transition: color 0.3s ease;
     }
     
     .breadcrumb a:hover {
+        color: #495057;
         text-decoration: underline;
     }
     
+    /* Modern Enterprise config section - Pure White */
     .config-section {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
+        background: #ffffff;
+        padding: 3rem;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+        margin-bottom: 2.5rem;
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
     }
     
+    .config-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+    }
+    
+    /* Modern Enterprise status card - Clean White Design */
     .status-card {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #8B5CF6;
-        margin-bottom: 1rem;
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        border-left: 4px solid #6c757d;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        transition: all 0.3s ease;
+    }
+    
+    .status-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
     }
     
     .status-online {
@@ -137,6 +190,158 @@ def main():
     .status-offline {
         border-left-color: #EF4444;
         background: #fef2f2;
+    }
+    
+    /* Modern Enterprise button styling */
+    .stButton > button {
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border: 2px solid transparent;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    /* Modern Enterprise input styling */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
+        font-weight: 500;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise radio button styling */
+    .stRadio > div {
+        gap: 1.5rem;
+    }
+    
+    .stRadio > div > label {
+        background: #ffffff;
+        padding: 1.25rem;
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .stRadio > div > label:hover {
+        border-color: #6c757d;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        background: #f8f9fa;
+    }
+    
+    /* Modern Enterprise checkbox styling */
+    .stCheckbox > label {
+        font-weight: 600;
+        color: #212529;
+        font-size: 1rem;
+    }
+    
+    /* Modern Enterprise tabs styling */
+    .stTabs > div > div > div > div {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+    }
+    
+    /* Modern Enterprise expander styling */
+    .streamlit-expander {
+        border: 2px solid #f1f3f4;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    
+    /* Modern Enterprise metric styling */
+    .metric-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Collection management cards */
+    .collection-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .collection-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Session management cards */
+    .session-card {
+        background: #ffffff;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .session-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 3rem 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+        }
+        
+        .config-section {
+            padding: 2rem 1.5rem;
+            margin: 1rem;
+        }
+        
+        .collection-card, .session-card {
+            padding: 1.5rem;
+        }
     }
     </style>
     """, unsafe_allow_html=True)

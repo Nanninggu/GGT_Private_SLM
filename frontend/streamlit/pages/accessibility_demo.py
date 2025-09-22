@@ -38,7 +38,7 @@ def main():
             st.rerun()
         return
     
-    # HAI Portal styling
+    # Modern Enterprise UI - Pure White Accessibility Demo Theme
     st.markdown("""
     <style>
     /* Hide Streamlit default UI elements */
@@ -58,45 +58,95 @@ def main():
     /* Hide the top bar completely */
     .stApp > div[data-testid="stHeader"] {display:none;}
     
+    /* Global styling - Pure White Background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
     /* Adjust main content padding */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 1rem;
+        background-color: #ffffff;
     }
     
+    /* Modern Enterprise page header - Clean White Design */
     .page-header {
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        color: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 4rem 2rem;
+        border-radius: 24px;
+        margin-bottom: 3rem;
+        color: #212529;
+        text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
     }
     
     .page-title {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        color: #212529;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .page-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
+        font-size: 1.3rem;
+        opacity: 0.8;
+        font-weight: 500;
+        color: #6c757d;
     }
     
+    /* Modern Enterprise config section - Pure White */
     .config-section {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
+        background: #ffffff;
+        padding: 3rem;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+        margin-bottom: 2.5rem;
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
     }
     
+    .config-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+    }
+    
+    /* Modern Enterprise status card - Clean White Design */
     .status-card {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #8B5CF6;
-        margin-bottom: 1rem;
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        border-left: 4px solid #6c757d;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        transition: all 0.3s ease;
+    }
+    
+    .status-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
     }
     
     .status-online {
@@ -107,6 +157,126 @@ def main():
     .status-offline {
         border-left-color: #EF4444;
         background: #fef2f2;
+    }
+    
+    /* Modern Enterprise button styling */
+    .stButton > button {
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border: 2px solid transparent;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    /* Modern Enterprise input styling */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
+        font-weight: 500;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise radio button styling */
+    .stRadio > div {
+        gap: 1.5rem;
+    }
+    
+    .stRadio > div > label {
+        background: #ffffff;
+        padding: 1.25rem;
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .stRadio > div > label:hover {
+        border-color: #6c757d;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        background: #f8f9fa;
+    }
+    
+    /* Modern Enterprise expander styling */
+    .streamlit-expander {
+        border: 2px solid #f1f3f4;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    
+    /* RAG accuracy measurement cards */
+    .accuracy-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .accuracy-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Accessibility demo cards */
+    .demo-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .demo-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 3rem 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+        }
+        
+        .config-section {
+            padding: 2rem 1.5rem;
+        }
+        
+        .accuracy-card, .demo-card {
+            padding: 1.5rem;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -129,33 +299,52 @@ def main():
     with tab1:
         # Demo explanation
         st.markdown("""
-        ## 📋 답변 신뢰도 표시 기능 테스트
-        
-        이 페이지는 채팅 답변의 신뢰도를 시각적으로 표시하는 기능을 테스트합니다.
-        
-        ### 🎯 구현된 기능:
-        
-        1. **답변 신뢰도 점수**
-           - 0-100% 범위의 유사도 점수 표시
-           - 색상 코딩으로 직관적인 신뢰도 표시
-           - 진행률 바로 시각적 표현
-        
-        2. **신뢰도 등급 표시**
-           - 🟢 매우 높음 (80% 이상): 녹색
-           - 🟡 높음 (60-79%): 노란색  
-           - 🟠 보통 (40-59%): 주황색
-           - 🔴 낮음 (40% 미만): 빨간색
-        
-        3. **깔끔한 UI**
-           - 참고문서 목록 제거로 간소화
-           - 답변 품질에 집중
-           - 시각적 피드백 강화
-        
-        4. **접근성 지원**
-           - 색상뿐만 아니라 텍스트로도 신뢰도 표시
-           - 스크린 리더 호환성
-           - 명확한 상태 표시
-        """)
+        <div class="demo-card">
+            <h2 style="color: #212529; margin-bottom: 1.5rem; font-weight: 700;">📋 답변 신뢰도 표시 기능 테스트</h2>
+            <p style="color: #495057; margin-bottom: 2rem; line-height: 1.6; font-size: 1.1rem;">
+                이 페이지는 채팅 답변의 신뢰도를 시각적으로 표시하는 기능을 테스트합니다.
+            </p>
+            
+            <h3 style="color: #212529; margin-bottom: 1rem; font-weight: 600;">🎯 구현된 기능:</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">1. 답변 신뢰도 점수</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>0-100% 범위의 유사도 점수 표시</li>
+                    <li>색상 코딩으로 직관적인 신뢰도 표시</li>
+                    <li>진행률 바로 시각적 표현</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">2. 신뢰도 등급 표시</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>🟢 매우 높음 (80% 이상): 녹색</li>
+                    <li>🟡 높음 (60-79%): 노란색</li>
+                    <li>🟠 보통 (40-59%): 주황색</li>
+                    <li>🔴 낮음 (40% 미만): 빨간색</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">3. 깔끔한 UI</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>참고문서 목록 제거로 간소화</li>
+                    <li>답변 품질에 집중</li>
+                    <li>시각적 피드백 강화</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">4. 접근성 지원</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>색상뿐만 아니라 텍스트로도 신뢰도 표시</li>
+                    <li>스크린 리더 호환성</li>
+                    <li>명확한 상태 표시</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
         st.markdown("---")
         
@@ -235,32 +424,55 @@ def main():
     
     with tab2:
         st.markdown("""
-        ## 📊 정확도 측정 기능
-        
-        RAG 시스템의 정확도를 측정하고 분석할 수 있는 기능입니다.
-        
-        ### 🎯 측정 가능한 메트릭:
-        
-        1. **유사도 점수 (Similarity Score)**
-           - 벡터 검색에서 반환되는 유사도 점수
-           - 0-1 범위의 정규화된 값
-        
-        2. **컨텍스트 관련성 (Context Relevance)**
-           - 검색된 문서가 질문과 얼마나 관련있는지
-           - 평균 유사도 점수 기반
-        
-        3. **답변 품질 (Answer Quality)**
-           - 생성된 답변의 품질 평가
-           - 길이, 구조, 언어 품질 등 고려
-        
-        4. **전체 정확도 (Overall Accuracy)**
-           - 여러 메트릭의 가중 평균
-           - 시스템의 전반적인 성능 지표
-        
-        5. **신뢰도 (Confidence)**
-           - 시스템이 답변에 대해 가지는 신뢰도
-           - 컨텍스트 가용성, 유사도 등 고려
-        """)
+        <div class="accuracy-card">
+            <h2 style="color: #212529; margin-bottom: 1.5rem; font-weight: 700;">📊 정확도 측정 기능</h2>
+            <p style="color: #495057; margin-bottom: 2rem; line-height: 1.6; font-size: 1.1rem;">
+                RAG 시스템의 정확도를 측정하고 분석할 수 있는 기능입니다.
+            </p>
+            
+            <h3 style="color: #212529; margin-bottom: 1rem; font-weight: 600;">🎯 측정 가능한 메트릭:</h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">1. 유사도 점수 (Similarity Score)</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>벡터 검색에서 반환되는 유사도 점수</li>
+                    <li>0-1 범위의 정규화된 값</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">2. 컨텍스트 관련성 (Context Relevance)</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>검색된 문서가 질문과 얼마나 관련있는지</li>
+                    <li>평균 유사도 점수 기반</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">3. 답변 품질 (Answer Quality)</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>생성된 답변의 품질 평가</li>
+                    <li>길이, 구조, 언어 품질 등 고려</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">4. 전체 정확도 (Overall Accuracy)</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>여러 메트릭의 가중 평균</li>
+                    <li>시스템의 전반적인 성능 지표</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 style="color: #495057; margin-bottom: 0.5rem; font-weight: 600;">5. 신뢰도 (Confidence)</h4>
+                <ul style="color: #6c757d; margin-left: 1.5rem; line-height: 1.6;">
+                    <li>시스템이 답변에 대해 가지는 신뢰도</li>
+                    <li>컨텍스트 가용성, 유사도 등 고려</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
         st.markdown("---")
         

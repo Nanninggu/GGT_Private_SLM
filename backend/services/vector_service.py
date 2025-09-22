@@ -3,6 +3,7 @@ Vector database service for pgvector integration
 """
 import asyncio
 import logging
+import re
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
 from sqlalchemy import text
@@ -227,10 +228,13 @@ class VectorService:
                         "similarity": float(row.similarity)
                     })
                 
+                # Apply advanced filtering and ranking
+                documents = self._apply_advanced_filtering(query, documents)
+                
                 # Cache the results
                 await cache_service.set_search_results(query, top_k, similarity_threshold, documents)
                 
-                logger.info(f"Found {len(documents)} similar documents (ultra-optimized)")
+                logger.info(f"Found {len(documents)} similar documents (ultra-optimized with filtering)")
                 return documents
                 
         except Exception as e:
@@ -641,6 +645,181 @@ class VectorService:
         except Exception as e:
             logger.error(f"Failed to preload embeddings: {e}")
     
+    def _apply_advanced_filtering(self, query: str, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Apply advanced filtering and ranking to search results"""
+        try:
+            if not documents:
+                return documents
+            
+            # Extract query keywords
+            query_keywords = self._extract_keywords(query)
+            
+            # Apply content quality scoring
+            for doc in documents:
+                doc['content_quality_score'] = self._calculate_content_quality_score(doc['content'], query_keywords)
+                doc['relevance_boost'] = self._calculate_relevance_boost(doc['content'], query)
+            
+            # Re-rank documents based on combined scores
+            for doc in documents:
+                # Combine similarity with content quality and relevance boost
+                base_similarity = doc['similarity']
+                content_quality = doc['content_quality_score']
+                relevance_boost = doc['relevance_boost']
+                
+                # Weighted combination: 60% similarity + 25% content quality + 15% relevance boost
+                doc['final_score'] = (
+                    base_similarity * 0.6 +
+                    content_quality * 0.25 +
+                    relevance_boost * 0.15
+                )
+            
+            # Sort by final score and remove duplicates
+            documents = sorted(documents, key=lambda x: x['final_score'], reverse=True)
+            documents = self._remove_duplicate_content(documents)
+            
+            # Apply diversity filtering to avoid similar documents
+            documents = self._apply_diversity_filtering(documents)
+            
+            logger.info(f"Applied advanced filtering to {len(documents)} documents")
+            return documents
+            
+        except Exception as e:
+            logger.error(f"Failed to apply advanced filtering: {e}")
+            return documents
+    
+    def _extract_keywords(self, query: str) -> List[str]:
+        """Extract important keywords from query"""
+        
+        # Remove common stop words
+        stop_words = {'은', '는', '이', '가', '을', '를', '에', '의', '로', '으로', '와', '과', '도', '만', '부터', '까지', '에서', '에게', '한테', '께', '더', '가장', '매우', '정말', '진짜', '완전', '너무', '아주', '꽤', '상당히', '꽤나', '제법', '어느', '어떤', '무엇', '어디', '언제', '누가', '왜', '어떻게', '몇', '얼마', '얼마나'}
+        
+        # Extract Korean words (2+ characters)
+        korean_words = re.findall(r'[가-힣]{2,}', query)
+        
+        # Filter out stop words and short words
+        keywords = [word for word in korean_words if word not in stop_words and len(word) >= 2]
+        
+        return keywords
+    
+    def _calculate_content_quality_score(self, content: str, query_keywords: List[str]) -> float:
+        """Calculate content quality score based on various factors"""
+        try:
+            score = 0.0
+            
+            # Length score (optimal length is 200-800 characters)
+            content_length = len(content)
+            if 200 <= content_length <= 800:
+                score += 0.3
+            elif 100 <= content_length <= 1000:
+                score += 0.2
+            else:
+                score += 0.1
+            
+            # Keyword density score
+            if query_keywords:
+                keyword_matches = sum(1 for keyword in query_keywords if keyword in content)
+                keyword_density = keyword_matches / len(query_keywords)
+                score += keyword_density * 0.3
+            
+            # Structure score (check for organized content)
+            structure_indicators = ['•', '1.', '2.', '3.', '-', '→', '▶', ':', ';']
+            structure_count = sum(content.count(indicator) for indicator in structure_indicators)
+            structure_score = min(1.0, structure_count / 5) * 0.2
+            score += structure_score
+            
+            # Information density score (check for specific information)
+            info_indicators = ['데이터', '통계', '분석', '결과', '연구', '조사', '예시', '사례', '방법', '절차']
+            info_count = sum(1 for indicator in info_indicators if indicator in content)
+            info_score = min(1.0, info_count / 3) * 0.2
+            score += info_score
+            
+            return min(1.0, score)
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate content quality score: {e}")
+            return 0.5
+    
+    def _calculate_relevance_boost(self, content: str, query: str) -> float:
+        """Calculate relevance boost based on query-content matching"""
+        try:
+            # Extract key terms from query
+            query_terms = re.findall(r'\b\w+\b', query.lower())
+            content_terms = re.findall(r'\b\w+\b', content.lower())
+            
+            # Calculate term overlap
+            common_terms = set(query_terms) & set(content_terms)
+            if len(query_terms) > 0:
+                overlap_ratio = len(common_terms) / len(query_terms)
+            else:
+                overlap_ratio = 0.0
+            
+            # Check for direct question addressing
+            question_patterns = [
+                r"질문.*답변", r"문의.*응답", r"요청.*제공",
+                r"궁금.*설명", r"알고.*싶", r"궁금.*것"
+            ]
+            direct_addressing = any(re.search(pattern, content) for pattern in question_patterns)
+            
+            # Calculate final relevance boost
+            boost = overlap_ratio * 0.7 + (0.3 if direct_addressing else 0.0)
+            return min(1.0, boost)
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate relevance boost: {e}")
+            return 0.5
+    
+    def _remove_duplicate_content(self, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Remove documents with duplicate or very similar content"""
+        try:
+            unique_docs = []
+            seen_content_hashes = set()
+            
+            for doc in documents:
+                # Create content hash for duplicate detection
+                content = doc['content']
+                content_hash = hash(content[:200])  # Use first 200 chars as hash
+                
+                if content_hash not in seen_content_hashes:
+                    unique_docs.append(doc)
+                    seen_content_hashes.add(content_hash)
+                else:
+                    logger.debug(f"Removed duplicate document: {doc.get('id', 'unknown')}")
+            
+            return unique_docs
+            
+        except Exception as e:
+            logger.error(f"Failed to remove duplicate content: {e}")
+            return documents
+    
+    def _apply_diversity_filtering(self, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Apply diversity filtering to ensure varied content sources"""
+        try:
+            if len(documents) <= 3:
+                return documents
+            
+            diverse_docs = []
+            used_sources = set()
+            
+            for doc in documents:
+                # Check source diversity
+                metadata = doc.get('metadata', {})
+                source = metadata.get('filename', metadata.get('file_name', 'unknown'))
+                
+                # If we haven't seen this source or it's been a while, include it
+                if source not in used_sources or len(diverse_docs) % 2 == 0:
+                    diverse_docs.append(doc)
+                    used_sources.add(source)
+                    
+                    # Limit to prevent too many documents
+                    if len(diverse_docs) >= 5:
+                        break
+            
+            return diverse_docs
+            
+        except Exception as e:
+            logger.error(f"Failed to apply diversity filtering: {e}")
+            return documents
+
     async def close(self):
         """Close vector service"""
         if self.ollama_client:

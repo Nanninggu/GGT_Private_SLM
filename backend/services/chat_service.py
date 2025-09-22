@@ -10,6 +10,9 @@ from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResp
 from backend.repositories.chat_repository import ChatRepository
 from backend.services.llm_service import ExaoneLLMService
 from backend.services.langchain_rag_service import langchain_rag_service
+from backend.services.quality_service import quality_service
+from backend.services.personalization_service import personalization_service
+from backend.services.monitoring_service import get_monitoring_service
 from backend.config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -50,8 +53,8 @@ class ChatService:
                 logger.error(f"Failed to initialize RAG service: {e}")
                 raise
 
-    async def send_message(self, session_id: str, user_message: str, model_type: str = "fast") -> tuple[ChatMessage, ChatMessage]:
-        """Send a message and get AI response using RAG"""
+    async def send_message(self, session_id: str, user_message: str, model_type: str = "fast", user_id: str = "default") -> tuple[ChatMessage, ChatMessage]:
+        """Send a message and get AI response using RAG with personalization"""
         # Initialize RAG service if not already done
         if not self._initialized:
             await self.initialize()
@@ -83,9 +86,14 @@ class ChatService:
         accuracy_info = None
         
         try:
+            # Apply personalization to the query
+            personalized_query = personalization_service.customize_prompt(
+                user_message, user_id, user_message
+            )
+            
             # Use LangChain RAG service to generate response
-            logger.info(f"Processing LangChain RAG query with model type {model_type}: {user_message[:100]}...")
-            rag_result = await self.rag_service.rag_query(user_message, session_id, model_type)
+            logger.info(f"Processing personalized LangChain RAG query with model type {model_type}: {user_message[:100]}...")
+            rag_result = await self.rag_service.rag_query(personalized_query, session_id, model_type)
             
             if rag_result["success"]:
                 # RAG-based response
@@ -112,7 +120,20 @@ class ChatService:
                             document_id=document_id
                         ))
                 
-                # Create accuracy information
+                # Apply personalization to response format
+                response_content = personalization_service.customize_response_format(
+                    response_content, user_id
+                )
+                
+                # Assess response quality
+                quality_metrics = quality_service.assess_response_quality(
+                    user_question=user_message,
+                    response=response_content,
+                    context_documents=rag_result.get("context", []),
+                    sources=sources
+                )
+                
+                # Create enhanced accuracy information with quality metrics
                 accuracy_info = AccuracyInfo(
                     confidence_score=avg_similarity,
                     context_count=context_count,
@@ -136,7 +157,7 @@ class ChatService:
         model_info = rag_result.get("model_info", {}) if rag_result.get("success") else {}
         model_name = model_info.get("model", "exaone3.5:2.4b")
         
-        # Create assistant message with source and accuracy information
+        # Create assistant message with source, accuracy, and quality information
         assistant_msg = ChatMessage(
             id=str(uuid.uuid4()),
             role=MessageRole.ASSISTANT,
@@ -149,12 +170,38 @@ class ChatService:
                 "model_type": model_type,
                 "model_name": model_name,
                 "rag_mode": "LangChain RAG",
-                "model_info": model_info
+                "model_info": model_info,
+                "quality_metrics": {
+                    "overall_score": quality_metrics.overall_score,
+                    "completeness_score": quality_metrics.completeness_score,
+                    "accuracy_score": quality_metrics.accuracy_score,
+                    "relevance_score": quality_metrics.relevance_score,
+                    "clarity_score": quality_metrics.clarity_score,
+                    "structure_score": quality_metrics.structure_score,
+                    "quality_level": quality_service.get_quality_level(quality_metrics.overall_score),
+                    "issues": quality_metrics.issues,
+                    "suggestions": quality_metrics.suggestions
+                } if 'quality_metrics' in locals() else {}
             }
         )
 
         # Add assistant message to session
         session.add_message(assistant_msg)
+
+        # Record metrics for monitoring
+        response_time = (assistant_msg.timestamp - user_msg.timestamp).total_seconds()
+        quality_score = quality_metrics.overall_score if 'quality_metrics' in locals() else 0.5
+        user_satisfaction = 0.5  # Default, would be updated based on feedback
+        
+        # Get monitoring service and record metrics
+        monitoring_svc = get_monitoring_service()
+        monitoring_svc.record_metrics(
+            response_time=response_time,
+            quality_score=quality_score,
+            user_satisfaction=user_satisfaction,
+            error_occurred=not rag_result.get("success", False),
+            active_users=1
+        )
 
         # Save session
         self.repository.save_session(session)

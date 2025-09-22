@@ -268,7 +268,7 @@ def main():
     # Inject accessibility scripts
     ChatComponents._inject_accessibility_scripts()
 
-    # Custom CSS for HAI Portal styling
+    # Modern Enterprise UI - Pure White Theme
     st.markdown("""
     <style>
     /* Hide Streamlit default UI elements */
@@ -288,10 +288,16 @@ def main():
     /* Hide the top bar completely */
     .stApp > div[data-testid="stHeader"] {display:none;}
     
+    /* Global styling - Pure White Background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
     /* Adjust main content padding */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 2rem;
+        background-color: #ffffff;
     }
     
     /* Chat message spacing */
@@ -304,94 +310,308 @@ def main():
         margin-top: 2rem !important;
     }
     
+    /* Modern Enterprise header - Clean White Design */
     .main-header {
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        color: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 4rem 2rem;
+        border-radius: 24px;
+        margin-bottom: 3rem;
+        color: #212529;
         text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
     }
     
     .main-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+        font-size: 3.2rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        color: #212529;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .main-subtitle {
-        font-size: 1.2rem;
-        opacity: 0.9;
+        font-size: 1.3rem;
+        opacity: 0.8;
+        font-weight: 500;
+        color: #6c757d;
     }
     
+    /* Modern Enterprise service card - Pure White */
     .service-card {
-        background: white;
+        background: #ffffff;
         padding: 3rem;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
         text-align: center;
         margin: 2rem auto;
-        max-width: 500px;
+        max-width: 600px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .service-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+    }
+    
+    .service-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+        border-color: #e9ecef;
     }
     
     .service-icon {
         font-size: 4rem;
-        margin-bottom: 1rem;
-        color: #8B5CF6;
+        margin-bottom: 2rem;
+        color: #6c757d;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
     }
     
     .service-title {
         font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        color: #333;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        color: #212529;
+        letter-spacing: -0.02em;
     }
     
     .service-description {
         font-size: 1.1rem;
-        color: #666;
-        margin-bottom: 1rem;
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+        line-height: 1.7;
+        font-weight: 400;
     }
     
+    /* Status indicators - Clean White Design */
     .status-indicator {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 500;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 30px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: 2px solid;
     }
     
     .status-online {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: #f0f9ff;
+        color: #0369a1;
+        border-color: #bae6fd;
     }
     
     .status-offline {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
     }
     
+    /* Modern Enterprise navigation buttons */
     .nav-button {
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        color: #495057;
+        border: 2px solid #e9ecef;
+        padding: 1rem 2rem;
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         text-decoration: none;
         display: inline-block;
-        margin: 0.25rem;
+        margin: 0.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        font-size: 1rem;
     }
     
     .nav-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-color: #6c757d;
+        color: #212529;
+    }
+    
+    /* Modern Enterprise card styling */
+    .modern-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .modern-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Modern Enterprise input styling */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
+        font-weight: 500;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise button styling */
+    .stButton > button {
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border: 2px solid transparent;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    /* Modern Enterprise selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise radio button styling */
+    .stRadio > div {
+        gap: 1.5rem;
+    }
+    
+    .stRadio > div > label {
+        background: #ffffff;
+        padding: 1.25rem;
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .stRadio > div > label:hover {
+        border-color: #6c757d;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        background: #f8f9fa;
+    }
+    
+    /* Modern Enterprise sidebar styling */
+    .css-1d391kg {
+        background-color: #ffffff;
+    }
+    
+    .css-1d391kg .css-1v0mbdj {
+        background-color: #ffffff;
+        border-radius: 20px;
+        margin: 1rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        border: 2px solid #f1f3f4;
+    }
+    
+    /* Modern Enterprise chat input */
+    .stChatInput > div {
+        border-radius: 20px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    
+    .stChatInput > div:focus-within {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
+    }
+    
+    /* Modern Enterprise chat messages */
+    .stChatMessage {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+    }
+    
+    /* Modern Enterprise tabs */
+    .stTabs > div > div > div > div {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+    }
+    
+    /* Modern Enterprise expander */
+    .streamlit-expander {
+        border: 2px solid #f1f3f4;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    
+    /* Modern Enterprise metric cards */
+    .metric-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .main-header {
+            padding: 3rem 1.5rem;
+        }
+        
+        .main-title {
+            font-size: 2.5rem;
+        }
+        
+        .service-card {
+            padding: 2.5rem 2rem;
+            margin: 1.5rem;
+        }
     }
     </style>
     """, unsafe_allow_html=True)

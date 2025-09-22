@@ -95,24 +95,28 @@ def get_collections(force_refresh: bool = False) -> List[Dict[str, Any]]:
 
 def display_search_result(result: Dict[str, Any], index: int):
     """검색 결과를 표시합니다."""
-    with st.expander(f"**{index + 1}. {result.get('title', '제목 없음')}**", expanded=False):
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            st.write(f"**URL:** {result.get('url', 'N/A')}")
-            st.write(f"**도메인:** {result.get('domain', 'N/A')}")
-            
-            if result.get('snippet'):
-                st.write("**요약:**")
-                st.write(result['snippet'])
-            
-            if result.get('content') and result['content'] != result.get('snippet'):
-                st.write("**내용:**")
-                st.write(result['content'][:500] + "..." if len(result['content']) > 500 else result['content'])
-        
-        with col2:
-            if result.get('url'):
-                st.link_button("🔗 링크 열기", result['url'])
+    st.markdown(f"""
+    <div class="search-result-card">
+        <h4 style="color: #212529; margin-bottom: 1rem; font-weight: 700; font-size: 1.25rem;">
+            {index + 1}. {result.get('title', '제목 없음')}
+        </h4>
+        <div style="margin-bottom: 1rem;">
+            <p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem;">
+                <strong>URL:</strong> {result.get('url', 'N/A')}
+            </p>
+            <p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem;">
+                <strong>도메인:</strong> {result.get('domain', 'N/A')}
+            </p>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            {f'<p style="color: #495057; line-height: 1.6; margin-bottom: 1rem;"><strong>요약:</strong><br>{result["snippet"]}</p>' if result.get('snippet') else ''}
+            {f'<p style="color: #495057; line-height: 1.6;"><strong>내용:</strong><br>{(result["content"][:500] + "..." if len(result["content"]) > 500 else result["content"])}</p>' if result.get('content') and result['content'] != result.get('snippet') else ''}
+        </div>
+        <div style="text-align: right;">
+            {f'<a href="{result["url"]}" target="_blank" style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; text-decoration: none; border-radius: 16px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s ease;">🔗 링크 열기</a>' if result.get('url') else ''}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 def main():
     """Web search page with unified design"""
@@ -124,7 +128,7 @@ def main():
             st.rerun()
         return
     
-    # HAI Portal styling
+    # Modern Enterprise UI - Pure White Web Search Theme
     st.markdown("""
     <style>
     /* Hide Streamlit default UI elements */
@@ -144,45 +148,95 @@ def main():
     /* Hide the top bar completely */
     .stApp > div[data-testid="stHeader"] {display:none;}
     
+    /* Global styling - Pure White Background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
     /* Adjust main content padding */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 1rem;
+        background-color: #ffffff;
     }
     
+    /* Modern Enterprise page header - Clean White Design */
     .page-header {
-        background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        color: white;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 4rem 2rem;
+        border-radius: 24px;
+        margin-bottom: 3rem;
+        color: #212529;
+        text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
     }
     
     .page-title {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        color: #212529;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .page-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
+        font-size: 1.3rem;
+        opacity: 0.8;
+        font-weight: 500;
+        color: #6c757d;
     }
     
+    /* Modern Enterprise config section - Pure White */
     .config-section {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
+        background: #ffffff;
+        padding: 3rem;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+        margin-bottom: 2.5rem;
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
     }
     
+    .config-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+    }
+    
+    /* Modern Enterprise status card - Clean White Design */
     .status-card {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #8B5CF6;
-        margin-bottom: 1rem;
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        border-left: 4px solid #6c757d;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        transition: all 0.3s ease;
+    }
+    
+    .status-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
     }
     
     .status-online {
@@ -193,6 +247,126 @@ def main():
     .status-offline {
         border-left-color: #EF4444;
         background: #fef2f2;
+    }
+    
+    /* Modern Enterprise button styling */
+    .stButton > button {
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border: 2px solid transparent;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    /* Modern Enterprise input styling */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
+        font-weight: 500;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise radio button styling */
+    .stRadio > div {
+        gap: 1.5rem;
+    }
+    
+    .stRadio > div > label {
+        background: #ffffff;
+        padding: 1.25rem;
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .stRadio > div > label:hover {
+        border-color: #6c757d;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        background: #f8f9fa;
+    }
+    
+    /* Modern Enterprise expander styling */
+    .streamlit-expander {
+        border: 2px solid #f1f3f4;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    
+    /* Search result cards */
+    .search-result-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-result-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Collection management cards */
+    .collection-card {
+        background: #ffffff;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .collection-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 3rem 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+        }
+        
+        .config-section {
+            padding: 2rem 1.5rem;
+        }
+        
+        .search-result-card, .collection-card {
+            padding: 1.5rem;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -300,36 +474,43 @@ def main():
             st.subheader("📋 컬렉션 목록")
             
             for i, collection in enumerate(collections, 1):
-                with st.expander(f"📁 {collection.get('name', 'Unknown')} ({collection.get('document_count', 0)}개 문서)", expanded=False):
-                    col1, col2, col3 = st.columns([2, 1, 1])
-                    
-                    with col1:
-                        st.write(f"**이름:** {collection.get('name', 'Unknown')}")
-                        if collection.get('metadata', {}).get('description'):
-                            st.write(f"**설명:** {collection['metadata']['description']}")
-                    
-                    with col2:
-                        st.metric("문서 수", collection.get('document_count', 0))
-                    
-                    with col3:
-                        if collection.get('created_at'):
-                            created_date = collection['created_at'][:10]
-                            st.caption(f"생성일: {created_date}")
-                        else:
-                            st.caption("생성일: 알 수 없음")
-                    
-                    # 컬렉션 선택 및 삭제 버튼
-                    col_btn1, col_btn2 = st.columns([1, 1])
-                    
-                    with col_btn1:
-                        if st.button(f"선택", key=f"select_collection_{i}"):
-                            st.session_state.selected_collection = collection.get('name', '')
-                            st.rerun()
-                    
-                    with col_btn2:
-                        if st.button(f"삭제", key=f"delete_collection_{i}", type="secondary"):
-                            st.session_state.collection_to_delete = collection.get('name', '')
-                            st.rerun()
+                st.markdown(f"""
+                <div class="collection-card">
+                    <h4 style="color: #212529; margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem;">
+                        📁 {collection.get('name', 'Unknown')} ({collection.get('document_count', 0)}개 문서)
+                    </h4>
+                    <div style="margin-bottom: 1rem;">
+                        <p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
+                            <strong>이름:</strong> {collection.get('name', 'Unknown')}
+                        </p>
+                        {f'<p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;"><strong>설명:</strong> {collection["metadata"]["description"]}</p>' if collection.get('metadata', {}).get('description') else ''}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #6c757d;">{collection.get('document_count', 0)}</div>
+                            <div style="font-size: 0.9rem; color: #6c757d; font-weight: 500;">문서 수</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: #6c757d; font-weight: 500;">
+                                생성일: {collection['created_at'][:10] if collection.get('created_at') else '알 수 없음'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # 컬렉션 선택 및 삭제 버튼
+                col_btn1, col_btn2 = st.columns([1, 1])
+                
+                with col_btn1:
+                    if st.button(f"선택", key=f"select_collection_{i}"):
+                        st.session_state.selected_collection = collection.get('name', '')
+                        st.rerun()
+                
+                with col_btn2:
+                    if st.button(f"삭제", key=f"delete_collection_{i}", type="secondary"):
+                        st.session_state.collection_to_delete = collection.get('name', '')
+                        st.rerun()
         
         # 컬렉션 삭제 확인 다이얼로그
         if st.session_state.get("collection_to_delete"):

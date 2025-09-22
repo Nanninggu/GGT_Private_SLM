@@ -419,12 +419,239 @@ def main():
             st.rerun()
         return
     
-    # Page header
+    # Modern Enterprise UI - Pure White User Management Theme
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%); 
-                padding: 2rem; border-radius: 10px; margin-bottom: 2rem; color: white; text-align: center;">
-        <h1 style="margin: 0; font-size: 2.5rem;">👥 사용자 관리</h1>
-        <p style="margin: 0.5rem 0 0 0; font-size: 1.2rem; opacity: 0.9;">HAI Portal 사용자 관리 시스템</p>
+    <style>
+    /* Hide Streamlit default UI elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    .stDecoration {display:none;}
+    .stApp > header {display:none;}
+    .stApp > div[data-testid="stToolbar"] {display:none;}
+    .stApp > div[data-testid="stDecoration"] {display:none;}
+    .stApp > div[data-testid="stStatusWidget"] {display:none;}
+    
+    /* Hide the hamburger menu */
+    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    
+    /* Hide the top bar completely */
+    .stApp > div[data-testid="stHeader"] {display:none;}
+    
+    /* Global styling - Pure White Background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
+    /* Adjust main content padding */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        background-color: #ffffff;
+    }
+    
+    /* Modern Enterprise page header - Clean White Design */
+    .page-header {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 4rem 2rem;
+        border-radius: 24px;
+        margin-bottom: 3rem;
+        color: #212529;
+        text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
+    }
+    
+    .page-title {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.03em;
+        color: #212529;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .page-subtitle {
+        font-size: 1.3rem;
+        opacity: 0.8;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    /* Modern Enterprise button styling */
+    .stButton > button {
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border: 2px solid transparent;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    
+    /* Modern Enterprise input styling */
+    .stTextInput > div > div > input {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
+        font-weight: 500;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #6c757d;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise selectbox styling */
+    .stSelectbox > div > div {
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise radio button styling */
+    .stRadio > div {
+        gap: 1.5rem;
+    }
+    
+    .stRadio > div > label {
+        background: #ffffff;
+        padding: 1.25rem;
+        border-radius: 16px;
+        border: 2px solid #f1f3f4;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .stRadio > div > label:hover {
+        border-color: #6c757d;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        background: #f8f9fa;
+    }
+    
+    /* Modern Enterprise tabs styling */
+    .stTabs > div > div > div > div {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+    }
+    
+    /* Modern Enterprise data table styling - Pure White */
+    .stDataFrame {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        background: #ffffff;
+    }
+    
+    /* Modern Enterprise expander styling */
+    .streamlit-expander {
+        border: 2px solid #f1f3f4;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    
+    /* User management cards */
+    .user-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .user-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Form sections */
+    .form-section {
+        background: #ffffff;
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 2rem;
+    }
+    
+    .form-section h3 {
+        color: #212529;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
+    }
+    
+    /* User list styling */
+    .user-list-item {
+        background: #ffffff;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 2px solid #f1f3f4;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .user-list-item:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-color: #e9ecef;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 3rem 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+        }
+        
+        .form-section {
+            padding: 2rem 1.5rem;
+        }
+        
+        .user-card, .user-list-item {
+            padding: 1.5rem;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Modern Enterprise page header - Clean White Design
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-title">👥 사용자 관리</div>
+        <div class="page-subtitle">HAI Portal 사용자 관리 시스템</div>
     </div>
     """, unsafe_allow_html=True)
     

@@ -1816,6 +1816,7 @@ async def login(request: LoginRequest):
                 "role": result.user.role.value,
                 "is_active": result.user.is_active,
                 "created_at": result.user.created_at.isoformat() if result.user.created_at else None,
+                "updated_at": result.user.updated_at.isoformat() if result.user.updated_at else None,
                 "last_login": result.user.last_login.isoformat() if result.user.last_login else None
             }
         

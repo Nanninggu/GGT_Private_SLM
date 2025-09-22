@@ -3,7 +3,7 @@
     "id": "5ba9fad6-3b51-4f80-ba65-482be46e6bac",
     "username": "admin",
     "email": "admin@example.com",
-    "password_hash": "7606c59129936fb17499b87b98d13aac:9bf8b2517ec4e5779a14d04acbf3f38d235dd50fbcdc28296bc8a836f4716500",
+    "password_hash": "ec820bf94c8e3a2a8b46055ba9b421cf:23b9017cbad625274fbd74b50d24fdc21cfa073a3e365d1d54df8eaaef4e51ae",
     "role": "admin",
     "is_active": true,
     "created_at": "2025-09-22T01:19:42.114419",

@@ -3,4 +3,4 @@ Configuration settings for frontend
 """
 
 # Admin configuration - matches backend settings
-ADMIN_USER_ID = "5ba9fad6-3b51-4f80-ba65-482be46e6bac"  # Current admin user ID
+ADMIN_USER_ID = "eee65338-086b-457a-8746-b88cceac42a3"  # Current admin user ID (from database)

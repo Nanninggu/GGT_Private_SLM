@@ -158,7 +158,7 @@ class Settings:
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # ===== 관리자 설정 =====
-    ADMIN_USER_ID: str = "5ba9fad6-3b51-4f80-ba65-482be46e6bac"  # admin 사용자 ID
+    ADMIN_USER_ID: str = "eee65338-086b-457a-8746-b88cceac42a3"  # admin 사용자 ID (from database)
     
     # ===== 기존 설정 유지 =====
     # Model configurations for different types

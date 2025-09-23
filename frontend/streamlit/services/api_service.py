@@ -102,12 +102,52 @@ class APIService:
             return response.json()
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
+    
+    def delete_session(self, session_id: str) -> Dict[str, Any]:
+        """Delete a chat session permanently"""
+        try:
+            response = requests.delete(
+                f"{self.base_url}/api/chat/session/{session_id}/delete",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def save_message(self, message: Dict[str, Any], session_id: str) -> Dict[str, Any]:
+        """Save a message to the backend"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/chat/save-message",
+                json={
+                    "message": message,
+                    "session_id": session_id
+                },
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
 
     def clear_all_sessions(self) -> Dict[str, Any]:
         """Clear all sessions except default"""
         try:
             response = requests.delete(
                 f"{self.base_url}/api/chat/sessions/all",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+
+    def get_session_stats(self, session_id: str) -> Dict[str, Any]:
+        """Get session statistics"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/chat/session/{session_id}/stats",
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -582,8 +622,24 @@ class APIService:
                 f"{self.base_url}/api/collections/{collection_name}",
                 timeout=self.timeout
             )
+            
+            # Handle HTTP 400 (Bad Request) as a normal response, not an exception
+            if response.status_code == 400:
+                try:
+                    error_detail = response.json()
+                    return {"success": False, "error": error_detail.get('detail', 'Bad Request')}
+                except:
+                    return {"success": False, "error": "Bad Request"}
+            
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            # Get detailed error information for other HTTP errors
+            try:
+                error_detail = response.json()
+                return {"success": False, "error": f"HTTP {response.status_code}: {error_detail.get('detail', str(e))}"}
+            except:
+                return {"success": False, "error": f"HTTP {response.status_code}: {str(e)}"}
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
@@ -777,7 +833,11 @@ class APIService:
                 timeout=self.timeout
             )
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            # Ensure the result has the expected structure
+            if "valid" not in result:
+                result["valid"] = result.get("success", False)
+            return result
         except requests.exceptions.RequestException as e:
             return {"success": False, "valid": False, "error": str(e)}
     

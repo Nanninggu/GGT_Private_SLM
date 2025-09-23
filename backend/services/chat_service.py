@@ -26,31 +26,54 @@ class ChatService:
         self.rag_service = langchain_rag_service
         self._initialized = False
 
-    def create_session(self) -> ChatSession:
+    async def create_session(self) -> ChatSession:
         """Create a new chat session"""
-        session_id = str(uuid.uuid4())
-        session = ChatSession(
-            id=session_id,
-            messages=[],
-            created_at=datetime.now(),
-            updated_at=datetime.now()
-        )
-        self.repository.save_session(session)
-        return session
+        try:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info("Creating new session in ChatService...")
+            
+            session_id = str(uuid.uuid4())
+            logger.info(f"Generated session ID: {session_id}")
+            
+            session = ChatSession(
+                id=session_id,
+                messages=[],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+            logger.info("ChatSession object created")
+            
+            success = await self.repository.save_session(session)
+            logger.info(f"Session save result: {success}")
+            
+            return session
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in create_session: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            raise
 
-    def get_session(self, session_id: str) -> Optional[ChatSession]:
+    async def get_session(self, session_id: str) -> Optional[ChatSession]:
         """Get existing chat session"""
-        return self.repository.load_session(session_id)
+        return await self.repository.load_session(session_id)
+    
+    async def save_session(self, session: ChatSession) -> bool:
+        """Save a chat session"""
+        return await self.repository.save_session(session)
 
     async def initialize(self):
-        """Initialize RAG service"""
+        """Initialize RAG service and database repository"""
         if not self._initialized:
             try:
+                await self.repository.initialize()
                 await self.rag_service.initialize()
                 self._initialized = True
-                logger.info("ChatService initialized with RAG")
+                logger.info("ChatService initialized with RAG and database")
             except Exception as e:
-                logger.error(f"Failed to initialize RAG service: {e}")
+                logger.error(f"Failed to initialize ChatService: {e}")
                 raise
 
     async def send_message(self, session_id: str, user_message: str, model_type: str = "fast", user_id: str = "default") -> tuple[ChatMessage, ChatMessage]:
@@ -60,9 +83,9 @@ class ChatService:
             await self.initialize()
 
         # Load or create session
-        session = self.get_session(session_id)
+        session = await self.get_session(session_id)
         if not session:
-            session = self.create_session()
+            session = await self.create_session()
             session.id = session_id
 
         # Create user message
@@ -204,13 +227,13 @@ class ChatService:
         )
 
         # Save session
-        self.repository.save_session(session)
+        await self.repository.save_session(session)
 
         return user_msg, assistant_msg
 
-    def get_chat_history(self, session_id: str, limit: Optional[int] = None) -> List[ChatMessage]:
+    async def get_chat_history(self, session_id: str, limit: Optional[int] = None) -> List[ChatMessage]:
         """Get chat history for a session"""
-        session = self.get_session(session_id)
+        session = await self.get_session(session_id)
         if not session:
             return []
 
@@ -220,19 +243,26 @@ class ChatService:
 
         return messages
 
-    def get_all_sessions(self) -> List[str]:
+    async def get_all_sessions(self) -> List[str]:
         """Get all session IDs"""
-        return self.repository.get_all_sessions()
+        return await self.repository.get_all_sessions()
 
-    def session_exists(self, session_id: str) -> bool:
+    async def session_exists(self, session_id: str) -> bool:
         """Check if a session exists without loading all sessions"""
-        return self.repository.session_exists(session_id)
+        return await self.repository.session_exists(session_id)
 
-    def clear_session(self, session_id: str) -> bool:
+    async def clear_session(self, session_id: str) -> bool:
         """Clear a chat session"""
-        session = self.get_session(session_id)
-        if session:
-            session.messages = []
-            session.updated_at = datetime.now()
-            return self.repository.save_session(session)
-        return False
+        return await self.repository.clear_session(session_id)
+
+    async def delete_session(self, session_id: str) -> bool:
+        """Delete a chat session completely"""
+        return await self.repository.delete_session(session_id)
+
+    async def clear_all_sessions(self) -> List[str]:
+        """Clear all sessions except default"""
+        return await self.repository.clear_all_sessions()
+
+    async def get_session_stats(self, session_id: str) -> dict:
+        """Get session statistics"""
+        return await self.repository.get_session_stats(session_id)

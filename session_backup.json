@@ -1,0 +1,16 @@
+{
+  "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInVzZXJfaWQiOiJlZWU2NTMzOC0wODZiLTQ1N2EtODc0Ni1iODhjY2VhYzQyYTMiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NTg2NzA3MjAsImlhdCI6MTc1ODY0MTkyMCwidHlwZSI6ImFjY2VzcyJ9.wK7KKalfJknKGfOCk02SNbyGhWdwTuMhujKUXdX-Ixs",
+  "user_info": {
+    "id": "eee65338-086b-457a-8746-b88cceac42a3",
+    "username": "admin",
+    "email": "admin@example.com",
+    "role": "admin",
+    "is_active": true,
+    "created_at": "2025-09-22T01:19:42.114419",
+    "updated_at": "2025-09-23T23:11:36.072177",
+    "last_login": "2025-09-24T00:38:40.403975"
+  },
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInVzZXJfaWQiOiJlZWU2NTMzOC0wODZiLTQ1N2EtODc0Ni1iODhjY2VhYzQyYTMiLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NjEyMzM5MjAsImlhdCI6MTc1ODY0MTkyMCwidHlwZSI6InJlZnJlc2gifQ.vDCVEmJVtSp5m6OTxIx-UxLlt65dGTKON3jtHlba0o8",
+  "login_time": "2025-09-24T00:38:40.412479",
+  "expires_at": "2025-09-24T09:15:01.704055"
+}

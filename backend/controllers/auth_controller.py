@@ -20,18 +20,18 @@ class AuthController:
         """Register a new user"""
         return self.auth_service.register_user(request)
     
-    def login(self, request: LoginRequest) -> AuthResponse:
+    async def login(self, request: LoginRequest) -> AuthResponse:
         """Login user"""
-        return self.auth_service.login_user(request)
+        return await self.auth_service.login_user(request)
     
     def refresh_token(self, refresh_token: str) -> AuthResponse:
         """Refresh access token"""
         return self.auth_service.refresh_access_token(refresh_token)
     
-    def get_current_user(self, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    async def get_current_user(self, credentials: HTTPAuthorizationCredentials = Depends(security)):
         """Get current authenticated user"""
         token = credentials.credentials
-        user = self.auth_service.get_current_user(token)
+        user = await self.auth_service.get_current_user(token)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -46,8 +46,19 @@ class AuthController:
     
     def verify_token(self, token: str) -> bool:
         """Verify if token is valid"""
-        user = self.auth_service.get_current_user(token)
-        return user is not None
+        try:
+            token_data = self.auth_service.verify_token(token)
+            if not token_data:
+                return False
+            
+            # Check if token is expired
+            from datetime import datetime
+            if token_data.exp and datetime.utcnow().timestamp() > token_data.exp:
+                return False
+                
+            return True
+        except Exception:
+            return False
 
 # Global auth controller instance
 auth_controller = AuthController()

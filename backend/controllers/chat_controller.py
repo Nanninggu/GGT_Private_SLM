@@ -2,11 +2,11 @@
 Chat controller for handling API requests
 """
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from backend.services.chat_service import ChatService
 from backend.services.ollama_service import ollama_service
-from backend.models.chat import ChatMessage, MessageRole
+from backend.models.chat import ChatMessage, MessageRole, ChatSession
 
 
 class ChatController:
@@ -15,20 +15,49 @@ class ChatController:
     def __init__(self):
         self.chat_service = ChatService()
 
-    def create_session(self) -> Dict[str, Any]:
+    async def create_session(self) -> Dict[str, Any]:
         """Create a new chat session"""
         try:
-            session = self.chat_service.create_session()
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info("Creating new session...")
+            
+            session = await self.chat_service.create_session()
+            logger.info(f"Session created successfully: {session.id}")
+            
             return {
                 "success": True,
                 "session_id": session.id,
                 "created_at": session.created_at.isoformat()
             }
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating session: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 "success": False,
                 "error": str(e)
             }
+
+    async def create_session_object(self) -> ChatSession:
+        """Create a new chat session and return the object"""
+        try:
+            return await self.chat_service.create_session()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating session object: {e}")
+            raise
+    
+    async def save_session(self, session) -> bool:
+        """Save a chat session"""
+        try:
+            return await self.chat_service.save_session(session)
+        except Exception as e:
+            print(f"Error saving session: {e}")
+            return False
 
     async def send_message(self, session_id: str, message: str, model_type: str = "fast") -> Dict[str, Any]:
         """Send a message and get response with model selection"""
@@ -171,10 +200,10 @@ class ChatController:
                 "error": str(e)
             }
 
-    def get_sessions(self) -> Dict[str, Any]:
+    async def get_sessions(self) -> Dict[str, Any]:
         """Get all session IDs"""
         try:
-            sessions = self.chat_service.get_all_sessions()
+            sessions = await self.chat_service.get_all_sessions()
             return {
                 "success": True,
                 "sessions": sessions
@@ -185,10 +214,10 @@ class ChatController:
                 "error": str(e)
             }
 
-    def check_session_exists(self, session_id: str) -> Dict[str, Any]:
+    async def check_session_exists(self, session_id: str) -> Dict[str, Any]:
         """Check if a session exists without loading all sessions"""
         try:
-            exists = self.chat_service.session_exists(session_id)
+            exists = await self.chat_service.session_exists(session_id)
             return {
                 "success": True,
                 "exists": exists
@@ -199,10 +228,10 @@ class ChatController:
                 "error": str(e)
             }
 
-    def clear_session(self, session_id: str) -> Dict[str, Any]:
+    async def clear_session(self, session_id: str) -> Dict[str, Any]:
         """Clear a chat session"""
         try:
-            success = self.chat_service.clear_session(session_id)
+            success = await self.chat_service.clear_session(session_id)
             return {
                 "success": success,
                 "message": "Session cleared successfully" if success else "Failed to clear session"
@@ -213,26 +242,74 @@ class ChatController:
                 "error": str(e)
             }
 
-    def clear_all_sessions(self) -> Dict[str, Any]:
+    async def delete_session(self, session_id: str) -> Dict[str, Any]:
+        """Delete a chat session completely"""
+        try:
+            success = await self.chat_service.delete_session(session_id)
+            return {
+                "success": success,
+                "message": "Session deleted successfully" if success else "Failed to delete session"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    async def clear_all_sessions(self) -> Dict[str, Any]:
         """Clear all sessions except default"""
         try:
-            sessions = self.chat_service.get_all_sessions()
-            cleared_sessions = []
-            failed_sessions = []
-            
-            for session_id in sessions:
-                if session_id != "default":  # Don't delete default session
-                    success = self.chat_service.clear_session(session_id)
-                    if success:
-                        cleared_sessions.append(session_id)
-                    else:
-                        failed_sessions.append(session_id)
-            
+            cleared_sessions = await self.chat_service.clear_all_sessions()
             return {
-                "success": len(failed_sessions) == 0,
+                "success": True,
                 "cleared_sessions": cleared_sessions,
-                "failed_sessions": failed_sessions,
                 "message": f"Cleared {len(cleared_sessions)} sessions successfully"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    async def get_chat_history(self, session_id: str, limit: Optional[int] = None) -> Dict[str, Any]:
+        """Get chat history for a session"""
+        try:
+            messages = await self.chat_service.get_chat_history(session_id, limit)
+            return {
+                "success": True,
+                "messages": [
+                    {
+                        "id": msg.id,
+                        "role": msg.role.value,
+                        "content": msg.content,
+                        "timestamp": msg.timestamp.isoformat(),
+                        "session_id": msg.session_id,
+                        "metadata": msg.metadata or {}
+                    }
+                    for msg in messages
+                ]
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    async def get_session(self, session_id: str) -> Optional[ChatSession]:
+        """Get a chat session"""
+        try:
+            return await self.chat_service.get_session(session_id)
+        except Exception as e:
+            logger.error(f"Error getting session {session_id}: {e}")
+            return None
+
+    async def get_session_stats(self, session_id: str) -> Dict[str, Any]:
+        """Get session statistics"""
+        try:
+            stats = await self.chat_service.get_session_stats(session_id)
+            return {
+                "success": True,
+                "stats": stats
             }
         except Exception as e:
             return {

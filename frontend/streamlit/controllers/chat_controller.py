@@ -9,7 +9,10 @@ import os
 # Add parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from services.api_service import APIService
+try:
+    from services.api_service import APIService
+except ImportError:
+    APIService = None
 import uuid
 from datetime import datetime
 
@@ -17,7 +20,10 @@ class ChatController:
     """Controller for chat-related functionality"""
 
     def __init__(self):
-        self.api_service = APIService()
+        try:
+            self.api_service = APIService()
+        except:
+            self.api_service = None
         self._initialize_session_state()
 
     def _initialize_session_state(self):
@@ -31,9 +37,13 @@ class ChatController:
 
     def check_backend_connection(self) -> bool:
         """Check if backend is connected"""
-        connected = self.api_service.health_check()
-        st.session_state.backend_connected = connected
-        return connected
+        if self.api_service:
+            connected = self.api_service.health_check()
+            st.session_state.backend_connected = connected
+            return connected
+        else:
+            st.session_state.backend_connected = False
+            return False
 
     def send_message(self, message: str, model_type: str = "fast") -> Optional[Dict[str, Any]]:
         """Send a message and return response with context"""
@@ -47,6 +57,10 @@ class ChatController:
             return None
 
         # Send message to backend with RAG mode
+        if not self.api_service:
+            st.error("API 서비스가 사용할 수 없습니다.")
+            return None
+            
         rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
         response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode, model_type=model_type)
 
@@ -62,19 +76,76 @@ class ChatController:
 
     def clear_chat(self):
         """Clear current chat session"""
-        if st.session_state.backend_connected:
+        if st.session_state.backend_connected and self.api_service:
             self.api_service.clear_session(st.session_state.session_id)
 
         st.session_state.messages = []
         st.session_state.session_id = str(uuid.uuid4())
         st.success("채팅이 초기화되었습니다.")
+    
+    def save_current_session(self):
+        """Save current session to backend"""
+        if not st.session_state.backend_connected or not self.api_service:
+            return False
+        
+        try:
+            current_messages = st.session_state.get("messages", [])
+            current_session_id = st.session_state.get("session_id", "default")
+            
+            if current_messages:
+                # Save to backend API
+                for message in current_messages:
+                    if self.api_service:
+                        self.api_service.save_message(message, current_session_id)
+                
+                # Also save to file system directly
+                self._save_session_to_file(current_session_id, current_messages)
+                return True
+            return False
+        except Exception as e:
+            st.error(f"세션 저장 중 오류가 발생했습니다: {str(e)}")
+            return False
+
+    def _save_session_to_file(self, session_id: str, messages: List[Dict[str, Any]]) -> bool:
+        """Save session to file system directly"""
+        try:
+            import json
+            import os
+            from datetime import datetime
+            
+            # Create data directory if it doesn't exist
+            data_dir = "./data"
+            os.makedirs(data_dir, exist_ok=True)
+            
+            # Prepare session data
+            session_data = {
+                "id": session_id,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "messages": messages
+            }
+            
+            # Save to file
+            file_path = os.path.join(data_dir, f"session_{session_id}.json")
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(session_data, f, ensure_ascii=False, indent=2)
+            
+            return True
+        except Exception as e:
+            st.error(f"파일 저장 중 오류가 발생했습니다: {str(e)}")
+            return False
 
     def get_chat_history(self) -> List[Dict[str, Any]]:
         """Get current chat history"""
         return st.session_state.messages
 
     def load_session_history(self, session_id: str):
-        """Load chat history from backend"""
+        """Load chat history from backend and file system"""
+        # Try to load from file system first
+        if self._load_session_from_file(session_id):
+            return
+        
+        # If file loading fails, try backend
         if not self.check_backend_connection():
             st.error("백엔드 서버에 연결할 수 없습니다.")
             return
@@ -99,6 +170,41 @@ class ChatController:
                 st.success(f"채팅 기록을 불러왔습니다. ({len(messages)}개 메시지)")
         else:
             st.error(f"채팅 기록을 불러올 수 없습니다: {response.get('error', '알 수 없는 오류')}")
+
+    def _load_session_from_file(self, session_id: str) -> bool:
+        """Load session from file system"""
+        try:
+            import json
+            import os
+            
+            file_path = os.path.join("./data", f"session_{session_id}.json")
+            if not os.path.exists(file_path):
+                return False
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                session_data = json.load(f)
+            
+            # Convert file messages to frontend format
+            messages = []
+            for msg in session_data.get("messages", []):
+                messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"],
+                    "timestamp": msg["timestamp"],
+                    "context": [],
+                    "metadata": msg.get("metadata", {})
+                })
+            
+            st.session_state.messages = messages
+            st.session_state.session_id = session_id
+            
+            if session_id != st.session_state.get("last_loaded_session", ""):
+                st.success(f"채팅 기록을 불러왔습니다. ({len(messages)}개 메시지)")
+            
+            return True
+        except Exception as e:
+            st.error(f"파일에서 채팅 기록을 불러올 수 없습니다: {str(e)}")
+            return False
     
     def switch_to_session(self, session_id: str):
         """Switch to a different session and load its history"""
@@ -107,11 +213,17 @@ class ChatController:
             st.session_state.is_new_session = False
             self.load_session_history(session_id)
             st.session_state.last_loaded_session = session_id  # Update last loaded session
-            st.rerun()
+            # Note: st.rerun() is called by the component that calls this method
 
     def get_available_sessions(self) -> List[str]:
-        """Get list of available sessions"""
-        if not self.check_backend_connection():
+        """Get list of available sessions from file system and backend"""
+        # Try to get sessions from file system first
+        file_sessions = self._get_sessions_from_file()
+        if file_sessions:
+            return file_sessions
+        
+        # If no file sessions, try backend
+        if not self.check_backend_connection() or not self.api_service:
             return []
 
         response = self.api_service.get_sessions()
@@ -119,31 +231,168 @@ class ChatController:
             return response["sessions"]
         return []
 
+    def _get_sessions_from_file(self) -> List[str]:
+        """Get sessions from file system"""
+        try:
+            import os
+            
+            data_dir = "./data"
+            if not os.path.exists(data_dir):
+                return []
+            
+            sessions = []
+            for filename in os.listdir(data_dir):
+                if filename.startswith("session_") and filename.endswith(".json"):
+                    session_id = filename[8:-5]  # Remove "session_" prefix and ".json" suffix
+                    sessions.append(session_id)
+            
+            # Sort by modification time (newest first)
+            sessions.sort(key=lambda x: os.path.getmtime(os.path.join(data_dir, f"session_{x}.json")), reverse=True)
+            return sessions
+        except Exception as e:
+            st.error(f"파일에서 세션 목록을 불러올 수 없습니다: {str(e)}")
+            return []
+
     def check_session_exists(self, session_id: str) -> bool:
         """Check if a specific session exists without loading all sessions"""
-        if not self.check_backend_connection():
+        if not self.check_backend_connection() or not self.api_service:
             return False
 
         response = self.api_service.check_session_exists(session_id)
         if response["success"]:
             return response["exists"]
         return False
+    
+    def delete_session(self, session_id: str) -> bool:
+        """Delete a chat session"""
+        try:
+            if session_id == "default":
+                st.error("기본 세션은 삭제할 수 없습니다.")
+                return False
+            
+            # If we're deleting the current session, switch to default first
+            if st.session_state.get("session_id") == session_id:
+                st.session_state.session_id = "default"
+                st.session_state.messages = []
+                st.session_state.last_loaded_session = None
+                st.session_state.is_new_session = True
+            
+            # Delete from file system first
+            file_success = self._delete_session_from_file(session_id)
+            
+            # Try to delete from backend if available
+            backend_success = True
+            if self.api_service and self.check_backend_connection():
+                try:
+                    response = self.api_service.delete_session(session_id)
+                    if not response.get("success", False):
+                        backend_success = False
+                        st.warning(f"백엔드에서 세션 삭제에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
+                except Exception as e:
+                    backend_success = False
+                    st.warning(f"백엔드 삭제 중 오류가 발생했습니다: {str(e)}")
+            
+            # Clear any related session state
+            for key in list(st.session_state.keys()):
+                if key.startswith("confirm_delete_") or key.startswith("show_"):
+                    del st.session_state[key]
+            
+            if file_success:
+                return True
+            else:
+                return False
+            
+        except Exception as e:
+            st.error(f"세션 삭제 중 오류가 발생했습니다: {str(e)}")
+            return False
+
+    def _delete_session_from_file(self, session_id: str) -> bool:
+        """Delete session from file system"""
+        try:
+            import os
+            
+            file_path = os.path.join("./data", f"session_{session_id}.json")
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                return True
+            return False
+        except Exception as e:
+            st.error(f"파일에서 세션 삭제 중 오류가 발생했습니다: {str(e)}")
+            return False
+
+    def _clear_all_sessions_from_file(self) -> List[str]:
+        """Clear all sessions from file system except default"""
+        try:
+            import os
+            
+            data_dir = "./data"
+            if not os.path.exists(data_dir):
+                return []
+            
+            cleared_sessions = []
+            for filename in os.listdir(data_dir):
+                if filename.startswith("session_") and filename.endswith(".json"):
+                    session_id = filename[8:-5]  # Remove "session_" prefix and ".json" suffix
+                    if session_id != "default":
+                        file_path = os.path.join(data_dir, filename)
+                        os.remove(file_path)
+                        cleared_sessions.append(session_id)
+            
+            return cleared_sessions
+        except Exception as e:
+            st.error(f"파일에서 전체 세션 삭제 중 오류가 발생했습니다: {str(e)}")
+            return []
 
     def clear_all_sessions(self) -> Dict[str, Any]:
         """Clear all sessions except default"""
-        if not self.check_backend_connection():
-            return {"success": False, "error": "백엔드 서버에 연결할 수 없습니다."}
-
-        response = self.api_service.clear_all_sessions()
-        if response["success"]:
-            # Clear current session if it was deleted
-            current_session = st.session_state.get("session_id", "")
-            if current_session != "default" and current_session in response.get("cleared_sessions", []):
-                st.session_state.session_id = "default"
-                st.session_state.messages = []
-                st.session_state.last_loaded_session = "default"
-        
-        return response
+        try:
+            # Clear current session immediately
+            st.session_state.session_id = "default"
+            st.session_state.messages = []
+            st.session_state.last_loaded_session = "default"
+            st.session_state.is_new_session = True
+            
+            # Clear any confirmation states
+            for key in list(st.session_state.keys()):
+                if key.startswith("confirm_delete_") or key.startswith("show_"):
+                    del st.session_state[key]
+            
+            # Clear all sessions from file system
+            cleared_sessions = self._clear_all_sessions_from_file()
+            
+            # Try to clear backend sessions if available
+            if self.api_service and self.check_backend_connection():
+                try:
+                    response = self.api_service.clear_all_sessions()
+                    if response.get("success", False):
+                        return {
+                            "success": True,
+                            "message": f"모든 채팅이 삭제되었습니다. ({len(cleared_sessions)}개 세션)",
+                            "cleared_sessions": cleared_sessions
+                        }
+                    else:
+                        return {
+                            "success": True,
+                            "message": f"모든 채팅이 삭제되었습니다. ({len(cleared_sessions)}개 세션)",
+                            "warning": "백엔드 삭제 실패"
+                        }
+                except Exception as e:
+                    return {
+                        "success": True,
+                        "message": f"모든 채팅이 삭제되었습니다. ({len(cleared_sessions)}개 세션)",
+                        "warning": f"백엔드 연결 실패: {str(e)}"
+                    }
+            else:
+                return {
+                    "success": True,
+                    "message": f"모든 채팅이 삭제되었습니다. ({len(cleared_sessions)}개 세션)"
+                }
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"전체 삭제 중 오류 발생: {str(e)}"
+            }
     
     def send_message_langchain(self, message: str, model_type: str = "fast", use_rag: bool = True) -> Optional[Dict[str, Any]]:
         """Send a message using LangChain RAG"""
@@ -439,8 +688,14 @@ class ChatController:
             st.success(f"컬렉션 '{collection_name}'이 삭제되었습니다.")
             return True
         else:
-            st.error(f"컬렉션 삭제에 실패했습니다: {response.get('error', '알 수 없는 오류')}")
-            return False
+            error_message = response.get('error', '알 수 없는 오류')
+            # Check if it's a "collection does not exist" error
+            if "does not exist" in error_message or "COLLECTION_NOT_FOUND" in str(response):
+                st.warning(f"컬렉션 '{collection_name}'이 존재하지 않습니다.")
+                return True  # Return True since this is expected behavior, not an error
+            else:
+                st.error(f"컬렉션 삭제에 실패했습니다: {error_message}")
+                return False
     
     def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
         """Rename a collection"""

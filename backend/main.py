@@ -441,7 +441,7 @@ async def test_login():
     try:
         from backend.models.user import LoginRequest
         request = LoginRequest(username="test1234", password="test1234")
-        result = auth_controller.login(request)
+        result = await auth_controller.login(request)
         return {
             "success": result.success,
             "message": result.message,
@@ -455,10 +455,77 @@ async def test_login():
 @app.post("/api/chat/session")
 async def create_session():
     """Create a new chat session"""
-    result = chat_controller.create_session()
+    result = await chat_controller.create_session()
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
+
+@app.post("/api/chat/save-message")
+async def save_message(request: dict):
+    """Save a message to a session"""
+    try:
+        message = request.get("message")
+        session_id = request.get("session_id", "default")
+        
+        if not message:
+            raise HTTPException(status_code=400, detail="Message is required")
+        
+        # Create a simple message object for saving
+        from backend.models.chat import ChatMessage, MessageRole
+        from datetime import datetime
+        
+        chat_message = ChatMessage(
+            id=message.get("id", str(uuid.uuid4())),
+            role=MessageRole.USER if message.get("role") == "user" else MessageRole.ASSISTANT,
+            content=message.get("content", ""),
+            timestamp=datetime.now(),
+            session_id=session_id
+        )
+        
+        # Get or create session
+        session = await chat_controller.get_session(session_id)
+        if not session:
+            session = await chat_controller.create_session_object()
+            session.id = session_id
+        
+        # Add message to session
+        session.add_message(chat_message)
+        logger.info(f"Added message to session. Session now has {len(session.messages)} messages")
+        
+        # Save session directly to file system
+        import json
+        import os
+        data_dir = "./data"
+        os.makedirs(data_dir, exist_ok=True)
+        
+        file_path = os.path.join(data_dir, f"session_{session_id}.json")
+        session_data = {
+            "id": session.id,
+            "created_at": session.created_at.isoformat(),
+            "updated_at": session.updated_at.isoformat(),
+            "messages": [
+                {
+                    "id": msg.id,
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat(),
+                    "session_id": msg.session_id,
+                    "metadata": msg.metadata or {}
+                }
+                for msg in session.messages
+            ]
+        }
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(session_data, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"Session {session_id} saved to file successfully with {len(session.messages)} messages")
+        
+        return {"success": True, "message": "Message saved successfully"}
+        
+    except Exception as e:
+        logger.error(f"Failed to save message: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/chat/message")
 async def send_message(request: MessageRequest):
@@ -841,7 +908,7 @@ async def stream_chat_langchain(request: ChatRequest):
 @app.get("/api/chat/history/{session_id}")
 async def get_chat_history(session_id: str, limit: Optional[int] = None):
     """Get chat history for a session"""
-    result = chat_controller.get_chat_history(session_id, limit)
+    result = await chat_controller.get_chat_history(session_id, limit)
     if not result["success"]:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
@@ -849,7 +916,7 @@ async def get_chat_history(session_id: str, limit: Optional[int] = None):
 @app.get("/api/chat/sessions")
 async def get_sessions():
     """Get all session IDs"""
-    result = chat_controller.get_sessions()
+    result = await chat_controller.get_sessions()
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
@@ -857,7 +924,7 @@ async def get_sessions():
 @app.get("/api/chat/session/{session_id}/exists")
 async def check_session_exists(session_id: str):
     """Check if a session exists without loading all sessions"""
-    result = chat_controller.check_session_exists(session_id)
+    result = await chat_controller.check_session_exists(session_id)
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
@@ -865,7 +932,15 @@ async def check_session_exists(session_id: str):
 @app.delete("/api/chat/session/{session_id}")
 async def clear_session(session_id: str):
     """Clear a chat session"""
-    result = chat_controller.clear_session(session_id)
+    result = await chat_controller.clear_session(session_id)
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@app.delete("/api/chat/session/{session_id}/delete")
+async def delete_session(session_id: str):
+    """Delete a chat session completely"""
+    result = await chat_controller.delete_session(session_id)
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
@@ -873,7 +948,15 @@ async def clear_session(session_id: str):
 @app.delete("/api/chat/sessions/all")
 async def clear_all_sessions():
     """Clear all sessions except default"""
-    result = chat_controller.clear_all_sessions()
+    result = await chat_controller.clear_all_sessions()
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+@app.get("/api/chat/session/{session_id}/stats")
+async def get_session_stats(session_id: str):
+    """Get session statistics"""
+    result = await chat_controller.get_session_stats(session_id)
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result["error"])
     return result
@@ -1385,7 +1468,7 @@ async def get_collections(current_user: User = Depends(auth_controller.get_curre
             raise HTTPException(status_code=503, detail="Services not initialized")
         
         # Get LangChain RAG collections for the current user
-        langchain_collections = await langchain_rag_service.get_available_collections(current_user.id)
+        langchain_collections = await langchain_rag_service.get_collections(current_user.id)
         
         # Get basic RAG collections (documents table) - shared for all users
         basic_collections = await rag_service.get_available_collections()
@@ -1609,6 +1692,16 @@ async def delete_collection(collection_name: str):
         }
         
     except ValueError as e:
+        # Collection doesn't exist - return a more user-friendly message
+        logger.info(f"ValueError caught: {str(e)}")
+        if "does not exist" in str(e):
+            logger.info("Collection does not exist, returning structured response")
+            return {
+                "success": False,
+                "message": f"Collection '{collection_name}' does not exist",
+                "error": "COLLECTION_NOT_FOUND"
+            }
+        logger.info("ValueError does not match 'does not exist' pattern, raising HTTPException")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to delete collection: {e}")
@@ -1647,7 +1740,7 @@ async def export_chat_markdown(request: MarkdownExportRequest):
             raise HTTPException(status_code=503, detail="Services not initialized")
         
         # Get chat history for the session
-        history_response = chat_controller.get_chat_history(request.session_id)
+        history_response = await chat_controller.get_chat_history(request.session_id)
         
         if not history_response.get("success"):
             raise HTTPException(
@@ -1793,7 +1886,7 @@ async def login(request: LoginRequest):
     """Login user"""
     try:
         logger.info(f"Login request for user: {request.username}")
-        result = auth_controller.login(request)
+        result = await auth_controller.login(request)
         logger.info(f"Login result: success={result.success}, message={result.message}")
         if not result.success:
             raise HTTPException(status_code=401, detail=result.message)
@@ -1832,7 +1925,30 @@ async def refresh_token(request: TokenRefreshRequest):
         result = auth_controller.refresh_token(request.refresh_token)
         if not result.success:
             raise HTTPException(status_code=401, detail=result.message)
-        return result
+        
+        # Convert AuthResponse to dictionary for JSON serialization
+        response_dict = {
+            "success": result.success,
+            "message": result.message,
+            "access_token": result.access_token,
+            "refresh_token": result.refresh_token,
+            "expires_in": result.expires_in
+        }
+        
+        # Convert User object to dictionary
+        if result.user:
+            response_dict["user"] = {
+                "id": result.user.id,
+                "username": result.user.username,
+                "email": result.user.email,
+                "role": result.user.role.value,
+                "is_active": result.user.is_active,
+                "created_at": result.user.created_at.isoformat() if result.user.created_at else None,
+                "updated_at": result.user.updated_at.isoformat() if result.user.updated_at else None,
+                "last_login": result.user.last_login.isoformat() if result.user.last_login else None
+            }
+        
+        return response_dict
     except Exception as e:
         logger.error(f"Token refresh failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1880,7 +1996,11 @@ async def verify_token(request: TokenVerifyRequest):
         }
     except Exception as e:
         logger.error(f"Token verification failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "success": False,
+            "valid": False,
+            "error": str(e)
+        }
 
 # Accuracy measurement endpoints
 @app.post("/api/accuracy/measure")
@@ -1964,13 +2084,17 @@ async def get_model_config(model_type: str):
 async def get_all_users(current_user = Depends(auth_controller.get_current_user)):
     """Get all users (admin only)"""
     try:
-        # Check if user is admin (only admin ID has admin permission)
+        # Check if user is admin (check by ID for now)
+        logger.info(f"Current user ID: {current_user.id}")
+        logger.info(f"Current user role: {current_user.role}")
+        logger.info(f"Admin user ID: {settings.ADMIN_USER_ID}")
+        logger.info(f"Permission check: {current_user.id == settings.ADMIN_USER_ID}")
         if current_user.id != settings.ADMIN_USER_ID:
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
         
         from backend.repositories.user_repository import UserRepository
         user_repo = UserRepository()
-        users = user_repo.get_all_users()
+        users = await user_repo.get_all_users()
         
         # Convert User objects to dictionaries
         user_list = []
@@ -2002,13 +2126,13 @@ async def get_all_users(current_user = Depends(auth_controller.get_current_user)
 async def get_user(user_id: str, current_user = Depends(auth_controller.get_current_user)):
     """Get user by ID (admin only)"""
     try:
-        # Check if user is admin (only admin ID has admin permission)
+        # Check if user is admin (check by ID for now)
         if current_user.id != settings.ADMIN_USER_ID:
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
         
         from backend.repositories.user_repository import UserRepository
         user_repo = UserRepository()
-        user = user_repo.get_user_by_id(user_id)
+        user = await user_repo.get_user_by_id(user_id)
         
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
@@ -2045,7 +2169,7 @@ class UserCreateRequest(BaseModel):
 async def create_user(request: UserCreateRequest, current_user = Depends(auth_controller.get_current_user)):
     """Create a new user (admin only)"""
     try:
-        # Check if user is admin (only admin ID has admin permission)
+        # Check if user is admin (check by ID for now)
         if current_user.id != settings.ADMIN_USER_ID:
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
         
@@ -2056,12 +2180,12 @@ async def create_user(request: UserCreateRequest, current_user = Depends(auth_co
         user_repo = UserRepository()
         
         # Check if username or email already exists
-        existing_user_by_username = user_repo.get_user_by_username(request.username)
+        existing_user_by_username = await user_repo.get_user_by_username(request.username)
         if existing_user_by_username:
             logger.warning(f"Username already exists: {request.username}")
             raise HTTPException(status_code=400, detail="이미 존재하는 사용자명입니다.")
         
-        existing_user_by_email = user_repo.get_user_by_email(request.email)
+        existing_user_by_email = await user_repo.get_user_by_email(request.email)
         if existing_user_by_email:
             logger.warning(f"Email already exists: {request.email}")
             raise HTTPException(status_code=400, detail="이미 존재하는 이메일입니다.")
@@ -2078,7 +2202,7 @@ async def create_user(request: UserCreateRequest, current_user = Depends(auth_co
         
         # Save user
         logger.info(f"Creating user: {user.username}, {user.email}")
-        if user_repo.create_user(user):
+        if await user_repo.create_user(user):
             logger.info(f"User created successfully: {user.id}")
             return {
                 "success": True,
@@ -2113,7 +2237,7 @@ class UserUpdateRequest(BaseModel):
 async def update_user(user_id: str, request: UserUpdateRequest, current_user = Depends(auth_controller.get_current_user)):
     """Update user (admin only)"""
     try:
-        # Check if user is admin (only admin ID has admin permission)
+        # Check if user is admin (check by ID for now)
         if current_user.id != settings.ADMIN_USER_ID:
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
         
@@ -2121,17 +2245,17 @@ async def update_user(user_id: str, request: UserUpdateRequest, current_user = D
         from backend.models.user import User, UserRole
         
         user_repo = UserRepository()
-        user = user_repo.get_user_by_id(user_id)
+        user = await user_repo.get_user_by_id(user_id)
         
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
         
         # Check if username or email already exists (excluding current user)
-        existing_user_by_username = user_repo.get_user_by_username(request.username)
+        existing_user_by_username = await user_repo.get_user_by_username(request.username)
         if existing_user_by_username and existing_user_by_username.id != user_id:
             raise HTTPException(status_code=400, detail="이미 존재하는 사용자명입니다.")
         
-        existing_user_by_email = user_repo.get_user_by_email(request.email)
+        existing_user_by_email = await user_repo.get_user_by_email(request.email)
         if existing_user_by_email and existing_user_by_email.id != user_id:
             raise HTTPException(status_code=400, detail="이미 존재하는 이메일입니다.")
         
@@ -2143,7 +2267,7 @@ async def update_user(user_id: str, request: UserUpdateRequest, current_user = D
         user.updated_at = datetime.now()
         
         # Save updated user
-        if user_repo.update_user(user):
+        if await user_repo.update_user(user):
             return {
                 "success": True,
                 "message": "사용자 정보가 성공적으로 업데이트되었습니다.",
@@ -2169,7 +2293,7 @@ async def update_user(user_id: str, request: UserUpdateRequest, current_user = D
 async def delete_user(user_id: str, current_user = Depends(auth_controller.get_current_user)):
     """Delete user (admin only)"""
     try:
-        # Check if user is admin (only admin ID has admin permission)
+        # Check if user is admin (check by ID for now)
         if current_user.id != settings.ADMIN_USER_ID:
             raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
         
@@ -2181,7 +2305,7 @@ async def delete_user(user_id: str, current_user = Depends(auth_controller.get_c
         user_repo = UserRepository()
         
         # Check if user exists
-        user = user_repo.get_user_by_id(user_id)
+        user = await user_repo.get_user_by_id(user_id)
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
         

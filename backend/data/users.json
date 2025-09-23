@@ -1,14 +1,14 @@
 [
   {
-    "id": "5ba9fad6-3b51-4f80-ba65-482be46e6bac",
+    "id": "eee65338-086b-457a-8746-b88cceac42a3",
     "username": "admin",
     "email": "admin@example.com",
     "password_hash": "ec820bf94c8e3a2a8b46055ba9b421cf:23b9017cbad625274fbd74b50d24fdc21cfa073a3e365d1d54df8eaaef4e51ae",
     "role": "admin",
     "is_active": true,
     "created_at": "2025-09-22T01:19:42.114419",
-    "updated_at": "2025-09-23T00:05:14.131437",
-    "last_login": "2025-09-23T00:05:14.131234"
+    "updated_at": "2025-09-23T00:23:40.293756",
+    "last_login": "2025-09-23T00:23:40.293559"
   },
   {
     "id": "67f745dc-b206-42aa-9eac-e81558cc937e",

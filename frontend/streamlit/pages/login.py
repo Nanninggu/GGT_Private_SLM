@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.api_service import APIService
+from utils.session_manager import session_manager
 
 # Page configuration is handled in main.py
 
@@ -297,16 +298,51 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Initialize session state
+    # Initialize session state with persistent session manager
+    session_manager.initialize_session()
+    
+    # Initialize other session state
     if "login_mode" not in st.session_state:
         st.session_state.login_mode = "login"
-    if "auth_token" not in st.session_state:
-        st.session_state.auth_token = None
-    if "user_info" not in st.session_state:
-        st.session_state.user_info = None
     
-    # Check if user is already logged in
+    # Check if user is already logged in with auto token refresh
     if st.session_state.get("auth_token") and st.session_state.get("user_info"):
+        # Check if token needs refresh
+        login_time = st.session_state.get("login_time")
+        if login_time:
+            try:
+                login_datetime = datetime.fromisoformat(login_time)
+                # Check if more than 7 hours have passed (8 hours - 1 hour buffer)
+                if datetime.now() - login_datetime > timedelta(hours=7):
+                    # Try to refresh token
+                    refresh_token = st.session_state.get("refresh_token")
+                    if refresh_token:
+                        try:
+                            from services.api_service import APIService
+                            api_service = APIService()
+                            result = api_service.refresh_token(refresh_token)
+                            if result.get("success"):
+                                st.session_state.auth_token = result.get("access_token")
+                                st.session_state.refresh_token = result.get("refresh_token")
+                                st.session_state.login_time = datetime.now().isoformat()
+                                # Update user info if available
+                                if result.get("user"):
+                                    st.session_state.user_info = result.get("user")
+                                st.success("세션이 자동으로 갱신되었습니다.")
+                            else:
+                                # If refresh fails, clear session
+                                st.session_state.auth_token = None
+                                st.session_state.user_info = None
+                                st.session_state.refresh_token = None
+                                st.session_state.login_time = None
+                                st.warning("세션이 만료되었습니다. 다시 로그인해주세요.")
+                                return
+                        except:
+                            st.warning("세션 갱신 중 오류가 발생했습니다. 다시 로그인해주세요.")
+                            return
+            except:
+                pass
+        
         st.success("이미 로그인되어 있습니다.")
         if st.button("메인 페이지로 이동"):
             st.session_state.current_page = "main"
@@ -349,9 +385,10 @@ def main():
                     st.session_state.auth_token = result.get("access_token")
                     st.session_state.user_info = result.get("user")
                     st.session_state.refresh_token = result.get("refresh_token")
-                    
-                    # Store in session storage for persistence
                     st.session_state.login_time = datetime.now().isoformat()
+                    
+                    # Save session to persistent storage
+                    session_manager.save_current_session()
                     
                     st.success("로그인에 성공했습니다!")
                     st.session_state.current_page = "main"
@@ -394,8 +431,17 @@ def main():
                     result = register_user(username, email, password, confirm_password)
                 
                 if result.get("success"):
-                    st.success("회원가입이 완료되었습니다! 로그인해주세요.")
-                    st.session_state.login_mode = "login"
+                    # Store authentication info for auto-login after registration
+                    st.session_state.auth_token = result.get("access_token")
+                    st.session_state.user_info = result.get("user")
+                    st.session_state.refresh_token = result.get("refresh_token")
+                    st.session_state.login_time = datetime.now().isoformat()
+                    
+                    # Save session to persistent storage
+                    session_manager.save_current_session()
+                    
+                    st.success("회원가입이 완료되었습니다! 자동으로 로그인됩니다.")
+                    st.session_state.current_page = "main"
                     st.rerun()
                 else:
                     st.error(result.get("message", "회원가입에 실패했습니다."))

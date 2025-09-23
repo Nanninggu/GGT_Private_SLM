@@ -5,7 +5,7 @@ import streamlit as st
 import sys
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Add current directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,13 +13,47 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from controllers.chat_controller import ChatController
 from components.chat_components import ChatComponents, StatusComponents
 from config import ADMIN_USER_ID
+from utils.session_manager import session_manager
 
 # Page configuration will be set dynamically based on current page
 
 def check_auth_status():
-    """Check if user is authenticated"""
+    """Check if user is authenticated with auto token refresh"""
     if not st.session_state.get("auth_token"):
         return False
+    
+    # Check if token is expired based on login time
+    login_time = st.session_state.get("login_time")
+    if login_time:
+        try:
+            login_datetime = datetime.fromisoformat(login_time)
+            # Check if more than 7 hours have passed (8 hours - 1 hour buffer)
+            if datetime.now() - login_datetime > timedelta(hours=7):
+                # Try to refresh token
+                refresh_token = st.session_state.get("refresh_token")
+                if refresh_token:
+                    try:
+                        from services.api_service import APIService
+                        api_service = APIService()
+                        result = api_service.refresh_token(refresh_token)
+                        if result.get("success"):
+                            st.session_state.auth_token = result.get("access_token")
+                            st.session_state.refresh_token = result.get("refresh_token")
+                            st.session_state.login_time = datetime.now().isoformat()
+                            # Update user info if available
+                            if result.get("user"):
+                                st.session_state.user_info = result.get("user")
+                            return True
+                    except:
+                        pass
+                # If refresh fails, clear session
+                st.session_state.auth_token = None
+                st.session_state.user_info = None
+                st.session_state.refresh_token = None
+                st.session_state.login_time = None
+                return False
+        except:
+            pass
     
     # Verify token with backend
     try:
@@ -32,7 +66,10 @@ def check_auth_status():
 
 def main():
     """Main application function"""
-    # Initialize session state
+    # Initialize session state with persistent session manager
+    session_manager.initialize_session()
+    
+    # Initialize other session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "session_id" not in st.session_state:
@@ -45,12 +82,34 @@ def main():
         st.session_state.force_refresh = False
     if "is_new_session" not in st.session_state:
         st.session_state.is_new_session = False
-    if "auth_token" not in st.session_state:
-        st.session_state.auth_token = None
-    if "user_info" not in st.session_state:
-        st.session_state.user_info = None
     if "current_page" not in st.session_state:
         st.session_state.current_page = "main"
+    
+    # Handle new chat creation flag
+    if st.session_state.get("create_new_chat", False):
+        # Save current session if it has messages
+        current_messages = st.session_state.get("messages", [])
+        if current_messages and st.session_state.backend_connected:
+            try:
+                chat_controller = ChatController()
+                chat_controller.api_service.save_session(st.session_state.session_id, current_messages)
+            except:
+                pass  # Continue even if save fails
+        
+        # Generate new session ID
+        new_session_id = str(uuid.uuid4())
+        st.session_state.session_id = new_session_id
+        st.session_state.messages = []  # Only clear current session messages
+        st.session_state.is_new_session = True
+        st.session_state.last_loaded_session = None
+        
+        # Clear any confirmation states and cache
+        for key in list(st.session_state.keys()):
+            if key.startswith("confirm_delete_") or key.startswith("session_title_"):
+                del st.session_state[key]
+        
+        # Clear the flag
+        st.session_state.create_new_chat = False
     
     # Page routing
     current_page = st.session_state.current_page
@@ -129,6 +188,18 @@ def main():
             st.session_state.current_page = "login"
             st.rerun()
         return
+    
+    # Save current session periodically
+    if st.session_state.get("auth_token"):
+        session_manager.save_current_session()
+        
+        # Also save chat session to backend
+        if st.session_state.backend_connected and st.session_state.get("messages"):
+            try:
+                chat_controller = ChatController()
+                chat_controller.save_current_session()
+            except:
+                pass  # Continue even if save fails
 
     # Initialize controller
     chat_controller = ChatController()
@@ -170,10 +241,10 @@ def main():
         st.session_state.messages = []
         st.rerun()
     elif sidebar_action == "logout":
-        # Clear authentication data
-        st.session_state.auth_token = None
-        st.session_state.user_info = None
+        # Clear authentication data using session manager
+        session_manager.clear_session()
         st.session_state.messages = []
+        st.session_state.current_page = "login"
         st.success("로그아웃되었습니다.")
         st.rerun()
     elif sidebar_action == "check_connection":
@@ -182,88 +253,6 @@ def main():
             StatusComponents.show_success("백엔드 서버에 연결되었습니다.")
         else:
             StatusComponents.show_error("백엔드 서버에 연결할 수 없습니다.")
-    elif isinstance(sidebar_action, tuple) and sidebar_action[0] == "download_pdf":
-        # Handle PDF download
-        pdf_type = sidebar_action[1]
-        include_metadata = sidebar_action[2]
-        
-        if st.session_state.messages:
-            try:
-                from services.pdf_service import PDFService
-                pdf_service = PDFService()
-                
-                # Get session info
-                current_session = st.session_state.session_id
-                session_name = st.session_state.get(f"session_name_{current_session}", "")
-                
-                # Generate PDF based on type
-                if pdf_type == "전체 채팅 기록":
-                    pdf_content = pdf_service.generate_chat_pdf(
-                        st.session_state.messages,
-                        current_session,
-                        session_name,
-                        include_metadata
-                    )
-                    filename = f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                else:  # 요약 보고서
-                    pdf_content = pdf_service.generate_summary_pdf(
-                        st.session_state.messages,
-                        current_session,
-                        session_name
-                    )
-                    filename = f"chat_summary_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                
-                # Create download button
-                st.download_button(
-                    label=f"📥 {pdf_type} 다운로드",
-                    data=pdf_content,
-                    file_name=filename,
-                    mime="application/pdf",
-                    use_container_width=True
-                )
-                
-                st.success(f"✅ {pdf_type} PDF가 생성되었습니다!")
-                
-            except Exception as e:
-                st.error(f"❌ PDF 생성 중 오류가 발생했습니다: {str(e)}")
-        else:
-            st.warning("⚠️ 다운로드할 채팅 메시지가 없습니다.")
-    elif isinstance(sidebar_action, tuple) and sidebar_action[0] == "download_markdown":
-        # Handle Markdown download
-        session_name = sidebar_action[1]
-        include_metadata = sidebar_action[2]
-        
-        if st.session_state.messages:
-            try:
-                current_session = st.session_state.session_id
-                
-                # Export chat to markdown
-                result = chat_controller.export_chat_markdown(
-                    current_session, 
-                    session_name, 
-                    include_metadata
-                )
-                
-                if result.get("success"):
-                    filename = f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-                    
-                    st.download_button(
-                        label="📥 마크다운 다운로드",
-                        data=result.get("content", ""),
-                        file_name=filename,
-                        mime="text/markdown",
-                        use_container_width=True
-                    )
-                    
-                    st.success(f"✅ 마크다운 파일이 생성되었습니다!")
-                    st.info(f"📊 총 {result.get('message_count', 0)}개의 메시지가 포함되었습니다.")
-                else:
-                    st.error(f"❌ 마크다운 생성 중 오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}")
-                
-            except Exception as e:
-                st.error(f"❌ 마크다운 생성 중 오류가 발생했습니다: {str(e)}")
-        else:
-            st.warning("⚠️ 다운로드할 채팅 메시지가 없습니다.")
 
     # Inject accessibility scripts
     ChatComponents._inject_accessibility_scripts()
@@ -661,44 +650,46 @@ def main():
     # Chat interface section
     st.markdown("---")
     
-    # Chat header with PDF download option
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown("### 💬 HAI-Chat 대화")
-    with col2:
-        if st.session_state.messages:
-            if st.button("📄 전체 대화 PDF로 저장", key="download_all_chat"):
-                try:
-                    from services.pdf_service import PDFService
-                    pdf_service = PDFService()
-                    
-                    current_session = st.session_state.session_id
-                    session_name = st.session_state.get(f"session_name_{current_session}", "")
-                    
-                    pdf_content = pdf_service.generate_chat_pdf(
-                        st.session_state.messages,
-                        current_session,
-                        session_name,
-                        True
-                    )
-                    
-                    filename = f"full_chat_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                    
-                    st.download_button(
-                        label="📥 전체 대화 다운로드",
-                        data=pdf_content,
-                        file_name=filename,
-                        mime="application/pdf"
-                    )
-                except Exception as e:
-                    st.error(f"PDF 생성 오류: {str(e)}")
+    # Chat header
+    st.markdown("### 💬 HAI-Chat 대화")
     
     # Add spacing before chat messages
     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     
     # Display chat history
-    for message in st.session_state.messages:
-        ChatComponents.render_message(message)
+    if st.session_state.messages:
+        for message in st.session_state.messages:
+            ChatComponents.render_message(message)
+    else:
+        # Show welcome message for new chat
+        st.markdown("""
+        <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+                    border-radius: 20px; margin: 2rem 0; border: 2px solid #e9ecef; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
+            <h3 style="color: #495057; margin-bottom: 1rem; font-weight: 600;">HAI-Chat에 오신 것을 환영합니다!</h3>
+            <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                AI와 대화하고 문서를 분석해보세요.<br>
+                아래에 메시지를 입력하여 시작하세요.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💬</div>
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">일반 대화</div>
+                    <div style="font-size: 0.9rem; color: #6c757d;">AI와 자유롭게 대화하세요</div>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📚</div>
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">문서 분석</div>
+                    <div style="font-size: 0.9rem; color: #6c757d;">업로드한 문서를 분석해보세요</div>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</div>
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">웹 검색</div>
+                    <div style="font-size: 0.9rem; color: #6c757d;">실시간 정보를 검색해보세요</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
 
     # Model selection section
@@ -713,16 +704,24 @@ def main():
     # Chat input
     if prompt := st.chat_input("HAI-Chat에게 메시지를 입력하세요..."):
         # Add user message to chat history
-        st.session_state.messages.append({
+        user_message = {
             "id": str(uuid.uuid4()),
             "role": "user",
             "content": prompt,
             "timestamp": datetime.now().strftime("%H:%M:%S")
-        })
+        }
+        st.session_state.messages.append(user_message)
         
         # Display user message
         with st.chat_message("user"):
             st.write(prompt)
+        
+        # Save user message to backend
+        if st.session_state.backend_connected:
+            try:
+                chat_controller.api_service.save_message(user_message, st.session_state.session_id)
+            except Exception as e:
+                st.error(f"메시지 저장 실패: {e}")
         
         # Send message to backend and get response
         if st.session_state.backend_connected:
@@ -775,6 +774,13 @@ def main():
                     
                     # Add assistant response to chat history
                     st.session_state.messages.append(assistant_message)
+                    
+                    # Save assistant message to backend
+                    if st.session_state.backend_connected:
+                        try:
+                            chat_controller.api_service.save_message(assistant_message, st.session_state.session_id)
+                        except Exception as e:
+                            st.error(f"응답 저장 실패: {e}")
                     
                     # Display assistant response (only for non-streaming)
                     if not streaming_enabled:

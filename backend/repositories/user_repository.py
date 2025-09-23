@@ -6,185 +6,216 @@ import os
 import uuid
 from datetime import datetime
 from typing import Optional, List
+from sqlalchemy import text
 from backend.models.user import User, UserRole
+from backend.services.database_service import db_service
 
 class UserRepository:
     """Repository for user data operations"""
     
-    def __init__(self, data_dir: str = "backend/data"):
-        self.data_dir = data_dir
-        self.users_file = os.path.join(data_dir, "users.json")
-        self._ensure_data_directory()
-        self._ensure_users_file()
+    def __init__(self):
+        self.db_service = db_service
     
-    def _ensure_data_directory(self):
-        """Ensure data directory exists"""
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
+    def _dict_to_user(self, user_dict: dict) -> User:
+        """Convert dictionary to User object"""
+        return User(
+            id=user_dict['id'],
+            username=user_dict['username'],
+            email=user_dict['email'],
+            password_hash=user_dict['password_hash'],
+            role=UserRole(user_dict['role']),
+            is_active=user_dict['is_active'],
+            created_at=datetime.fromisoformat(user_dict['created_at']) if user_dict.get('created_at') else None,
+            updated_at=datetime.fromisoformat(user_dict['updated_at']) if user_dict.get('updated_at') else None,
+            last_login=datetime.fromisoformat(user_dict['last_login']) if user_dict.get('last_login') else None
+        )
     
-    def _ensure_users_file(self):
-        """Ensure users.json file exists"""
-        if not os.path.exists(self.users_file):
-            with open(self.users_file, 'w', encoding='utf-8') as f:
-                json.dump([], f, ensure_ascii=False, indent=2)
-    
-    def _load_users(self) -> List[dict]:
-        """Load users from JSON file"""
-        try:
-            with open(self.users_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return []
-    
-    def _save_users(self, users: List[dict]):
-        """Save users to JSON file"""
-        with open(self.users_file, 'w', encoding='utf-8') as f:
-            json.dump(users, f, ensure_ascii=False, indent=2, default=str)
-    
-    def create_user(self, user: User) -> bool:
+    async def create_user(self, user: User) -> bool:
         """Create a new user"""
         try:
-            print(f"Creating user: {user.username}, {user.email}")
-            print(f"Data directory: {self.data_dir}")
-            print(f"Users file: {self.users_file}")
-            users = self._load_users()
-            print(f"Loaded {len(users)} existing users")
-            
-            # Check if username or email already exists
-            for existing_user in users:
-                if existing_user.get('username') == user.username:
+            async with self.db_service.get_session() as session:
+                # Check if username or email already exists
+                result = await session.execute(text("""
+                    SELECT id FROM users 
+                    WHERE username = :username OR email = :email
+                """), {"username": user.username, "email": user.email})
+                
+                if result.fetchone():
                     return False
-                if existing_user.get('email') == user.email:
-                    return False
-            
-            # Add new user
-            user_dict = {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'password_hash': user.password_hash,
-                'role': user.role.value,
-                'is_active': user.is_active,
-                'created_at': user.created_at.isoformat() if user.created_at else datetime.now().isoformat(),
-                'updated_at': user.updated_at.isoformat() if user.updated_at else datetime.now().isoformat(),
-                'last_login': user.last_login.isoformat() if user.last_login else None
-            }
-            
-            users.append(user_dict)
-            self._save_users(users)
-            return True
-            
+                
+                # Insert new user
+                await session.execute(text("""
+                    INSERT INTO users (id, username, email, password_hash, role, is_active, created_at, updated_at, last_login)
+                    VALUES (:id, :username, :email, :password_hash, :role, :is_active, :created_at, :updated_at, :last_login)
+                """), {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "password_hash": user.password_hash,
+                    "role": user.role.value,
+                    "is_active": user.is_active,
+                    "created_at": user.created_at or datetime.now(),
+                    "updated_at": user.updated_at or datetime.now(),
+                    "last_login": user.last_login
+                })
+                
+                await session.commit()
+                return True
+                
         except Exception as e:
             print(f"Error creating user: {e}", exc_info=True)
             return False
     
-    def get_user_by_username(self, username: str) -> Optional[User]:
+    async def get_user_by_username(self, username: str) -> Optional[User]:
         """Get user by username"""
         try:
-            users = self._load_users()
-            for user_dict in users:
-                if user_dict.get('username') == username:
-                    return self._dict_to_user(user_dict)
-            return None
+            async with self.db_service.get_session() as session:
+                result = await session.execute(text("""
+                    SELECT id, username, email, password_hash, role, is_active, 
+                           created_at, updated_at, last_login
+                    FROM users WHERE username = :username
+                """), {"username": username})
+                
+                row = result.fetchone()
+                if row:
+                    return User(
+                        id=str(row[0]),
+                        username=row[1],
+                        email=row[2],
+                        password_hash=row[3],
+                        role=UserRole(row[4]),
+                        is_active=row[5],
+                        created_at=row[6],
+                        updated_at=row[7],
+                        last_login=row[8]
+                    )
+                return None
         except Exception as e:
             print(f"Error getting user by username: {e}")
             return None
     
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
         try:
-            users = self._load_users()
-            for user_dict in users:
-                if user_dict.get('email') == email:
-                    return self._dict_to_user(user_dict)
-            return None
+            async with self.db_service.get_session() as session:
+                result = await session.execute(text("""
+                    SELECT id, username, email, password_hash, role, is_active, 
+                           created_at, updated_at, last_login
+                    FROM users WHERE email = :email
+                """), {"email": email})
+                
+                row = result.fetchone()
+                if row:
+                    return User(
+                        id=str(row[0]),
+                        username=row[1],
+                        email=row[2],
+                        password_hash=row[3],
+                        role=UserRole(row[4]),
+                        is_active=row[5],
+                        created_at=row[6],
+                        updated_at=row[7],
+                        last_login=row[8]
+                    )
+                return None
         except Exception as e:
             print(f"Error getting user by email: {e}")
             return None
     
-    def get_user_by_id(self, user_id: str) -> Optional[User]:
+    async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
         try:
-            users = self._load_users()
-            for user_dict in users:
-                if user_dict.get('id') == user_id:
-                    return self._dict_to_user(user_dict)
-            return None
+            async with self.db_service.get_session() as session:
+                result = await session.execute(text("""
+                    SELECT id, username, email, password_hash, role, is_active, 
+                           created_at, updated_at, last_login
+                    FROM users WHERE id = :user_id
+                """), {"user_id": user_id})
+                
+                row = result.fetchone()
+                if row:
+                    return User(
+                        id=str(row[0]),
+                        username=row[1],
+                        email=row[2],
+                        password_hash=row[3],
+                        role=UserRole(row[4]),
+                        is_active=row[5],
+                        created_at=row[6],
+                        updated_at=row[7],
+                        last_login=row[8]
+                    )
+                return None
         except Exception as e:
             print(f"Error getting user by ID: {e}")
             return None
     
-    def update_user(self, user: User) -> bool:
+    async def update_user(self, user: User) -> bool:
         """Update user information"""
         try:
-            users = self._load_users()
-            for i, user_dict in enumerate(users):
-                if user_dict.get('id') == user.id:
-                    users[i] = {
-                        'id': user.id,
-                        'username': user.username,
-                        'email': user.email,
-                        'password_hash': user.password_hash,
-                        'role': user.role.value,
-                        'is_active': user.is_active,
-                        'created_at': user.created_at.isoformat() if user.created_at else datetime.now().isoformat(),
-                        'updated_at': datetime.now().isoformat(),
-                        'last_login': user.last_login.isoformat() if user.last_login else None
-                    }
-                    self._save_users(users)
-                    return True
-            return False
+            async with self.db_service.get_session() as session:
+                await session.execute(text("""
+                    UPDATE users 
+                    SET username = :username, email = :email, password_hash = :password_hash,
+                        role = :role, is_active = :is_active, updated_at = :updated_at,
+                        last_login = :last_login
+                    WHERE id = :id
+                """), {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "password_hash": user.password_hash,
+                    "role": user.role.value,
+                    "is_active": user.is_active,
+                    "updated_at": datetime.now(),
+                    "last_login": user.last_login
+                })
+                
+                await session.commit()
+                return True
         except Exception as e:
             print(f"Error updating user: {e}")
             return False
     
-    def delete_user(self, user_id: str) -> bool:
+    async def delete_user(self, user_id: str) -> bool:
         """Delete user by ID"""
         try:
-            users = self._load_users()
-            users = [user for user in users if user.get('id') != user_id]
-            self._save_users(users)
-            return True
+            async with self.db_service.get_session() as session:
+                await session.execute(text("""
+                    DELETE FROM users WHERE id = :user_id
+                """), {"user_id": user_id})
+                
+                await session.commit()
+                return True
         except Exception as e:
             print(f"Error deleting user: {e}")
             return False
     
-    def get_all_users(self) -> List[User]:
+    async def get_all_users(self) -> List[User]:
         """Get all users"""
         try:
-            users = self._load_users()
-            return [self._dict_to_user(user_dict) for user_dict in users]
+            async with self.db_service.get_session() as session:
+                result = await session.execute(text("""
+                    SELECT id, username, email, password_hash, role, is_active, 
+                           created_at, updated_at, last_login
+                    FROM users ORDER BY created_at DESC
+                """))
+                
+                users = []
+                for row in result:
+                    users.append(User(
+                        id=str(row[0]),
+                        username=row[1],
+                        email=row[2],
+                        password_hash=row[3],
+                        role=UserRole(row[4]),
+                        is_active=row[5],
+                        created_at=row[6],
+                        updated_at=row[7],
+                        last_login=row[8]
+                    ))
+                return users
         except Exception as e:
             print(f"Error getting all users: {e}")
             return []
     
-    def _dict_to_user(self, user_dict: dict) -> User:
-        """Convert dictionary to User object"""
-        try:
-            created_at = datetime.fromisoformat(user_dict.get('created_at', datetime.now().isoformat()))
-        except (ValueError, TypeError):
-            created_at = datetime.now()
-        
-        try:
-            updated_at = datetime.fromisoformat(user_dict.get('updated_at', datetime.now().isoformat()))
-        except (ValueError, TypeError):
-            updated_at = datetime.now()
-        
-        last_login = None
-        if user_dict.get('last_login'):
-            try:
-                last_login = datetime.fromisoformat(user_dict.get('last_login'))
-            except (ValueError, TypeError):
-                last_login = None
-        
-        return User(
-            id=user_dict.get('id'),
-            username=user_dict.get('username'),
-            email=user_dict.get('email'),
-            password_hash=user_dict.get('password_hash'),
-            role=UserRole(user_dict.get('role', 'user')),
-            is_active=user_dict.get('is_active', True),
-            created_at=created_at,
-            updated_at=updated_at,
-            last_login=last_login
-        )

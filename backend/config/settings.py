@@ -154,11 +154,11 @@ class Settings:
     # ===== JWT 설정 =====
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production-2024")
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8시간으로 연장
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30  # 30일로 연장
     
     # ===== 관리자 설정 =====
-    ADMIN_USER_ID: str = "eee65338-086b-457a-8746-b88cceac42a3"  # admin 사용자 ID (from database)
+    ADMIN_USER_ID: str = "eee65338-086b-457a-8746-b88cceac42a3"  # admin 사용자 ID (actual login ID)
     
     # ===== 기존 설정 유지 =====
     # Model configurations for different types

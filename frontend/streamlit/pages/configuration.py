@@ -15,6 +15,48 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from controllers.chat_controller import ChatController
 from components.chat_components import ChatComponents, StatusComponents
+import json
+
+def load_export_settings():
+    """Load export settings from file"""
+    settings_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "export_settings.json")
+    
+    default_settings = {
+        "default_format": "PDF",
+        "pdf_type": "전체 채팅 기록",
+        "include_metadata": True,
+        "auto_download": False
+    }
+    
+    try:
+        if os.path.exists(settings_file):
+            with open(settings_file, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+                # Merge with defaults to ensure all keys exist
+                for key, value in default_settings.items():
+                    if key not in settings:
+                        settings[key] = value
+                return settings
+        else:
+            return default_settings
+    except Exception as e:
+        st.warning(f"설정 파일을 불러올 수 없습니다: {str(e)}")
+        return default_settings
+
+def save_export_settings(settings):
+    """Save export settings to file"""
+    settings_file = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "export_settings.json")
+    
+    try:
+        # Ensure data directory exists
+        os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+        
+        with open(settings_file, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        st.error(f"설정 파일을 저장할 수 없습니다: {str(e)}")
+        return False
 
 def check_auth_status():
     """Check if user is authenticated"""
@@ -364,7 +406,7 @@ def main():
         return
     
     # Create tabs for different configuration sections
-    tab1, tab2, tab3, tab4 = st.tabs(["🗂️ Vector DB 관리", "📋 세션 관리", "💬 채팅 히스토리", "🔗 연결 상태"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["🗂️ Vector DB 관리", "📋 세션 관리", "💬 채팅 히스토리", "📄 내보내기 설정", "🔗 연결 상태"])
     
     with tab1:
         render_vector_db_management(chat_controller)
@@ -376,6 +418,9 @@ def main():
         render_chat_history_management(chat_controller)
     
     with tab4:
+        render_export_settings(chat_controller)
+    
+    with tab5:
         render_connection_status(chat_controller)
 
 def render_vector_db_management(chat_controller):
@@ -1053,6 +1098,297 @@ def render_chat_history_management(chat_controller):
             st.info("📊 현재 세션: 메시지 없음")
     else:
         st.info("저장된 세션이 없습니다.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_export_settings(chat_controller):
+    """Render export settings section"""
+    st.markdown('<div class="config-section">', unsafe_allow_html=True)
+    
+    st.subheader("📄 내보내기 설정")
+    st.write("채팅 기록을 다양한 형식으로 내보낼 수 있습니다.")
+    
+    # Initialize export settings in session state
+    if "export_settings" not in st.session_state:
+        # Try to load settings from file
+        settings = load_export_settings()
+        st.session_state.export_settings = settings
+    
+    current_session = st.session_state.get("session_id", "default")
+    session_name = st.session_state.get(f"session_name_{current_session}", "")
+    
+    # Export format selection
+    st.markdown("#### 📋 내보내기 형식 선택")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        export_format = st.radio(
+            "내보내기 형식",
+            ["PDF", "마크다운"],
+            index=0 if st.session_state.export_settings.get("default_format", "PDF") == "PDF" else 1,
+            key="export_format_radio"
+        )
+    
+    with col2:
+        if export_format == "PDF":
+            pdf_type = st.radio(
+                "PDF 유형 선택",
+                ["전체 채팅 기록", "요약 보고서"],
+                index=0 if st.session_state.export_settings.get("pdf_type", "전체 채팅 기록") == "전체 채팅 기록" else 1,
+                key="pdf_type_radio"
+            )
+        else:
+            pdf_type = None
+    
+    # Additional options
+    st.markdown("#### ⚙️ 내보내기 옵션")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        include_metadata = st.checkbox(
+            "메타 데이터 포함",
+            value=st.session_state.export_settings.get("include_metadata", True),
+            help="타임스탬프, 세션 정보 등 메타데이터를 포함합니다",
+            key="include_metadata_checkbox"
+        )
+    
+    with col2:
+        auto_download = st.checkbox(
+            "자동 다운로드",
+            value=st.session_state.export_settings.get("auto_download", False),
+            help="내보내기 완료 시 자동으로 다운로드합니다",
+            key="auto_download_checkbox"
+        )
+    
+    # Save settings
+    if st.button("💾 설정 저장", key="save_export_settings"):
+        new_settings = {
+            "default_format": export_format,
+            "pdf_type": pdf_type if pdf_type else "전체 채팅 기록",
+            "include_metadata": include_metadata,
+            "auto_download": auto_download
+        }
+        
+        # Update session state
+        st.session_state.export_settings.update(new_settings)
+        
+        # Save to file
+        if save_export_settings(new_settings):
+            st.success("✅ 내보내기 설정이 저장되었습니다.")
+        else:
+            st.error("❌ 설정 저장에 실패했습니다.")
+    
+    st.markdown("---")
+    
+    # Export actions
+    st.markdown("#### 🚀 내보내기 실행")
+    
+    # Get current messages
+    if st.session_state.get("messages"):
+        message_count = len(st.session_state.messages)
+        st.info(f"📊 현재 세션: {message_count}개 메시지")
+        
+        # Export buttons
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📄 PDF로 내보내기", key="export_pdf_button", use_container_width=True):
+                try:
+                    from services.pdf_service import PDFService
+                    pdf_service = PDFService()
+                    
+                    # Generate PDF based on current settings
+                    pdf_type = st.session_state.export_settings.get("pdf_type", "전체 채팅 기록")
+                    if pdf_type == "전체 채팅 기록":
+                        pdf_content = pdf_service.generate_chat_pdf(
+                            st.session_state.messages,
+                            current_session,
+                            session_name,
+                            st.session_state.export_settings.get("include_metadata", True)
+                        )
+                        filename = f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    else:  # 요약 보고서
+                        pdf_content = pdf_service.generate_summary_pdf(
+                            st.session_state.messages,
+                            current_session,
+                            session_name
+                        )
+                        filename = f"chat_summary_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    
+                    # Create download button
+                    st.download_button(
+                        label=f"📥 {pdf_type} 다운로드",
+                        data=pdf_content,
+                        file_name=filename,
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                    
+                    st.success(f"✅ {pdf_type} PDF가 생성되었습니다!")
+                    
+                except Exception as e:
+                    st.error(f"❌ PDF 생성 중 오류가 발생했습니다: {str(e)}")
+        
+        with col2:
+            if st.button("📝 마크다운으로 내보내기", key="export_markdown_button", use_container_width=True):
+                try:
+                    # Export chat to markdown
+                    result = chat_controller.export_chat_markdown(
+                        current_session, 
+                        session_name, 
+                        st.session_state.export_settings.get("include_metadata", True)
+                    )
+                    
+                    if result.get("success"):
+                        filename = f"chat_history_{current_session}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                        
+                        st.download_button(
+                            label="📥 마크다운 다운로드",
+                            data=result.get("content", ""),
+                            file_name=filename,
+                            mime="text/markdown",
+                            use_container_width=True
+                        )
+                        
+                        st.success(f"✅ 마크다운 파일이 생성되었습니다!")
+                        st.info(f"📊 총 {result.get('message_count', 0)}개의 메시지가 포함되었습니다.")
+                    else:
+                        st.error(f"❌ 마크다운 생성 중 오류가 발생했습니다: {result.get('error', '알 수 없는 오류')}")
+                    
+                except Exception as e:
+                    st.error(f"❌ 마크다운 생성 중 오류가 발생했습니다: {str(e)}")
+        
+        # Batch export section
+        st.markdown("---")
+        st.markdown("#### 📦 일괄 내보내기")
+        
+        # Get all sessions for batch export
+        from services.api_service import APIService
+        api_service = APIService()
+        sessions_response = api_service.get_sessions()
+        
+        if sessions_response.get("success"):
+            sessions = sessions_response.get("sessions", [])
+            
+            if len(sessions) > 1:
+                st.write("여러 세션을 한 번에 내보낼 수 있습니다:")
+                
+                # Session selection for batch export
+                selected_sessions = st.multiselect(
+                    "내보낼 세션 선택",
+                    sessions,
+                    default=[current_session] if current_session in sessions else [sessions[0]] if sessions else [],
+                    key="batch_export_sessions"
+                )
+                
+                if selected_sessions:
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        if st.button("📄 모든 세션 PDF로 내보내기", key="batch_export_pdf"):
+                            try:
+                                from services.pdf_service import PDFService
+                                pdf_service = PDFService()
+                                
+                                all_pdf_content = b""
+                                total_messages = 0
+                                
+                                for session_id in selected_sessions:
+                                    # Get session messages
+                                    history_response = api_service.get_chat_history(session_id)
+                                    if history_response.get("success"):
+                                        messages = history_response.get("messages", [])
+                                        if messages:
+                                            session_name = st.session_state.get(f"session_name_{session_id}", "")
+                                            
+                                            # Generate PDF for this session
+                                            pdf_type = st.session_state.export_settings.get("pdf_type", "전체 채팅 기록")
+                                            if pdf_type == "전체 채팅 기록":
+                                                session_pdf = pdf_service.generate_chat_pdf(
+                                                    messages,
+                                                    session_id,
+                                                    session_name,
+                                                    st.session_state.export_settings.get("include_metadata", True)
+                                                )
+                                            else:
+                                                session_pdf = pdf_service.generate_summary_pdf(
+                                                    messages,
+                                                    session_id,
+                                                    session_name
+                                                )
+                                            
+                                            all_pdf_content += session_pdf
+                                            total_messages += len(messages)
+                                
+                                if all_pdf_content:
+                                    filename = f"batch_export_{len(selected_sessions)}_sessions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                                    
+                                    st.download_button(
+                                        label=f"📥 {len(selected_sessions)}개 세션 PDF 다운로드",
+                                        data=all_pdf_content,
+                                        file_name=filename,
+                                        mime="application/pdf",
+                                        use_container_width=True
+                                    )
+                                    
+                                    st.success(f"✅ {len(selected_sessions)}개 세션의 PDF가 생성되었습니다! (총 {total_messages}개 메시지)")
+                                else:
+                                    st.warning("⚠️ 내보낼 메시지가 없습니다.")
+                                    
+                            except Exception as e:
+                                st.error(f"❌ 일괄 PDF 생성 중 오류가 발생했습니다: {str(e)}")
+                    
+                    with col2:
+                        if st.button("📝 모든 세션 마크다운으로 내보내기", key="batch_export_markdown"):
+                            try:
+                                all_markdown_content = ""
+                                total_messages = 0
+                                
+                                for session_id in selected_sessions:
+                                    # Get session messages
+                                    history_response = api_service.get_chat_history(session_id)
+                                    if history_response.get("success"):
+                                        messages = history_response.get("messages", [])
+                                        if messages:
+                                            session_name = st.session_state.get(f"session_name_{session_id}", "")
+                                            
+                                            # Export to markdown
+                                            result = chat_controller.export_chat_markdown(
+                                                session_id, 
+                                                session_name, 
+                                                st.session_state.export_settings.get("include_metadata", True)
+                                            )
+                                            
+                                            if result.get("success"):
+                                                all_markdown_content += f"\n\n---\n# 세션: {session_name or session_id}\n---\n\n"
+                                                all_markdown_content += result.get("content", "")
+                                                total_messages += result.get('message_count', 0)
+                                
+                                if all_markdown_content:
+                                    filename = f"batch_export_{len(selected_sessions)}_sessions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                                    
+                                    st.download_button(
+                                        label=f"📥 {len(selected_sessions)}개 세션 마크다운 다운로드",
+                                        data=all_markdown_content,
+                                        file_name=filename,
+                                        mime="text/markdown",
+                                        use_container_width=True
+                                    )
+                                    
+                                    st.success(f"✅ {len(selected_sessions)}개 세션의 마크다운이 생성되었습니다! (총 {total_messages}개 메시지)")
+                                else:
+                                    st.warning("⚠️ 내보낼 메시지가 없습니다.")
+                                    
+                            except Exception as e:
+                                st.error(f"❌ 일괄 마크다운 생성 중 오류가 발생했습니다: {str(e)}")
+            else:
+                st.info("일괄 내보내기를 위해서는 2개 이상의 세션이 필요합니다.")
+        else:
+            st.error("세션 목록을 불러올 수 없습니다.")
+    else:
+        st.warning("⚠️ 내보낼 채팅 메시지가 없습니다.")
     
     st.markdown('</div>', unsafe_allow_html=True)
 

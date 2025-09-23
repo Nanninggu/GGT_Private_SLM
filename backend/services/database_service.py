@@ -61,6 +61,10 @@ class DatabaseService:
             await self._initialize_pgvector()
             await self._create_tables()
             
+            # Create users table
+            async with self.async_engine.begin() as conn:
+                await self._create_users_table(conn)
+            
             logger.info("Database service initialized successfully")
             
         except Exception as e:
@@ -203,6 +207,57 @@ class DatabaseService:
             """))
             
             logger.info("Database tables created successfully")
+    
+    async def _create_users_table(self, conn):
+        """Create users table"""
+        try:
+            # Check if users table exists
+            result = await conn.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'users'
+                )
+            """))
+            
+            table_exists = result.scalar()
+            
+            if not table_exists:
+                # Create users table
+                await conn.execute(text("""
+                    CREATE TABLE users (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        username VARCHAR(255) UNIQUE NOT NULL,
+                        email VARCHAR(255) UNIQUE NOT NULL,
+                        password_hash VARCHAR(255) NOT NULL,
+                        role VARCHAR(50) NOT NULL DEFAULT 'user',
+                        is_active BOOLEAN NOT NULL DEFAULT true,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_login TIMESTAMP
+                    )
+                """))
+                
+                # Create indexes for users table
+                await conn.execute(text("""
+                    CREATE INDEX IF NOT EXISTS users_username_idx ON users (username)
+                """))
+                
+                await conn.execute(text("""
+                    CREATE INDEX IF NOT EXISTS users_email_idx ON users (email)
+                """))
+                
+                await conn.execute(text("""
+                    CREATE INDEX IF NOT EXISTS users_role_idx ON users (role)
+                """))
+                
+                logger.info("Users table created successfully")
+            else:
+                logger.info("Users table already exists")
+                
+        except Exception as e:
+            logger.error(f"Failed to create users table: {e}")
+            raise
     
     async def _create_performance_indexes(self, conn):
         """Create additional performance indexes for vector database optimization"""

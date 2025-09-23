@@ -63,7 +63,7 @@ class LangChainRagService:
         """Change the active collection for RAG queries"""
         try:
             # Check if collection exists
-            collections = await self.get_available_collections()
+            collections = await self.get_collections()
             collection_exists = any(c["name"] == collection_name for c in collections)
             
             if not collection_exists:
@@ -87,13 +87,6 @@ class LangChainRagService:
             logger.error(f"Failed to set collection '{collection_name}': {e}")
             return False
     
-    async def get_available_collections(self, user_id: str = None) -> List[Dict[str, Any]]:
-        """Get list of available collections"""
-        try:
-            return await langchain_vector_service.get_collections(user_id)
-        except Exception as e:
-            logger.error(f"Failed to get collections: {e}")
-            return []
     
     async def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         """Get information about a specific collection"""
@@ -103,10 +96,10 @@ class LangChainRagService:
             logger.error(f"Failed to get collection info: {e}")
             return {}
     
-    async def create_collection(self, collection_name: str, description: str = "") -> Dict[str, Any]:
+    async def create_collection(self, collection_name: str, description: str = "", user_id: str = None) -> Dict[str, Any]:
         """Create a new collection"""
         try:
-            return await langchain_vector_service.create_collection(collection_name, description)
+            return await langchain_vector_service.create_collection(collection_name, description, user_id)
         except Exception as e:
             logger.error(f"Failed to create collection: {e}")
             raise
@@ -122,6 +115,10 @@ class LangChainRagService:
                 logger.info(f"Switched to default collection after deleting {collection_name}")
             
             return result
+        except ValueError as e:
+            # Collection doesn't exist - this is expected behavior, not an error
+            logger.info(f"Collection deletion skipped: {e}")
+            raise
         except Exception as e:
             logger.error(f"Failed to delete collection: {e}")
             raise
@@ -441,10 +438,10 @@ class LangChainRagService:
             logger.error(f"Failed to close RAG service: {e}")
     
     # Collection Management Methods
-    async def get_collections(self) -> List[Dict[str, Any]]:
+    async def get_collections(self, user_id: str = None) -> List[Dict[str, Any]]:
         """Get list of available collections"""
         try:
-            return await langchain_vector_service.get_collections()
+            return await langchain_vector_service.get_collections(user_id)
         except Exception as e:
             logger.error(f"Failed to get collections: {e}")
             return []

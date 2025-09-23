@@ -529,17 +529,28 @@ def main():
                             response = requests.delete(
                                 f"{API_BASE_URL}/api/collections/{collection_to_delete}"
                             )
+                            
                             if response.status_code == 200:
-                                st.success(f"컬렉션 '{collection_to_delete}'이 삭제되었습니다!")
-                                # 캐시된 컬렉션 목록 삭제하여 새로고침
-                                if "web_search_collections" in st.session_state:
-                                    del st.session_state.web_search_collections
-                                # 삭제된 컬렉션이 현재 선택된 컬렉션이면 기본값으로 변경
-                                if st.session_state.get("selected_collection") == collection_to_delete:
-                                    st.session_state.selected_collection = None
-                                # 삭제 확인 상태 초기화
-                                st.session_state.collection_to_delete = None
-                                st.rerun()
+                                response_data = response.json()
+                                if response_data.get("success", False):
+                                    st.success(f"컬렉션 '{collection_to_delete}'이 삭제되었습니다!")
+                                    # 캐시된 컬렉션 목록 삭제하여 새로고침
+                                    if "web_search_collections" in st.session_state:
+                                        del st.session_state.web_search_collections
+                                    # 삭제된 컬렉션이 현재 선택된 컬렉션이면 기본값으로 변경
+                                    if st.session_state.get("selected_collection") == collection_to_delete:
+                                        st.session_state.selected_collection = None
+                                    # 삭제 확인 상태 초기화
+                                    st.session_state.collection_to_delete = None
+                                    st.rerun()
+                                else:
+                                    # Collection doesn't exist or other business logic error
+                                    st.warning(f"컬렉션 '{collection_to_delete}'이 존재하지 않습니다.")
+                                    st.session_state.collection_to_delete = None
+                                    st.rerun()
+                            elif response.status_code == 400:
+                                error_data = response.json()
+                                st.error(f"컬렉션 삭제 실패: {error_data.get('detail', response.text)}")
                             else:
                                 error_data = response.json()
                                 st.error(f"컬렉션 삭제 실패: {error_data.get('detail', response.text)}")

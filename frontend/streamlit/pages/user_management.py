@@ -17,6 +17,7 @@ def check_admin_permission():
     """Check if current user has admin permission"""
     user_info = st.session_state.get("user_info")
     if not user_info:
+        st.error("사용자 정보가 없습니다. 다시 로그인해주세요.")
         return False
     
     # Check if user ID is admin (only admin ID has admin permission)

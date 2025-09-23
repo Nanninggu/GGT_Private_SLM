@@ -506,6 +506,7 @@ class LangChainVectorService:
             collection_exists = any(c["name"] == collection_name for c in collections)
             
             if not collection_exists:
+                logger.info(f"Collection '{collection_name}' does not exist, skipping deletion")
                 raise ValueError(f"Collection '{collection_name}' does not exist")
             
             async with db_service.get_session() as session:

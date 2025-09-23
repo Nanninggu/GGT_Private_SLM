@@ -1,0 +1,35 @@
+{
+  "id": "99feef75-c372-419a-b261-59ca0f20857a",
+  "created_at": "2025-09-24T01:15:01.717411",
+  "updated_at": "2025-09-24T01:15:01.717415",
+  "messages": [
+    {
+      "role": "user",
+      "content": "spring boot의 예제 코드를 보여줘",
+      "timestamp": "00:55:21",
+      "context": [],
+      "metadata": {}
+    },
+    {
+      "role": "assistant",
+      "content": "Spring Boot의 간단한 예제 코드입니다:\n\n```java\npackage com.example.demo;  // 프로젝트 패키지 지정\nimport org.springframework.boot.*;\nimport org.springframework.boot.autoconfigure.*;\nimport org.springframework.web.bind.annotation.*;\n\n@RestController // RESTful 서비스 컨트롤러 선언\npublic class HelloWorldController {\n\n    @GetMapping(\"/hello\") // \"/hello\" 경로에 대한 GET 요청 처리\n    public String helloWorld() {\n        return \"안녕하세요, 스프링 부트!\";  // 한국어로 변경된 메시지 반환\n    }\n}\n```\n\n이 코드는 스프링 부트로 간단한 애플리케이션을 만드는 예시입니다. `@RestController` 어노테이션을 사용하여 `/hello` 경로에 대한 GET 요청에 응답으로 `\"안녕하세요, 스프링 부트!\"`를 반환합니다. 실제 프로젝트에서는 `pom.xml` 파일 내에서 의존성 관리가 필요하며, 이를 적절히 설정해야 합니다. 특히 한국어로 모든 내용이 표시되도록 주의하시기 바랍니다.\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q8_0\n- 모델 타입: quality\n- 설명: 🎯 고품질 응답 (2.8GB, Q8_0)\n- 답변 방식: RAG 기반\n- RAG 모드: LangChain RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+      "timestamp": "00:55:33",
+      "context": [],
+      "metadata": {}
+    },
+    {
+      "role": "user",
+      "content": "건축법에서의 건축 설계란 ?",
+      "timestamp": "00:55:49",
+      "context": [],
+      "metadata": {}
+    },
+    {
+      "role": "assistant",
+      "content": "건축법에서의 건축 설계는 건물을 구체적으로 계획하고 구현하기 위한 전문적인 과정입니다. 이 과정은 건축주의 요구사항, 법규 준수, 기능성, 안전성 등을 고려하여 구조 설계, 인테리어 디자인, 설비 배치 등 다양한 요소를 포함합니다. 설계 단계에서는 건축물이 효율적으로 사용될 수 있도록 공간 활용과 함께 환경적 요건도 충족시키는 것이 중요하며, 최종적으로 건축허가를 위한 문서화 작업도 이루어집니다.\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q8_0\n- 모델 타입: quality\n- 설명: 🎯 고품질 응답 (2.8GB, Q8_0)\n- 답변 방식: RAG 기반\n- RAG 모드: LangChain RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+      "timestamp": "00:55:55",
+      "context": [],
+      "metadata": {}
+    }
+  ]
+}

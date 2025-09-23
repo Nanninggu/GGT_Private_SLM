@@ -11,7 +11,7 @@ from backend.models.chat import ChatSession, ChatMessage, MessageRole
 
 logger = logging.getLogger(__name__)
 
-class ChatRepository:
+class FileChatRepository:
     """File-based repository for chat session and message persistence"""
 
     def __init__(self):
@@ -23,7 +23,7 @@ class ChatRepository:
 
     async def initialize(self):
         """Initialize file system (no-op for file system)"""
-        logger.info("ChatRepository initialized successfully")
+        logger.info("FileChatRepository initialized successfully")
 
     async def save_session(self, session: ChatSession) -> bool:
         """Save chat session to file system"""

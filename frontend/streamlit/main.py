@@ -15,7 +15,13 @@ from components.chat_components import ChatComponents, StatusComponents
 from config import ADMIN_USER_ID
 from utils.session_manager import session_manager
 
-# Page configuration will be set dynamically based on current page
+# Set page configuration once at the top
+st.set_page_config(
+    page_title="HAI Portal",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 def check_auth_status():
     """Check if user is authenticated with auto token refresh"""
@@ -114,72 +120,34 @@ def main():
     # Page routing
     current_page = st.session_state.current_page
     
-    # Set page configuration based on current page
+    # Route to different pages without calling st.set_page_config
     if current_page == "login":
-        st.set_page_config(
-            page_title="HAI Portal - 로그인",
-            page_icon="🔐",
-            layout="centered",
-            initial_sidebar_state="collapsed"
-        )
         from pages.login import main as login_main
         login_main()
         return
     elif current_page == "file_upload":
-        st.set_page_config(
-            page_title="HAI Portal - 파일 업로드",
-            page_icon="📁",
-            layout="wide"
-        )
         from pages.file_upload import main as file_upload_main
         file_upload_main()
         return
     elif current_page == "accessibility_demo":
-        st.set_page_config(
-            page_title="접근성 데모 - HAI Portal",
-            page_icon="♿",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
         from pages.accessibility_demo import main as accessibility_main
         accessibility_main()
         return
     elif current_page == "configuration":
-        st.set_page_config(
-            page_title="시스템 설정 - HAI Portal",
-            page_icon="⚙️",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
         from pages.configuration import main as configuration_main
         configuration_main()
         return
     elif current_page == "user_management":
-        st.set_page_config(
-            page_title="사용자 관리 - HAI Portal",
-            page_icon="👥",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
         from pages.user_management import main as user_management_main
         user_management_main()
         return
     elif current_page == "main":
-        # Main page configuration
-        st.set_page_config(
-            page_title="HAI Portal",
-            page_icon="🤖",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
+        # Main page - continue with main page logic
+        pass
     else:
-        # Default configuration for main page
-        st.set_page_config(
-            page_title="HAI Portal",
-            page_icon="🤖",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
+        # Default to main page
+        st.session_state.current_page = "main"
+        # Don't rerun here to avoid infinite loop
     
     # Check authentication for main page
     if not check_auth_status():
@@ -239,14 +207,12 @@ def main():
     # Handle sidebar actions
     if sidebar_action == "clear_chat":
         st.session_state.messages = []
-        st.rerun()
     elif sidebar_action == "logout":
         # Clear authentication data using session manager
         session_manager.clear_session()
         st.session_state.messages = []
         st.session_state.current_page = "login"
         st.success("로그아웃되었습니다.")
-        st.rerun()
     elif sidebar_action == "check_connection":
         st.session_state.backend_connected = chat_controller.check_backend_connection()
         if st.session_state.backend_connected:
@@ -785,6 +751,13 @@ def main():
                     # Display assistant response (only for non-streaming)
                     if not streaming_enabled:
                         ChatComponents.render_message(assistant_message)
+                        
+                        # Show collection information
+                        metadata = assistant_message.get("metadata", {})
+                        if metadata.get("multi_collection", False):
+                            collections_used = metadata.get("collections_used", [])
+                            if collections_used:
+                                st.info(f"🔍 검색된 컬렉션: {', '.join(collections_used)}")
                         
                         # Show RAG mode indicator
                         if rag_mode == "LangChain RAG":

@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager
 # Add parent directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.controllers.chat_controller import ChatController
+# ChatController is now replaced by direct chat_service usage
 from backend.controllers.auth_controller import auth_controller
 from backend.controllers.web_search_controller import router as web_search_router
 from backend.controllers.accuracy_controller import AccuracyController
@@ -39,6 +39,7 @@ from backend.services.prompt_service import prompt_service
 from backend.services.file_processing_service import FileProcessingService
 from backend.services.markdown_service import MarkdownService
 from backend.services.accuracy_service import accuracy_service
+from backend.services.chat_service import ChatService
 from backend.services.cache_service import cache_service
 
 # Configure logging
@@ -54,6 +55,7 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     rag_mode: Optional[str] = "LangChain RAG"
     model_type: Optional[str] = "fast"
+    collection_names: Optional[List[str]] = None
 
 class CollectionRequest(BaseModel):
     collection_name: str
@@ -74,6 +76,7 @@ class CollectionResponse(BaseModel):
 
 # Global services
 services_initialized = False
+chat_service = ChatService()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -90,6 +93,7 @@ async def lifespan(app: FastAPI):
         await search_service.initialize()
         await langchain_rag_service.initialize()
         await accuracy_service.initialize()
+        await chat_service.initialize()
         services_initialized = True
         logger.info("All services initialized successfully")
     except Exception as e:
@@ -126,7 +130,6 @@ app.add_middleware(
 )
 
 # Initialize controller and services
-chat_controller = ChatController()
 accuracy_controller = AccuracyController()
 performance_controller = PerformanceController()
 markdown_service = MarkdownService()
@@ -455,10 +458,15 @@ async def test_login():
 @app.post("/api/chat/session")
 async def create_session():
     """Create a new chat session"""
-    result = await chat_controller.create_session()
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        session = await chat_service.create_session()
+        return {
+            "success": True,
+            "session_id": session.id,
+            "created_at": session.created_at.isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/chat/save-message")
 async def save_message(request: dict):
@@ -483,9 +491,9 @@ async def save_message(request: dict):
         )
         
         # Get or create session
-        session = await chat_controller.get_session(session_id)
+        session = await chat_service.get_session(session_id)
         if not session:
-            session = await chat_controller.create_session_object()
+            session = await chat_service.create_session()
             session.id = session_id
         
         # Add message to session
@@ -669,7 +677,7 @@ async def stream_chat(request: ChatRequest):
                     result = await rag_service.rag_query(request.message, request.session_id)
                 else:
                     # Use LangChain RAG service (default)
-                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type)
+                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type, request.collection_names)
                 
                 if result["success"] and result.get("response"):
                     # Stream the response
@@ -677,11 +685,15 @@ async def stream_chat(request: ChatRequest):
                     
                     # Send context information first
                     if result.get("context"):
+                        metadata = result.get("metadata", {})
                         context_info = {
                             "type": "context",
                             "sources": [doc.get("filename", "Unknown") for doc in result["context"]],
-                            "context_files": result.get("metadata", {}).get("context_files", []),
-                            "source_collection": result.get("metadata", {}).get("source_collection", "documents"),
+                            "context_files": metadata.get("context_files", []),
+                            "source_collection": metadata.get("source_collection", "documents"),
+                            "source_collections": metadata.get("source_collections", []),
+                            "collections_used": metadata.get("collections_used", []),
+                            "multi_collection": metadata.get("multi_collection", False),
                             "context_count": len(result["context"]),
                             "detailed_sources": result["context"],
                             "similarity_scores": [doc.get("similarity", 0) for doc in result["context"]]
@@ -796,7 +808,7 @@ async def stream_chat_langchain(request: ChatRequest):
                     result = await rag_service.rag_query(request.message, request.session_id)
                 else:
                     # Use LangChain RAG service (default)
-                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type)
+                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type, request.collection_names)
                 
                 if result["success"] and result.get("response"):
                     response_text = result["response"]
@@ -908,58 +920,103 @@ async def stream_chat_langchain(request: ChatRequest):
 @app.get("/api/chat/history/{session_id}")
 async def get_chat_history(session_id: str, limit: Optional[int] = None):
     """Get chat history for a session"""
-    result = await chat_controller.get_chat_history(session_id, limit)
-    if not result["success"]:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return result
+    try:
+        messages = await chat_service.get_chat_history(session_id, limit)
+        return {
+            "success": True,
+            "messages": [
+                {
+                    "id": msg.id,
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat(),
+                    "sources": [{"filename": s.filename, "similarity_score": s.similarity_score} for s in msg.sources] if msg.sources else [],
+                    "accuracy": {
+                        "confidence_score": msg.accuracy.confidence_score,
+                        "context_count": msg.accuracy.context_count,
+                        "avg_similarity": msg.accuracy.avg_similarity,
+                        "fallback_used": msg.accuracy.fallback_used
+                    } if msg.accuracy else None,
+                    "metadata": msg.metadata
+                }
+                for msg in messages
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/api/chat/sessions")
 async def get_sessions():
     """Get all session IDs"""
-    result = await chat_controller.get_sessions()
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        session_ids = await chat_service.get_all_sessions()
+        return {
+            "success": True,
+            "sessions": session_ids
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/chat/session/{session_id}/exists")
 async def check_session_exists(session_id: str):
     """Check if a session exists without loading all sessions"""
-    result = await chat_controller.check_session_exists(session_id)
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        exists = await chat_service.session_exists(session_id)
+        return {
+            "success": True,
+            "exists": exists
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/chat/session/{session_id}")
 async def clear_session(session_id: str):
     """Clear a chat session"""
-    result = await chat_controller.clear_session(session_id)
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        success = await chat_service.clear_session(session_id)
+        return {
+            "success": success,
+            "message": "Session cleared successfully" if success else "Failed to clear session"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/chat/session/{session_id}/delete")
 async def delete_session(session_id: str):
     """Delete a chat session completely"""
-    result = await chat_controller.delete_session(session_id)
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        success = await chat_service.delete_session(session_id)
+        return {
+            "success": success,
+            "message": "Session deleted successfully" if success else "Failed to delete session"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/chat/sessions/all")
 async def clear_all_sessions():
     """Clear all sessions except default"""
-    result = await chat_controller.clear_all_sessions()
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        cleared_sessions = await chat_service.clear_all_sessions()
+        return {
+            "success": True,
+            "cleared_sessions": cleared_sessions,
+            "message": f"Cleared {len(cleared_sessions)} sessions"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/chat/session/{session_id}/stats")
 async def get_session_stats(session_id: str):
     """Get session statistics"""
-    result = await chat_controller.get_session_stats(session_id)
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result["error"])
-    return result
+    try:
+        stats = await chat_service.get_session_stats(session_id)
+        return {
+            "success": True,
+            "stats": stats
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Document management endpoints
 @app.post("/api/documents")
@@ -1740,7 +1797,30 @@ async def export_chat_markdown(request: MarkdownExportRequest):
             raise HTTPException(status_code=503, detail="Services not initialized")
         
         # Get chat history for the session
-        history_response = await chat_controller.get_chat_history(request.session_id)
+        try:
+            messages = await chat_service.get_chat_history(request.session_id)
+            history_response = {
+                "success": True,
+                "messages": [
+                    {
+                        "id": msg.id,
+                        "role": msg.role.value,
+                        "content": msg.content,
+                        "timestamp": msg.timestamp.isoformat(),
+                        "sources": [{"filename": s.filename, "similarity_score": s.similarity_score} for s in msg.sources] if msg.sources else [],
+                        "accuracy": {
+                            "confidence_score": msg.accuracy.confidence_score,
+                            "context_count": msg.accuracy.context_count,
+                            "avg_similarity": msg.accuracy.avg_similarity,
+                            "fallback_used": msg.accuracy.fallback_used
+                        } if msg.accuracy else None,
+                        "metadata": msg.metadata
+                    }
+                    for msg in messages
+                ]
+            }
+        except Exception as e:
+            history_response = {"success": False, "error": str(e)}
         
         if not history_response.get("success"):
             raise HTTPException(
@@ -2059,10 +2139,11 @@ async def get_sample_test_queries():
 async def get_available_models():
     """Get available models for selection"""
     try:
-        result = await chat_controller.get_available_models()
-        if not result["success"]:
-            raise HTTPException(status_code=500, detail=result["error"])
-        return result
+        models = await ollama_service.get_available_models()
+        return {
+            "success": True,
+            "models": models
+        }
     except Exception as e:
         logger.error(f"Failed to get available models: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -2071,10 +2152,11 @@ async def get_available_models():
 async def get_model_config(model_type: str):
     """Get configuration for a specific model type"""
     try:
-        result = await chat_controller.get_model_config(model_type)
-        if not result["success"]:
-            raise HTTPException(status_code=500, detail=result["error"])
-        return result
+        config = await ollama_service.get_model_config(model_type)
+        return {
+            "success": True,
+            "config": config
+        }
     except Exception as e:
         logger.error(f"Failed to get model config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -2310,7 +2392,7 @@ async def delete_user(user_id: str, current_user = Depends(auth_controller.get_c
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
         
         # Delete user
-        if user_repo.delete_user(user_id):
+        if await user_repo.delete_user(user_id):
             return {
                 "success": True,
                 "message": "사용자가 성공적으로 삭제되었습니다."

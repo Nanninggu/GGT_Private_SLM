@@ -25,17 +25,27 @@ def check_auth_status():
         api_service = APIService()
         result = api_service.verify_token(st.session_state.auth_token)
         return result.get("valid", False)
-    except:
+    except Exception as e:
+        st.error(f"인증 확인 중 오류: {str(e)}")
         return False
 
-def search_web(query: str, num_results: int = 10) -> Dict[str, Any]:
+def search_web(query: str, num_results: int = 10, search_engine: str = "duckduckgo") -> Dict[str, Any]:
     """웹 검색을 수행합니다."""
     try:
+        # 검색 엔진 이름을 API 형식으로 변환
+        engine_mapping = {
+            "DuckDuckGo (무료)": "duckduckgo",
+            "Google Custom Search": "google",
+            "SerpAPI": "serpapi"
+        }
+        engine = engine_mapping.get(search_engine, "duckduckgo")
+        
         response = requests.post(
             f"{API_BASE_URL}/api/web-search/search",
             json={
                 "query": query,
-                "num_results": num_results
+                "num_results": num_results,
+                "search_engine": engine
             },
             timeout=30
         )
@@ -45,16 +55,25 @@ def search_web(query: str, num_results: int = 10) -> Dict[str, Any]:
         st.error(f"검색 중 오류가 발생했습니다: {str(e)}")
         return {"success": False, "error": str(e)}
 
-def search_and_save_to_collection(query: str, collection_name: str, num_results: int = 10) -> Dict[str, Any]:
+def search_and_save_to_collection(query: str, collection_name: str, num_results: int = 10, search_engine: str = "duckduckgo") -> Dict[str, Any]:
     """웹 검색을 수행하고 결과를 컬렉션에 저장합니다."""
     try:
+        # 검색 엔진 이름을 API 형식으로 변환
+        engine_mapping = {
+            "DuckDuckGo (무료)": "duckduckgo",
+            "Google Custom Search": "google",
+            "SerpAPI": "serpapi"
+        }
+        engine = engine_mapping.get(search_engine, "duckduckgo")
+        
         response = requests.post(
             f"{API_BASE_URL}/api/web-search/search-and-save",
             json={
                 "query": query,
                 "num_results": num_results,
                 "collection_name": collection_name,
-                "auto_save": True
+                "auto_save": True,
+                "search_engine": engine
             },
             timeout=60
         )
@@ -74,13 +93,13 @@ def get_collections(force_refresh: bool = False) -> List[Dict[str, Any]]:
         # Get authentication token from session state
         token = st.session_state.get("auth_token")
         if not token:
-            st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+            # 인증 토큰이 없으면 빈 목록 반환 (에러 메시지 표시하지 않음)
             return []
         
         headers = {
             "Authorization": f"Bearer {token}"
         }
-        response = requests.get(f"{API_BASE_URL}/api/web-search/collections", headers=headers)
+        response = requests.get(f"{API_BASE_URL}/api/web-search/collections", headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         if data.get("success"):
@@ -90,7 +109,10 @@ def get_collections(force_refresh: bool = False) -> List[Dict[str, Any]]:
             return collections
         return []
     except requests.exceptions.RequestException as e:
-        st.error(f"컬렉션 목록을 가져올 수 없습니다: {str(e)}")
+        # 에러 발생 시 빈 목록 반환 (에러 메시지 표시하지 않음)
+        return []
+    except Exception as e:
+        # 기타 예외 발생 시 빈 목록 반환
         return []
 
 def display_search_result(result: Dict[str, Any], index: int):
@@ -375,7 +397,7 @@ def main():
     st.markdown("""
     <div class="page-header">
         <div class="page-title">🔍 웹 검색</div>
-        <div class="page-subtitle">구글 웹 검색을 수행하고 결과를 컬렉션에 저장할 수 있습니다</div>
+        <div class="page-subtitle">DuckDuckGo, Google, SerpAPI 등 다양한 검색 엔진을 사용하여 웹 검색을 수행하고 결과를 컬렉션에 저장할 수 있습니다</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -400,6 +422,22 @@ def main():
             help="가져올 검색 결과의 개수를 선택하세요."
         )
         
+        # 검색 엔진 선택
+        search_engine = st.selectbox(
+            "검색 엔진",
+            options=["DuckDuckGo (무료)", "Google Custom Search", "SerpAPI"],
+            index=0,
+            help="사용할 검색 엔진을 선택하세요. DuckDuckGo는 완전 무료입니다."
+        )
+        
+        # 검색 엔진에 따른 설명
+        if search_engine == "DuckDuckGo (무료)":
+            st.info("🦆 **DuckDuckGo**: 완전 무료, 개인정보 보호 중심, API 키 불필요")
+        elif search_engine == "Google Custom Search":
+            st.warning("🔍 **Google Custom Search**: API 키 필요, 일일 검색 제한 있음")
+        elif search_engine == "SerpAPI":
+            st.warning("🔍 **SerpAPI**: 유료 서비스, API 키 필요")
+        
         # 컬렉션 선택
         st.subheader("컬렉션 관리")
         
@@ -410,17 +448,19 @@ def main():
                 # 캐시된 컬렉션 목록 삭제하고 새로고침
                 if "web_search_collections" in st.session_state:
                     del st.session_state.web_search_collections
-                st.rerun()
+                # 강제 새로고침으로 컬렉션 목록 다시 가져오기
+                get_collections(force_refresh=True)
         
         with col2:
             if st.button("➕ 새 컬렉션", help="새 컬렉션을 생성합니다."):
-                st.session_state.show_new_collection_form = True
-                st.rerun()
+                if st.session_state.get("auth_token"):
+                    st.session_state.show_new_collection_form = True
+                else:
+                    st.error("컬렉션을 생성하려면 로그인이 필요합니다.")
         
         with col3:
             if st.button("📋 목록 보기", help="컬렉션 목록을 자세히 봅니다."):
                 st.session_state.show_collection_list = not st.session_state.get("show_collection_list", False)
-                st.rerun()
         
         # 컬렉션 목록 가져오기
         collections = get_collections()
@@ -465,7 +505,11 @@ def main():
                     else:
                         st.caption("생성일: 알 수 없음")
         else:
-            st.warning("사용 가능한 컬렉션이 없습니다.")
+            # 인증 토큰이 있는지 확인
+            if st.session_state.get("auth_token"):
+                st.info("📝 사용 가능한 컬렉션이 없습니다. 새 컬렉션을 생성해보세요!")
+            else:
+                st.warning("🔐 컬렉션을 사용하려면 로그인이 필요합니다.")
             selected_collection = None
         
         # 컬렉션 목록 상세 보기
@@ -505,7 +549,6 @@ def main():
                 with col_btn1:
                     if st.button(f"선택", key=f"select_collection_{i}"):
                         st.session_state.selected_collection = collection.get('name', '')
-                        st.rerun()
                 
                 with col_btn2:
                     if st.button(f"삭제", key=f"delete_collection_{i}", type="secondary"):
@@ -547,7 +590,6 @@ def main():
                                     # Collection doesn't exist or other business logic error
                                     st.warning(f"컬렉션 '{collection_to_delete}'이 존재하지 않습니다.")
                                     st.session_state.collection_to_delete = None
-                                    st.rerun()
                             elif response.status_code == 400:
                                 error_data = response.json()
                                 st.error(f"컬렉션 삭제 실패: {error_data.get('detail', response.text)}")
@@ -560,17 +602,17 @@ def main():
             with col2:
                 if st.button("❌ 취소", use_container_width=True):
                     st.session_state.collection_to_delete = None
-                    st.rerun()
             
             with col3:
                 if st.button("🔄 새로고침", use_container_width=True):
                     # 캐시된 컬렉션 목록 삭제하고 새로고침
                     if "web_search_collections" in st.session_state:
                         del st.session_state.web_search_collections
-                    st.rerun()
+                    # 강제 새로고침으로 컬렉션 목록 다시 가져오기
+                    get_collections(force_refresh=True)
         
         # 새 컬렉션 생성 폼 (조건부 표시)
-        if st.session_state.get("show_new_collection_form", False):
+        if st.session_state.get("show_new_collection_form", False) and st.session_state.get("auth_token"):
             st.markdown("---")
             st.subheader("➕ 새 컬렉션 생성")
             
@@ -584,6 +626,7 @@ def main():
             
             new_collection_name = st.text_input(
                 "새 컬렉션 이름",
+                value=st.session_state.get("new_collection_name_input", ""),
                 placeholder="새 컬렉션 이름을 입력하세요...",
                 help="새로운 컬렉션을 생성합니다.",
                 key="new_collection_name_input"
@@ -598,77 +641,91 @@ def main():
             col1, col2, col3 = st.columns([1, 1, 1])
             
             with col1:
-                if st.button("✅ 생성", type="primary", use_container_width=True) and new_collection_name:
-                    with st.spinner("컬렉션 생성 중..."):
-                        try:
-                            # 컬렉션 타입에 따라 다른 API 엔드포인트 사용
-                            if collection_type == "개인 컬렉션":
-                                api_endpoint = f"{API_BASE_URL}/api/collections/create"
-                                collection_type_icon = "👤"
-                                collection_type_text = "개인"
-                            else:  # 공유 컬렉션
-                                api_endpoint = f"{API_BASE_URL}/api/collections/create-shared"
-                                collection_type_icon = "🌐"
-                                collection_type_text = "공유"
-                            
-                            # Get authentication token from session state
-                            token = st.session_state.get("auth_token")
-                            if not token:
-                                st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
-                                return
-                            
-                            headers = {
-                                "Authorization": f"Bearer {token}"
-                            }
-                            response = requests.post(
-                                api_endpoint,
-                                json={
-                                    "collection_name": new_collection_name,
-                                    "description": f"웹 검색 결과를 위한 {collection_type_text} 컬렉션: {new_collection_name}"
-                                },
-                                headers=headers
-                            )
-                            if response.status_code == 200:
-                                st.success(f"✅ {collection_type_text} 컬렉션 '{new_collection_name}'이 생성되었습니다! {collection_type_icon}")
-                                # 캐시된 컬렉션 목록 삭제하여 새로고침
-                                if "web_search_collections" in st.session_state:
-                                    del st.session_state.web_search_collections
-                                # 새로 생성된 컬렉션을 선택
-                                st.session_state.selected_collection = new_collection_name
-                                # 폼 숨기기
-                                st.session_state.show_new_collection_form = False
-                                st.rerun()
-                            elif response.status_code == 400:
-                                # 컬렉션이 이미 존재하는 경우
-                                error_data = response.json()
-                                if "already exists" in error_data.get("detail", ""):
-                                    st.warning(f"⚠️ {collection_type_text} 컬렉션 '{new_collection_name}'이 이미 존재합니다. 기존 컬렉션을 사용합니다. {collection_type_icon}")
+                if st.button("✅ 생성", type="primary", use_container_width=True):
+                    if not new_collection_name or not new_collection_name.strip():
+                        st.error("컬렉션 이름을 입력해주세요.")
+                    else:
+                        with st.spinner("컬렉션 생성 중..."):
+                            try:
+                                # 컬렉션 타입에 따라 다른 API 엔드포인트 사용
+                                if collection_type == "개인 컬렉션":
+                                    api_endpoint = f"{API_BASE_URL}/api/collections/create"
+                                    collection_type_icon = "👤"
+                                    collection_type_text = "개인"
+                                else:  # 공유 컬렉션
+                                    api_endpoint = f"{API_BASE_URL}/api/collections/create-shared"
+                                    collection_type_icon = "🌐"
+                                    collection_type_text = "공유"
+                                
+                                # Get authentication token from session state
+                                token = st.session_state.get("auth_token")
+                                if not token:
+                                    st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+                                    st.session_state.show_new_collection_form = False
+                                    return
+                                
+                                headers = {
+                                    "Authorization": f"Bearer {token}"
+                                }
+                                response = requests.post(
+                                    api_endpoint,
+                                    json={
+                                        "collection_name": new_collection_name,
+                                        "description": f"웹 검색 결과를 위한 {collection_type_text} 컬렉션: {new_collection_name}"
+                                    },
+                                    headers=headers,
+                                    timeout=30
+                                )
+                                if response.status_code == 200:
+                                    st.success(f"✅ {collection_type_text} 컬렉션 '{new_collection_name}'이 생성되었습니다! {collection_type_icon}")
                                     # 캐시된 컬렉션 목록 삭제하여 새로고침
                                     if "web_search_collections" in st.session_state:
                                         del st.session_state.web_search_collections
-                                    # 기존 컬렉션을 선택
+                                    # 새로 생성된 컬렉션을 선택
                                     st.session_state.selected_collection = new_collection_name
                                     # 폼 숨기기
                                     st.session_state.show_new_collection_form = False
+                                    # 입력 필드 초기화
+                                    st.session_state.new_collection_name_input = ""
                                     st.rerun()
+                                elif response.status_code == 401:
+                                    st.error("인증이 필요합니다. 로그인 페이지로 이동해주세요.")
+                                    st.session_state.show_new_collection_form = False
+                                elif response.status_code == 400:
+                                    # 컬렉션이 이미 존재하는 경우
+                                    error_data = response.json()
+                                    if "already exists" in error_data.get("detail", ""):
+                                        st.warning(f"⚠️ {collection_type_text} 컬렉션 '{new_collection_name}'이 이미 존재합니다. 기존 컬렉션을 사용합니다. {collection_type_icon}")
+                                        # 캐시된 컬렉션 목록 삭제하여 새로고침
+                                        if "web_search_collections" in st.session_state:
+                                            del st.session_state.web_search_collections
+                                        # 기존 컬렉션을 선택
+                                        st.session_state.selected_collection = new_collection_name
+                                        # 폼 숨기기
+                                        st.session_state.show_new_collection_form = False
+                                        # 입력 필드 초기화
+                                        st.session_state.new_collection_name_input = ""
+                                        st.rerun()
+                                    else:
+                                        st.error(f"컬렉션 생성 실패: {error_data.get('detail', response.text)}")
                                 else:
-                                    st.error(f"컬렉션 생성 실패: {error_data.get('detail', response.text)}")
-                            else:
-                                st.error(f"컬렉션 생성 실패: {response.text}")
-                        except Exception as e:
-                            st.error(f"컬렉션 생성 중 오류: {str(e)}")
+                                    st.error(f"컬렉션 생성 실패: {response.text}")
+                            except Exception as e:
+                                st.error(f"컬렉션 생성 중 오류: {str(e)}")
             
             with col2:
                 if st.button("❌ 취소", use_container_width=True):
                     st.session_state.show_new_collection_form = False
-                    st.rerun()
+                    # 입력 필드 초기화
+                    st.session_state.new_collection_name_input = ""
             
             with col3:
                 if st.button("🔄 새로고침", use_container_width=True):
                     # 캐시된 컬렉션 목록 삭제하고 새로고침
                     if "web_search_collections" in st.session_state:
                         del st.session_state.web_search_collections
-                    st.rerun()
+                    # 강제 새로고침으로 컬렉션 목록 다시 가져오기
+                    get_collections(force_refresh=True)
     
     # 메인 검색 영역
     if query:
@@ -676,8 +733,8 @@ def main():
         
         with col1:
             if st.button("🔍 검색만 하기", type="primary", use_container_width=True):
-                with st.spinner("검색 중..."):
-                    result = search_web(query, num_results)
+                with st.spinner(f"{search_engine}로 검색 중..."):
+                    result = search_web(query, num_results, search_engine)
                     
                     if result.get("success"):
                         st.success(f"검색 완료! {len(result.get('results', []))}개의 결과를 찾았습니다.")
@@ -691,8 +748,8 @@ def main():
         with col2:
             if selected_collection:
                 if st.button("💾 검색 후 컬렉션에 저장", type="secondary", use_container_width=True):
-                    with st.spinner("검색 및 저장 중..."):
-                        result = search_and_save_to_collection(query, selected_collection, num_results)
+                    with st.spinner(f"{search_engine}로 검색 및 저장 중..."):
+                        result = search_and_save_to_collection(query, selected_collection, num_results, search_engine)
                         
                         if result.get("success"):
                             st.success(f"검색 및 저장 완료! {len(result.get('results', []))}개의 결과를 '{selected_collection}' 컬렉션에 저장했습니다.")
@@ -715,20 +772,25 @@ def main():
         ### 웹 검색 기능 사용법
         
         1. **검색어 입력**: 왼쪽 사이드바에서 검색할 내용을 입력하세요.
-        2. **검색 결과 수 설정**: 가져올 검색 결과의 개수를 선택하세요 (1-20개).
-        3. **컬렉션 관리**: 
+        2. **검색 엔진 선택**: 사용할 검색 엔진을 선택하세요.
+           - **DuckDuckGo (무료)**: 완전 무료, 개인정보 보호 중심, API 키 불필요
+           - **Google Custom Search**: API 키 필요, 일일 검색 제한 있음
+           - **SerpAPI**: 유료 서비스, API 키 필요
+        3. **검색 결과 수 설정**: 가져올 검색 결과의 개수를 선택하세요 (1-20개).
+        4. **컬렉션 관리**: 
            - **컬렉션 선택**: 검색 결과를 저장할 컬렉션을 선택하세요.
            - **새 컬렉션 생성**: 새로운 컬렉션을 생성할 수 있습니다.
            - **목록 보기**: 모든 컬렉션의 상세 정보를 확인할 수 있습니다.
            - **컬렉션 삭제**: 불필요한 컬렉션을 삭제할 수 있습니다 (주의: 되돌릴 수 없음).
            - **새로고침**: 컬렉션 목록을 최신 상태로 업데이트합니다.
-        4. **검색 실행**: 
+        5. **검색 실행**: 
            - **검색만 하기**: 검색 결과만 확인합니다.
            - **검색 후 컬렉션에 저장**: 검색 결과를 선택한 컬렉션에 자동으로 저장합니다.
         
         ### 주요 기능
         
-        - **구글 웹 검색**: Google Custom Search API를 사용한 정확한 검색
+        - **다양한 검색 엔진**: DuckDuckGo, Google Custom Search, SerpAPI 지원
+        - **무료 검색 옵션**: DuckDuckGo를 사용하면 API 키 없이도 무료로 검색 가능
         - **실시간 컬렉션 관리**: 컬렉션 생성, 선택, 삭제, 목록 확인이 실시간으로 가능
         - **자동 새로고침**: 컬렉션 생성 후 자동으로 목록이 업데이트됩니다
         - **웹페이지 내용 추출**: 검색 결과의 실제 웹페이지 내용을 자동으로 추출

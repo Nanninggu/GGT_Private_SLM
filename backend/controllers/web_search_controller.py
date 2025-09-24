@@ -17,6 +17,7 @@ class WebSearchRequest(BaseModel):
     query: str
     num_results: int = 10
     collection_name: Optional[str] = None
+    search_engine: Optional[str] = "duckduckgo"
 
 class WebSearchResponse(BaseModel):
     success: bool
@@ -29,12 +30,18 @@ class WebSearchAndSaveRequest(BaseModel):
     num_results: int = 10
     collection_name: str
     auto_save: bool = True
+    search_engine: Optional[str] = "duckduckgo"
 
 @router.post("/search", response_model=WebSearchResponse)
 async def search_web(request: WebSearchRequest):
     """웹 검색을 수행합니다."""
     try:
         web_search_service = WebSearchService()
+        
+        # 검색 엔진 설정
+        if request.search_engine:
+            web_search_service.search_engine = request.search_engine
+            logger.info(f"Using search engine: {web_search_service.search_engine}")
         
         # 웹 검색 실행
         search_results = await web_search_service.search_web(
@@ -74,6 +81,11 @@ async def search_and_save_to_collection(
         web_search_service = WebSearchService()
         vector_service = VectorService()
         langchain_vector_service = LangChainVectorService()
+        
+        # 검색 엔진 설정
+        if request.search_engine:
+            web_search_service.search_engine = request.search_engine
+            logger.info(f"Using search engine: {web_search_service.search_engine}")
         
         # 웹 검색 실행
         search_results = await web_search_service.search_web(

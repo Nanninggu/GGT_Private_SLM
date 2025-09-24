@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResponse, SourceInfo, AccuracyInfo
-from backend.repositories.chat_repository import ChatRepository
+from backend.repositories.db_chat_repository import DBChatRepository
 from backend.services.llm_service import ExaoneLLMService
 from backend.services.langchain_rag_service import langchain_rag_service
 from backend.services.quality_service import quality_service
@@ -21,7 +21,7 @@ class ChatService:
     """Service layer for chat functionality"""
 
     def __init__(self):
-        self.repository = ChatRepository()
+        self.repository = DBChatRepository()
         self.llm_service = ExaoneLLMService()
         self.rag_service = langchain_rag_service
         self._initialized = False

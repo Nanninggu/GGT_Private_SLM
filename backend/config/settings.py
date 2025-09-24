@@ -134,6 +134,10 @@ class Settings:
     RAG_EXTERNAL_KNOWLEDGE_BLOCKED: bool = True
     RAG_CONTEXT_MAX_LENGTH: int = 100  # 컨텍스트 길이 대폭 최적화 (50% 추가 감소)
     
+    # ===== 웹 검색 엔진 설정 =====
+    SEARCH_ENGINE: str = os.getenv("SEARCH_ENGINE", "duckduckgo")  # duckduckgo, google, serpapi
+    SEARCH_ENGINE_TIMEOUT: int = 30  # seconds
+    
     # ===== Google Custom Search API 설정 =====
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "AIzaSyD9308788888888888888888888888888")
     GOOGLE_CSE_ID: str = os.getenv("GOOGLE_CSE_ID", "aaaaa")

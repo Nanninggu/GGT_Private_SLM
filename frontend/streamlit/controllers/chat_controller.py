@@ -62,7 +62,8 @@ class ChatController:
             return None
             
         rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
-        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode, model_type=model_type)
+        collection_names = st.session_state.get("selected_collections", None)
+        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode, model_type=model_type, collection_names=collection_names)
 
         if response["success"]:
             return {
@@ -407,7 +408,8 @@ class ChatController:
 
         # Send message to backend using LangChain
         rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
-        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag, rag_mode, model_type)
+        collection_names = st.session_state.get("selected_collections", None)
+        response = self.api_service.send_message_langchain(message, st.session_state.session_id, use_rag, rag_mode, model_type, collection_names)
 
         if response["success"]:
             return {
@@ -463,7 +465,8 @@ class ChatController:
                 </style>
                 """, unsafe_allow_html=True)
             
-            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode, model_type):
+            collection_names = st.session_state.get("selected_collections", None)
+            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode, model_type, collection_names):
                 if "error" in chunk:
                     if chunk.get("retrying", False):
                         # Show retry status
@@ -479,11 +482,20 @@ class ChatController:
                     context_sources = chunk.get("sources", [])
                     similarity_scores = chunk.get("similarity_scores", [])
                     context_count = chunk.get("context_count", 0)
+                    source_collections = chunk.get("source_collections", [])
+                    collections_used = chunk.get("collections_used", [])
+                    multi_collection = chunk.get("multi_collection", False)
                     
                     if context_sources:
                         with context_container.container():
                             # Enhanced context display with similarity scores
                             st.markdown("### 📚 참고 문서")
+                            
+                            # Show collection information
+                            if multi_collection and collections_used:
+                                st.info(f"🔍 검색된 컬렉션: {', '.join(collections_used)}")
+                            elif source_collections:
+                                st.info(f"🔍 검색된 컬렉션: {', '.join(source_collections)}")
                             
                             # Create a more detailed context display
                             for i, (source, similarity) in enumerate(zip(context_sources, similarity_scores), 1):
@@ -497,7 +509,10 @@ class ChatController:
                                 """, unsafe_allow_html=True)
                             
                             if context_count > 0:
-                                st.caption(f"총 {context_count}개의 관련 문서를 참조했습니다.")
+                                if multi_collection:
+                                    st.caption(f"총 {context_count}개의 관련 문서를 {len(collections_used)}개 컬렉션에서 참조했습니다.")
+                                else:
+                                    st.caption(f"총 {context_count}개의 관련 문서를 참조했습니다.")
                         
                         # Clear status when context is received
                         status_container.empty()

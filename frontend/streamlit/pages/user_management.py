@@ -245,16 +245,26 @@ def render_user_delete_confirmation(user: Dict[str, Any]):
         if st.button("✅ 삭제 확인", key="confirm_delete", type="primary"):
             try:
                 api_service = APIService()
-                result = api_service.delete_user(user.get('id'))
+                user_id = user.get('id')
+                
+                # Debug information
+                st.write(f"🔍 디버그 - 삭제할 사용자 ID: {user_id}")
+                
+                result = api_service.delete_user(user_id)
+                
+                # Debug information
+                st.write(f"🔍 디버그 - API 응답: {result}")
                 
                 if result.get("success"):
                     st.success("사용자가 성공적으로 삭제되었습니다.")
                     st.session_state.selected_user_for_delete = None
                     st.rerun()
                 else:
-                    st.error(f"삭제 실패: {result.get('message', '알 수 없는 오류')}")
+                    error_msg = result.get('message') or result.get('error', '알 수 없는 오류')
+                    st.error(f"삭제 실패: {error_msg}")
             except Exception as e:
                 st.error(f"삭제 중 오류가 발생했습니다: {str(e)}")
+                st.write(f"🔍 디버그 - 예외 상세: {type(e).__name__}: {str(e)}")
     
     with col2:
         if st.button("❌ 취소", key="cancel_delete"):
@@ -676,7 +686,15 @@ def main():
     # Back to main page button
     st.markdown("---")
     if st.button("← 메인 페이지로 돌아가기", key="back_to_main"):
+        # Clear any user management specific state
+        for key in list(st.session_state.keys()):
+            if key.startswith("selected_user_") or key.startswith("user_created") or key.startswith("form_counter"):
+                del st.session_state[key]
+        
+        # Set page to main
         st.session_state.current_page = "main"
+        
+        # Use a simple rerun
         st.rerun()
 
 if __name__ == "__main__":

@@ -562,12 +562,10 @@ class ChatComponents:
                         )
                         st.success("상세 피드백을 주셔서 감사합니다!")
                         st.session_state[f"show_feedback_form_{message_id}"] = False
-                        st.rerun()
                 
                 with col2:
                     if st.form_submit_button("취소"):
                         st.session_state[f"show_feedback_form_{message_id}"] = False
-                        st.rerun()
 
     @staticmethod
     def _submit_feedback(message_id: str, feedback_type: str, is_positive: bool = None, rating: int = None, comment: str = None):
@@ -813,7 +811,6 @@ class ChatComponents:
         if st.button("🗑️ 전체 삭제", key="clear_all_chats_btn", use_container_width=True, type="secondary"):
             # Show confirmation dialog
             st.session_state.show_clear_all_confirm = True
-            st.rerun()
         
         # Confirmation dialog for clear all
         if st.session_state.get("show_clear_all_confirm", False):
@@ -830,53 +827,47 @@ class ChatComponents:
             </div>
             """, unsafe_allow_html=True)
             
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col1:
-                if st.button("✅ 확인", key="confirm_clear_all", type="primary"):
+            # Use buttons without columns in sidebar
+            if st.button("✅ 확인", key="confirm_clear_all", type="primary", use_container_width=True):
+                try:
+                    # Clear current session immediately
+                    st.session_state.messages = []
+                    st.session_state.session_id = "default"
+                    st.session_state.last_loaded_session = None
+                    
+                    # Clear any confirmation states
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("confirm_delete_") or key.startswith("show_"):
+                            del st.session_state[key]
+                    
+                    # Try to clear backend sessions
+                    backend_success = True
                     try:
-                        # Clear current session immediately
-                        st.session_state.messages = []
-                        st.session_state.session_id = "default"
-                        st.session_state.last_loaded_session = None
-                        
-                        # Clear any confirmation states
-                        for key in list(st.session_state.keys()):
-                            if key.startswith("confirm_delete_") or key.startswith("show_"):
-                                del st.session_state[key]
-                        
-                        # Try to clear backend sessions
-                        backend_success = True
-                        try:
-                            if chat_controller.api_service and chat_controller.check_backend_connection():
-                                result = chat_controller.clear_all_sessions()
-                                if not result.get("success", False):
-                                    backend_success = False
-                                    st.warning(f"백엔드 삭제 중 일부 오류가 발생했습니다: {result.get('warning', '알 수 없는 오류')}")
-                        except Exception as e:
-                            backend_success = False
-                            st.warning(f"백엔드 삭제 중 오류가 발생했습니다: {str(e)}")
-                        
-                        # Show success message
-                        if backend_success:
-                            st.success("모든 채팅이 성공적으로 삭제되었습니다.")
-                        else:
-                            st.warning("현재 채팅이 초기화되었습니다. 일부 백엔드 데이터는 수동으로 정리해야 할 수 있습니다.")
-                        
-                        # Force refresh session list
-                        st.session_state.force_refresh = True
-                        
-                        # Force rerun to update UI
-                        st.rerun()
+                        if chat_controller.api_service and chat_controller.check_backend_connection():
+                            result = chat_controller.clear_all_sessions()
+                            if not result.get("success", False):
+                                backend_success = False
+                                st.warning(f"백엔드 삭제 중 일부 오류가 발생했습니다: {result.get('warning', '알 수 없는 오류')}")
                     except Exception as e:
-                        st.error(f"전체 삭제 중 오류가 발생했습니다: {str(e)}")
-            
-            with col2:
-                if st.button("❌ 취소", key="cancel_clear_all"):
+                        backend_success = False
+                        st.warning(f"백엔드 삭제 중 오류가 발생했습니다: {str(e)}")
+                    
+                    # Show success message
+                    if backend_success:
+                        st.success("모든 채팅이 성공적으로 삭제되었습니다.")
+                    else:
+                        st.warning("현재 채팅이 초기화되었습니다. 일부 백엔드 데이터는 수동으로 정리해야 할 수 있습니다.")
+                    
+                    # Force refresh session list
+                    st.session_state.force_refresh = True
+                    
+                    # Clear confirmation state
                     st.session_state.show_clear_all_confirm = False
-                    st.rerun()
+                except Exception as e:
+                    st.error(f"전체 삭제 중 오류가 발생했습니다: {str(e)}")
             
-            with col3:
-                pass  # Empty column for spacing
+            if st.button("❌ 취소", key="cancel_clear_all", use_container_width=True):
+                st.session_state.show_clear_all_confirm = False
         
         
         st.markdown("---")
@@ -978,7 +969,6 @@ class ChatComponents:
                                         del st.session_state[key]
                                 # Switch to this session
                                 chat_controller.switch_to_session(session_id)
-                                st.rerun()
                     
                     with col2:
                         # Delete session button with confirmation (show for all sessions except default)
@@ -986,7 +976,6 @@ class ChatComponents:
                             if st.button("🗑️", key=f"delete_{session_id}", help="채팅 삭제"):
                                 # Set confirmation state
                                 st.session_state[f"confirm_delete_{session_id}"] = True
-                                st.rerun()
                         
                         # Confirmation dialog for individual delete
                         if st.session_state.get(f"confirm_delete_{session_id}", False):
@@ -1003,40 +992,35 @@ class ChatComponents:
                             </div>
                             """, unsafe_allow_html=True)
                             
-                            col_del1, col_del2, col_del3 = st.columns([1, 1, 1])
-                            with col_del1:
-                                if st.button("✅ 삭제", key=f"confirm_delete_yes_{session_id}", type="primary"):
-                                    # Delete session
-                                    try:
-                                        delete_success = chat_controller.delete_session(session_id)
+                            # Use buttons without columns in sidebar
+                            if st.button("✅ 삭제", key=f"confirm_delete_yes_{session_id}", type="primary", use_container_width=True):
+                                # Delete session
+                                try:
+                                    delete_success = chat_controller.delete_session(session_id)
+                                    
+                                    if delete_success:
+                                        # Clear confirmation state
+                                        if f"confirm_delete_{session_id}" in st.session_state:
+                                            del st.session_state[f"confirm_delete_{session_id}"]
                                         
-                                        if delete_success:
-                                            # Clear confirmation state
-                                            if f"confirm_delete_{session_id}" in st.session_state:
-                                                del st.session_state[f"confirm_delete_{session_id}"]
-                                            
-                                            # Force refresh session list
-                                            st.session_state.force_refresh = True
-                                            
-                                            # Show success message
-                                            st.success(f"'{session_title}' 채팅이 성공적으로 삭제되었습니다.")
-                                            
-                                            # Force rerun to update UI
-                                            st.rerun()
-                                        else:
-                                            st.error("채팅 삭제에 실패했습니다.")
-                                    except Exception as e:
-                                        st.error(f"삭제 중 오류가 발생했습니다: {str(e)}")
+                                        # Force refresh session list
+                                        st.session_state.force_refresh = True
+                                        
+                                        # Show success message
+                                        st.success(f"'{session_title}' 채팅이 성공적으로 삭제되었습니다.")
+                                        
+                                        # Clear confirmation state
+                                        if f"confirm_delete_{session_id}" in st.session_state:
+                                            del st.session_state[f"confirm_delete_{session_id}"]
+                                    else:
+                                        st.error("채팅 삭제에 실패했습니다.")
+                                except Exception as e:
+                                    st.error(f"삭제 중 오류가 발생했습니다: {str(e)}")
                             
-                            with col_del2:
-                                if st.button("❌ 취소", key=f"confirm_delete_no_{session_id}"):
-                                    # Clear confirmation state
-                                    if f"confirm_delete_{session_id}" in st.session_state:
-                                        del st.session_state[f"confirm_delete_{session_id}"]
-                                    st.rerun()
-                            
-                            with col_del3:
-                                pass  # Empty column for spacing
+                            if st.button("❌ 취소", key=f"confirm_delete_no_{session_id}", use_container_width=True):
+                                # Clear confirmation state
+                                if f"confirm_delete_{session_id}" in st.session_state:
+                                    del st.session_state[f"confirm_delete_{session_id}"]
                     
                     # Close session item container
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -1254,54 +1238,384 @@ class ChatComponents:
                 
                 # Always show collection selection UI
                 if collections:
-                    # Create collection options
+                    # Create collection options for multiselect
                     collection_options = [f"{col['name']} ({col.get('document_count', 0)}개 문서)" for col in collections]
+                    collection_names = [col['name'] for col in collections]
                     
-                    # Find current collection index
-                    current_collection_index = 0
-                    for i, col in enumerate(collections):
-                        if col['name'] == current_collection:
-                            current_collection_index = i
-                            break
+                    # Initialize multi-collection selection in session state
+                    if "selected_collections" not in st.session_state:
+                        # Default to current collection if it exists, otherwise first collection
+                        if current_collection in collection_names:
+                            st.session_state.selected_collections = [current_collection]
+                        else:
+                            st.session_state.selected_collections = [collection_names[0]] if collection_names else []
                     
-                    # Collection selector
-                    selected_index = st.selectbox(
-                        "사용할 컬렉션 선택",
-                        range(len(collection_options)),
-                        format_func=lambda x: collection_options[x],
-                        index=current_collection_index,
-                        key="collection_select"
+                    # Multi-collection selector with aliases
+                    def format_collection_name(collection_name):
+                        doc_count = next((col.get('document_count', 0) for col in collections if col['name'] == collection_name), 0)
+                        # Check if there's a custom alias
+                        aliases = st.session_state.get("collection_aliases", {})
+                        if collection_name in aliases and aliases[collection_name]:
+                            return f"{aliases[collection_name]} ({collection_name}) - {doc_count}개 문서"
+                        else:
+                            # Use auto-generated alias for long names
+                            if len(collection_name) > 20:
+                                display_name = collection_name[:17] + "..."
+                                return f"{display_name} ({collection_name}) - {doc_count}개 문서"
+                            else:
+                                return f"{collection_name} - {doc_count}개 문서"
+                    
+                    selected_collections = st.multiselect(
+                        "사용할 컬렉션 선택 (여러 개 선택 가능)",
+                        options=collection_names,
+                        default=st.session_state.selected_collections,
+                        format_func=format_collection_name,
+                        key="multi_collection_select",
+                        help="LangChain RAG 모드에서 여러 컬렉션을 선택하여 질문할 수 있습니다. 긴 이름은 별명으로 관리할 수 있습니다."
                     )
                     
-                    if selected_index is not None:
-                        selected_collection = collections[selected_index]['name']
-                        
-                        # Show collection info
-                        if st.button("ℹ️ 컬렉션 정보 보기", key="show_collection_info"):
-                            collection_info = chat_controller.get_collection_info(selected_collection)
-                            if collection_info:
-                                st.json(collection_info)
-                        
-                        # Switch collection if different
-                        if selected_collection != current_collection:
-                            if st.button("🔄 컬렉션 전환", key="switch_collection"):
-                                if chat_controller.switch_collection(selected_collection):
-                                    st.rerun()
+                    # Update session state
+                    st.session_state.selected_collections = selected_collections
                     
-                    # Show current collection info
+                    # Clear active group if collections don't match
+                    active_group = st.session_state.get("active_group")
+                    if active_group and selected_collections != active_group["collections"]:
+                        st.session_state.active_group = None
+                    
+                    if selected_collections:
+                        # Show selected collections info with aliases
+                        collection_display_names = []
+                        aliases = st.session_state.get("collection_aliases", {})
+                        
+                        for col_name in selected_collections:
+                            # Use custom alias if available
+                            if col_name in aliases and aliases[col_name]:
+                                collection_display_names.append(f"{aliases[col_name]} ({col_name})")
+                            else:
+                                # Use auto-generated alias for long names
+                                if len(col_name) > 15:
+                                    alias = col_name[:12] + "..."
+                                    collection_display_names.append(f"{alias} ({col_name})")
+                                else:
+                                    collection_display_names.append(col_name)
+                        
+                        st.info(f"선택된 컬렉션: {', '.join(collection_display_names)}")
+                        
+                        # Collection management buttons
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        with col1:
+                            if st.button("ℹ️ 컬렉션 정보", key="show_collection_info"):
+                                for collection_name in selected_collections:
+                                    collection_info = chat_controller.get_collection_info(collection_name)
+                                    if collection_info:
+                                        st.write(f"**{collection_name}** 정보:")
+                                        st.json(collection_info)
+                                        st.markdown("---")
+                        
+                        with col2:
+                            if len(selected_collections) == 1:
+                                # Single collection - direct activation
+                                if st.button("🔄 활성화", key="activate_single_collection"):
+                                    collection_name = selected_collections[0]
+                                    result = chat_controller.switch_collection(collection_name)
+                                    if result.get("success"):
+                                        st.session_state.current_collection = collection_name
+                                        # Clear active group when activating individual collection
+                                        st.session_state.active_group = None
+                                        st.success(f"'{collection_name}' 컬렉션이 활성화되었습니다.")
+                                    else:
+                                        st.error(f"컬렉션 활성화 실패: {result.get('error', '알 수 없는 오류')}")
+                            else:
+                                # Multiple collections - dropdown selection
+                                selected_for_activation = st.selectbox(
+                                    "활성화할 컬렉션 선택:",
+                                    options=selected_collections,
+                                    format_func=lambda x: aliases.get(x, x) if x in aliases and aliases[x] else x,
+                                    key="collection_activation_select"
+                                )
+                                if st.button("🔄 선택된 컬렉션 활성화", key="activate_selected_collection"):
+                                    result = chat_controller.switch_collection(selected_for_activation)
+                                    if result.get("success"):
+                                        st.session_state.current_collection = selected_for_activation
+                                        # Clear active group when activating individual collection
+                                        st.session_state.active_group = None
+                                        st.success(f"'{selected_for_activation}' 컬렉션이 활성화되었습니다.")
+                                    else:
+                                        st.error(f"컬렉션 활성화 실패: {result.get('error', '알 수 없는 오류')}")
+                        
+                        with col3:
+                            manage_aliases_clicked = st.button("📝 별명 관리", key="manage_aliases")
+                            if manage_aliases_clicked:
+                                st.session_state.show_alias_management = True
+                        
+                        with col4:
+                            if len(selected_collections) > 1:
+                                create_group_clicked = st.button("🔗 그룹으로 묶기", key="create_collection_group")
+                                if create_group_clicked:
+                                    st.session_state.show_group_creation = True
+                            else:
+                                st.button("🔗 그룹으로 묶기", key="create_collection_group", disabled=True, help="2개 이상의 컬렉션을 선택해야 합니다.")
+                        
+                        # Alias management UI
+                        if st.session_state.get("show_alias_management", False):
+                            st.markdown("---")
+                            st.subheader("📝 컬렉션 별명 관리")
+                            
+                            # Initialize collection aliases in session state
+                            if "collection_aliases" not in st.session_state:
+                                st.session_state.collection_aliases = {}
+                            
+                            # Show alias management for selected collections
+                            for collection_name in selected_collections:
+                                current_alias = st.session_state.collection_aliases.get(collection_name, "")
+                                
+                                col1, col2 = st.columns([2, 1])
+                                
+                                with col1:
+                                    new_alias = st.text_input(
+                                        f"별명 (최대 20자)",
+                                        value=current_alias,
+                                        key=f"alias_{collection_name}",
+                                        placeholder=f"예: {collection_name[:10]}...",
+                                        max_chars=20
+                                    )
+                                
+                                with col2:
+                                    if st.button("저장", key=f"save_alias_{collection_name}"):
+                                        if new_alias and len(new_alias.strip()) > 0:
+                                            st.session_state.collection_aliases[collection_name] = new_alias.strip()
+                                            st.success(f"'{collection_name}'의 별명이 '{new_alias.strip()}'로 설정되었습니다.")
+                                        else:
+                                            # Remove alias if empty
+                                            if collection_name in st.session_state.collection_aliases:
+                                                del st.session_state.collection_aliases[collection_name]
+                                            st.info(f"'{collection_name}'의 별명이 제거되었습니다.")
+                            
+                            close_alias_clicked = st.button("닫기", key="close_alias_management")
+                            if close_alias_clicked:
+                                st.session_state.show_alias_management = False
+                        
+                        # Collection group creation UI
+                        if st.session_state.get("show_group_creation", False):
+                            st.markdown("---")
+                            st.subheader("🔗 컬렉션 그룹 생성")
+                            
+                            # Initialize collection groups in session state
+                            if "collection_groups" not in st.session_state:
+                                st.session_state.collection_groups = {}
+                            
+                            # Show selected collections for grouping
+                            st.write("**그룹에 포함될 컬렉션들:**")
+                            for i, collection_name in enumerate(selected_collections, 1):
+                                aliases = st.session_state.get("collection_aliases", {})
+                                display_name = aliases.get(collection_name, collection_name) if collection_name in aliases and aliases[collection_name] else collection_name
+                                st.write(f"{i}. {display_name} ({collection_name})")
+                            
+                            # Check if editing existing group
+                            editing_group_id = st.session_state.get("editing_group")
+                            if editing_group_id and editing_group_id in st.session_state.get("collection_groups", {}):
+                                # Editing existing group
+                                existing_group = st.session_state.collection_groups[editing_group_id]
+                                default_name = existing_group["name"]
+                                default_description = existing_group.get("description", "")
+                                st.info(f"그룹 편집 중: {default_name}")
+                            else:
+                                # Creating new group
+                                default_name = ""
+                                default_description = ""
+                            
+                            # Group name input
+                            group_name = st.text_input(
+                                "그룹 이름을 입력하세요:",
+                                value=default_name,
+                                placeholder="예: 내 문서 그룹, 프로젝트 A, 등등",
+                                key="group_name_input",
+                                max_chars=30
+                            )
+                            
+                            # Group description
+                            group_description = st.text_area(
+                                "그룹 설명 (선택사항):",
+                                value=default_description,
+                                placeholder="이 그룹에 대한 간단한 설명을 입력하세요.",
+                                key="group_description_input",
+                                max_chars=100
+                            )
+                            
+                            col1, col2, col3 = st.columns(3)
+                            
+                            with col1:
+                                if editing_group_id:
+                                    # Editing existing group
+                                    if st.button("✅ 그룹 수정", key="update_group"):
+                                        if group_name and group_name.strip():
+                                            st.session_state.collection_groups[editing_group_id].update({
+                                                "name": group_name.strip(),
+                                                "description": group_description.strip() if group_description else "",
+                                                "collections": selected_collections.copy()
+                                            })
+                                            st.success(f"'{group_name.strip()}' 그룹이 수정되었습니다!")
+                                            st.session_state.show_group_creation = False
+                                            st.session_state.editing_group = None
+                                        else:
+                                            st.error("그룹 이름을 입력해주세요.")
+                                else:
+                                    # Creating new group
+                                    if st.button("✅ 그룹 생성", key="create_group"):
+                                        if group_name and group_name.strip():
+                                            import datetime
+                                            group_id = f"group_{len(st.session_state.collection_groups) + 1}"
+                                            st.session_state.collection_groups[group_id] = {
+                                                "name": group_name.strip(),
+                                                "description": group_description.strip() if group_description else "",
+                                                "collections": selected_collections.copy(),
+                                                "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                            }
+                                            st.success(f"'{group_name.strip()}' 그룹이 생성되었습니다!")
+                                            st.session_state.show_group_creation = False
+                                        else:
+                                            st.error("그룹 이름을 입력해주세요.")
+                            
+                            with col2:
+                                cancel_group_clicked = st.button("❌ 취소", key="cancel_group_creation")
+                                if cancel_group_clicked:
+                                    st.session_state.show_group_creation = False
+                                    if editing_group_id:
+                                        st.session_state.editing_group = None
+                            
+                            with col3:
+                                show_group_list_clicked = st.button("📋 그룹 목록", key="show_group_list")
+                                if show_group_list_clicked:
+                                    st.session_state.show_group_list = True
+                        
+                        # Group list and management UI
+                        if st.session_state.get("show_group_list", False):
+                            st.markdown("---")
+                            st.subheader("📋 컬렉션 그룹 관리")
+                            
+                            groups = st.session_state.get("collection_groups", {})
+                            
+                            if groups:
+                                for group_id, group_info in groups.items():
+                                    with st.expander(f"🔗 {group_info['name']} ({len(group_info['collections'])}개 컬렉션)"):
+                                        st.write(f"**설명:** {group_info.get('description', '설명 없음')}")
+                                        st.write(f"**생성일:** {group_info.get('created_at', 'Unknown')}")
+                                        
+                                        st.write("**포함된 컬렉션들:**")
+                                        for i, collection_name in enumerate(group_info['collections'], 1):
+                                            aliases = st.session_state.get("collection_aliases", {})
+                                            display_name = aliases.get(collection_name, collection_name) if collection_name in aliases and aliases[collection_name] else collection_name
+                                            st.write(f"  {i}. {display_name} ({collection_name})")
+                                        
+                                        col1, col2, col3 = st.columns(3)
+                                        
+                                        with col1:
+                                            if st.button(f"🔄 그룹 활성화", key=f"activate_group_{group_id}"):
+                                                # Set all collections in the group as selected
+                                                st.session_state.selected_collections = group_info['collections'].copy()
+                                                # Set the first collection as current collection
+                                                if group_info['collections']:
+                                                    st.session_state.current_collection = group_info['collections'][0]
+                                                # Store group information for display
+                                                st.session_state.active_group = {
+                                                    "id": group_id,
+                                                    "name": group_info['name'],
+                                                    "description": group_info.get('description', ''),
+                                                    "collections": group_info['collections'].copy()
+                                                }
+                                                st.success(f"'{group_info['name']}' 그룹의 모든 컬렉션이 선택되었습니다!")
+                                        
+                                        with col2:
+                                            if st.button(f"✏️ 그룹 수정", key=f"edit_group_{group_id}"):
+                                                st.session_state.editing_group = group_id
+                                                st.session_state.show_group_creation = True
+                                        
+                                        with col3:
+                                            if st.button(f"🗑️ 그룹 삭제", key=f"delete_group_{group_id}"):
+                                                st.session_state.group_to_delete = group_id
+                                        
+                                        # Group deletion confirmation
+                                        if st.session_state.get("group_to_delete") == group_id:
+                                            st.warning(f"'{group_info['name']}' 그룹을 삭제하시겠습니까?")
+                                            col1, col2 = st.columns(2)
+                                            with col1:
+                                                if st.button("✅ 삭제 확인", key=f"confirm_delete_group_{group_id}"):
+                                                    del st.session_state.collection_groups[group_id]
+                                                    st.success(f"'{group_info['name']}' 그룹이 삭제되었습니다.")
+                                                    st.session_state.group_to_delete = None
+                                            with col2:
+                                                if st.button("❌ 취소", key=f"cancel_delete_group_{group_id}"):
+                                                    st.session_state.group_to_delete = None
+                            else:
+                                st.info("생성된 그룹이 없습니다.")
+                            
+                            close_group_list_clicked = st.button("닫기", key="close_group_list")
+                            if close_group_list_clicked:
+                                st.session_state.show_group_list = False
+                        
+                        # For backward compatibility, set the first selected collection as current
+                        if selected_collections:
+                            selected_collection = selected_collections[0]
+                        else:
+                            selected_collection = current_collection
+                    else:
+                        st.warning("최소 하나의 컬렉션을 선택해주세요.")
+                        selected_collection = current_collection
+                    
+                    # Switch collection if different (for single collection compatibility)
+                    if selected_collection != current_collection:
+                        if st.button("🔄 컬렉션 전환", key="switch_collection"):
+                            result = chat_controller.switch_collection(selected_collection)
+                            if result.get("success"):
+                                st.session_state.current_collection = selected_collection
+                                # Clear active group when switching to individual collection
+                                st.session_state.active_group = None
+                                st.success(f"'{selected_collection}' 컬렉션으로 전환되었습니다.")
+                            else:
+                                st.error(f"컬렉션 전환 실패: {result.get('error', '알 수 없는 오류')}")
+                    
+                    # Show current collection info with alias and group info
                     if current_collection:
-                        st.info(f"현재 활성 컬렉션: **{current_collection}**")
+                        aliases = st.session_state.get("collection_aliases", {})
+                        if current_collection in aliases and aliases[current_collection]:
+                            display_name = f"{aliases[current_collection]} ({current_collection})"
+                        else:
+                            display_name = current_collection
+                        
+                        # Check if there's an active group
+                        active_group = st.session_state.get("active_group")
+                        if active_group and st.session_state.get("selected_collections") == active_group["collections"]:
+                            st.info(f"현재 활성 그룹: **{active_group['name']}** ({len(active_group['collections'])}개 컬렉션)")
+                            if active_group.get('description'):
+                                st.caption(f"그룹 설명: {active_group['description']}")
+                            
+                            # Show collections in the active group
+                            with st.expander("🔍 활성 그룹의 컬렉션들", expanded=False):
+                                for i, collection_name in enumerate(active_group['collections'], 1):
+                                    collection_alias = aliases.get(collection_name, "")
+                                    if collection_alias:
+                                        st.write(f"{i}. {collection_alias} ({collection_name})")
+                                    else:
+                                        st.write(f"{i}. {collection_name}")
+                        else:
+                            st.info(f"현재 활성 컬렉션: **{display_name}**")
                 else:
                     # Show default collection when no collections are available
                     st.info("기본 컬렉션을 사용합니다.")
                     
-                    # Show current collection info
+                    # Show current collection info with alias
                     if current_collection:
-                        st.info(f"현재 활성 컬렉션: **{current_collection}**")
+                        aliases = st.session_state.get("collection_aliases", {})
+                        if current_collection in aliases and aliases[current_collection]:
+                            display_name = f"{aliases[current_collection]} ({current_collection})"
+                        else:
+                            display_name = current_collection
+                        st.info(f"현재 활성 컬렉션: **{display_name}**")
                     
                     # Refresh button
                     if st.button("🔄 컬렉션 목록 새로고침", key="refresh_collections"):
-                        st.rerun()
+                        st.session_state.force_refresh = True
                     
             # Collection management button
             if st.button("🗂️ 컬렉션 관리", key="collection_management", use_container_width=True):
@@ -1312,7 +1626,6 @@ class ChatComponents:
             if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
                 if st.button("👥 사용자 관리", key="user_management", use_container_width=True):
                     st.session_state.current_page = "user_management"
-                    st.rerun()
                     
                     # Show message about creating collections
                     st.markdown("""

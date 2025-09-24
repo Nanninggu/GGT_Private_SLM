@@ -251,8 +251,8 @@ class LangChainRagService:
                 system=settings.KOREAN_SYSTEM_PROMPT
             )
     
-    async def rag_query(self, query: str, session_id: str = None, model_type: str = "fast") -> Dict[str, Any]:
-        """Main RAG query method using LangChain with parallel processing"""
+    async def rag_query(self, query: str, session_id: str = None, model_type: str = "fast", collection_names: List[str] = None) -> Dict[str, Any]:
+        """Main RAG query method using LangChain with parallel processing and multi-collection support"""
         try:
             # Set up LLM based on model type
             await self._setup_llm_for_model_type(model_type)
@@ -260,30 +260,74 @@ class LangChainRagService:
             # 병렬 처리로 벡터 검색과 임베딩 생성 동시 실행
             import asyncio
             
-            # Search for relevant documents with similarity scores
-            source_docs_with_scores = await self.documents.asimilarity_search_with_score(
-                query,
-                k=settings.RAG_VECTOR_SEARCH_TOP_K
-            )
+            # If no collections specified, use current collection
+            if not collection_names:
+                collection_names = ["langchain_documents"]  # Default collection
             
-            # Filter by similarity threshold and extract documents
-            source_docs = []
-            for doc, score in source_docs_with_scores:
-                # For cosine distance strategy, convert distance to similarity
-                # Cosine distance ranges from 0 to 2, where 0 means identical
-                # Convert to similarity: similarity = 1 - (distance / 2)
-                similarity = 1 - (score / 2)
-                
-                # Ensure similarity is between 0 and 1
-                similarity = max(0.0, min(1.0, similarity))
-                
-                logger.debug(f"Document similarity: {similarity:.3f} (distance: {score:.3f})")
-                
-                if similarity >= settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD:
-                    source_docs.append((doc, similarity))
+            # Search across multiple collections
+            all_source_docs = []
+            collection_sources = {}
             
-            # Create context from source documents
-            context = "\n\n".join([doc.page_content for doc, similarity in source_docs])
+            for collection_name in collection_names:
+                try:
+                    # Set collection for search
+                    await langchain_vector_service.set_collection(collection_name)
+                    
+                    # Search for relevant documents with similarity scores
+                    source_docs_with_scores = await self.documents.asimilarity_search_with_score(
+                        query,
+                        k=settings.RAG_VECTOR_SEARCH_TOP_K
+                    )
+                    
+                    # Process documents from this collection
+                    collection_docs = []
+                    for doc, score in source_docs_with_scores:
+                        # For cosine distance strategy, convert distance to similarity
+                        # Cosine distance ranges from 0 to 2, where 0 means identical
+                        # Convert to similarity: similarity = 1 - (distance / 2)
+                        similarity = 1 - (score / 2)
+                        
+                        # Ensure similarity is between 0 and 1
+                        similarity = max(0.0, min(1.0, similarity))
+                        
+                        logger.debug(f"Document similarity in {collection_name}: {similarity:.3f} (distance: {score:.3f})")
+                        
+                        if similarity >= settings.RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD:
+                            # Add collection info to document metadata
+                            doc.metadata['collection'] = collection_name
+                            collection_docs.append((doc, similarity))
+                    
+                    collection_sources[collection_name] = collection_docs
+                    all_source_docs.extend(collection_docs)
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to search collection {collection_name}: {e}")
+                    continue
+            
+            # Sort all documents by similarity score (highest first)
+            all_source_docs.sort(key=lambda x: x[1], reverse=True)
+            
+            # Limit to top K documents across all collections
+            source_docs = all_source_docs[:settings.RAG_VECTOR_SEARCH_TOP_K]
+            
+            # Create context from source documents with collection information
+            context_parts = []
+            for doc, similarity in source_docs:
+                collection_name = doc.metadata.get('collection', 'Unknown')
+                context_parts.append(f"[{collection_name}] {doc.page_content}")
+            
+            context = "\n\n".join(context_parts)
+            
+            # Create sources information for response
+            sources = []
+            for doc, similarity in source_docs:
+                collection_name = doc.metadata.get('collection', 'Unknown')
+                sources.append({
+                    "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
+                    "similarity": similarity,
+                    "collection": collection_name,
+                    "metadata": doc.metadata
+                })
             
             # 최적화된 프롬프트 - 더 짧고 명확하게
             prompt = f"""컨텍스트를 바탕으로 질문에 간결하게 답변하세요.
@@ -311,13 +355,14 @@ class LangChainRagService:
             context_docs = []
             for i, (doc, similarity) in enumerate(source_docs):
                 # Extract source information
+                collection_name = doc.metadata.get('collection', 'Unknown')
                 source_info = {
                     "id": doc.metadata.get("id", f"doc_{i}"),
                     "content": doc.page_content,
                     "metadata": doc.metadata,
                     "similarity": similarity,  # Use actual similarity score
                     "source_type": "vector_db",
-                    "collection": self.current_collection,
+                    "collection": collection_name,
                     "filename": doc.metadata.get("filename", "Unknown"),
                     "page_number": doc.metadata.get("page", 1),
                     "chunk_index": doc.metadata.get("chunk_index", i),
@@ -341,8 +386,11 @@ class LangChainRagService:
                 "langchain_mode": True,
                 "memory_enabled": True,
                 "source_collection": self.current_collection,
+                "source_collections": collection_names,  # List of collections searched
+                "collections_used": list(set([doc.get("collection", "Unknown") for doc in context_docs])),  # Collections that provided results
                 "has_sources": len(context_docs) > 0,
-                "rag_mode": "LangChain RAG"
+                "rag_mode": "LangChain RAG",
+                "multi_collection": len(collection_names) > 1
             }
             
             # Format response without source information

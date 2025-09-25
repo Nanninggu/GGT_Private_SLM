@@ -262,6 +262,128 @@ class ChatService:
     async def clear_all_sessions(self) -> List[str]:
         """Clear all sessions except default"""
         return await self.repository.clear_all_sessions()
+    
+    # Database-based session management methods
+    async def create_chat_session(self, session_id: str, user_id: str, title: str) -> Dict[str, Any]:
+        """Create a new chat session in database"""
+        try:
+            # Use the database function to create/update session
+            result = await self.repository.execute_query(
+                "SELECT update_session_title(%s, %s, %s)",
+                (session_id, title, user_id)
+            )
+            
+            if result and result[0][0]:  # Function returned True
+                return {
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "title": title,
+                    "created_at": datetime.now().isoformat()
+                }
+            else:
+                raise Exception("Failed to create session")
+        except Exception as e:
+            logger.error(f"Error creating chat session: {e}")
+            raise e
+    
+    async def update_session_title(self, session_id: str, title: str, user_id: str = "default") -> bool:
+        """Update chat session title in database"""
+        try:
+            result = await self.repository.execute_query(
+                "SELECT update_session_title(%s, %s, %s)",
+                (session_id, title, user_id)
+            )
+            return result and result[0][0] if result else False
+        except Exception as e:
+            logger.error(f"Error updating session title: {e}")
+            return False
+    
+    async def get_user_sessions(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all sessions for a user"""
+        try:
+            result = await self.repository.execute_query(
+                """
+                SELECT session_id, title, title_edited, created_at, updated_at, 
+                       last_activity, message_count, is_active
+                FROM user_active_sessions 
+                WHERE user_id = %s
+                ORDER BY last_activity DESC
+                """,
+                (user_id,)
+            )
+            
+            sessions = []
+            for row in result:
+                sessions.append({
+                    "session_id": row[0],
+                    "title": row[1],
+                    "title_edited": row[2],
+                    "created_at": row[3].isoformat() if row[3] else None,
+                    "updated_at": row[4].isoformat() if row[4] else None,
+                    "last_activity": row[5].isoformat() if row[5] else None,
+                    "message_count": row[6],
+                    "is_active": row[7]
+                })
+            
+            return sessions
+        except Exception as e:
+            logger.error(f"Error getting user sessions: {e}")
+            return []
+    
+    async def get_session_info(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Get session information"""
+        try:
+            result = await self.repository.execute_query(
+                """
+                SELECT session_id, user_id, title, title_edited, created_at, 
+                       updated_at, last_activity, message_count, is_active
+                FROM chat_sessions 
+                WHERE session_id = %s
+                """,
+                (session_id,)
+            )
+            
+            if result:
+                row = result[0]
+                return {
+                    "session_id": row[0],
+                    "user_id": row[1],
+                    "title": row[2],
+                    "title_edited": row[3],
+                    "created_at": row[4].isoformat() if row[4] else None,
+                    "updated_at": row[5].isoformat() if row[5] else None,
+                    "last_activity": row[6].isoformat() if row[6] else None,
+                    "message_count": row[7],
+                    "is_active": row[8]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting session info: {e}")
+            return None
+    
+    async def delete_chat_session(self, session_id: str) -> bool:
+        """Delete a chat session from database"""
+        try:
+            result = await self.repository.execute_query(
+                "SELECT deactivate_session(%s)",
+                (session_id,)
+            )
+            return result and result[0][0] if result else False
+        except Exception as e:
+            logger.error(f"Error deleting chat session: {e}")
+            return False
+    
+    async def update_session_activity(self, session_id: str) -> bool:
+        """Update session activity and message count"""
+        try:
+            result = await self.repository.execute_query(
+                "SELECT update_session_message_count(%s)",
+                (session_id,)
+            )
+            return result and result[0][0] if result else False
+        except Exception as e:
+            logger.error(f"Error updating session activity: {e}")
+            return False
 
     async def get_session_stats(self, session_id: str) -> dict:
         """Get session statistics"""

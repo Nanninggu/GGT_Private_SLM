@@ -2,6 +2,13 @@
 File Upload Page for Streamlit
 """
 import streamlit as st
+
+# 페이지 설정
+st.set_page_config(
+    page_title="파일 업로드",
+    page_icon="📤",
+    layout="wide"
+)
 import sys
 import os
 
@@ -186,19 +193,25 @@ def main():
         background: #ffffff;
     }
     
-    /* Modern Enterprise radio button styling */
+    /* Modern Enterprise radio button styling - Horizontal layout */
     .stRadio > div {
-        gap: 1.5rem;
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+        flex-wrap: wrap;
     }
     
     .stRadio > div > label {
         background: #ffffff;
-        padding: 1.25rem;
+        padding: 1rem 1.5rem;
         border-radius: 16px;
         border: 2px solid #f1f3f4;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         font-weight: 600;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
     }
     
     .stRadio > div > label:hover {
@@ -418,7 +431,8 @@ def main():
     upload_mode = st.sidebar.radio(
         "업로드 모드",
         ["단일 파일", "여러 파일"],
-        help="단일 파일: 하나씩 업로드\n여러 파일: 여러 개를 한 번에 업로드"
+        help="단일 파일: 하나씩 업로드\n여러 파일: 여러 개를 한 번에 업로드",
+        horizontal=True
     )
     
     # Main content area

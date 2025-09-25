@@ -17,8 +17,8 @@ from utils.session_manager import session_manager
 
 # Set page configuration once at the top
 st.set_page_config(
-    page_title="HAI Portal",
-    page_icon="🤖",
+    page_title="채팅",
+    page_icon="💬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -90,35 +90,22 @@ def main():
         st.session_state.is_new_session = False
     if "current_page" not in st.session_state:
         st.session_state.current_page = "main"
+    if "last_page" not in st.session_state:
+        st.session_state.last_page = "main"
     
-    # Handle new chat creation flag
+    # Handle new chat creation flag (legacy support)
     if st.session_state.get("create_new_chat", False):
-        # Save current session if it has messages
-        current_messages = st.session_state.get("messages", [])
-        if current_messages and st.session_state.backend_connected:
-            try:
-                chat_controller = ChatController()
-                chat_controller.api_service.save_session(st.session_state.session_id, current_messages)
-            except:
-                pass  # Continue even if save fails
-        
-        # Generate new session ID
-        new_session_id = str(uuid.uuid4())
-        st.session_state.session_id = new_session_id
-        st.session_state.messages = []  # Only clear current session messages
-        st.session_state.is_new_session = True
-        st.session_state.last_loaded_session = None
-        
-        # Clear any confirmation states and cache
-        for key in list(st.session_state.keys()):
-            if key.startswith("confirm_delete_") or key.startswith("session_title_"):
-                del st.session_state[key]
-        
-        # Clear the flag
+        # This is now handled directly in the sidebar component
+        # Clear the flag to prevent duplicate processing
         st.session_state.create_new_chat = False
     
     # Page routing
     current_page = st.session_state.current_page
+    last_page = st.session_state.last_page
+    
+    # Update last page if current page changed
+    if current_page != last_page:
+        st.session_state.last_page = current_page
     
     # Route to different pages without calling st.set_page_config
     if current_page == "login":
@@ -140,6 +127,10 @@ def main():
     elif current_page == "user_management":
         from pages.user_management import main as user_management_main
         user_management_main()
+        return
+    elif current_page == "menu_management":
+        from pages.menu_management import main as menu_management_main
+        menu_management_main()
         return
     elif current_page == "main":
         # Main page - continue with main page logic
@@ -571,29 +562,26 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # Main header
-    st.markdown("""
-    <div class="main-header">
-        <div class="main-title">HAI Portal</div>
-        <div class="main-subtitle">AI 기반 지능형 서비스 플랫폼</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Main header - removed HAI Portal content
     
-    # Service cards - centered
+    # Service cards - removed HAI-Chat content
+    
+    # Welcome message with modern styling
     st.markdown("""
-    <div style="display: flex; justify-content: center; margin: 2rem 0; gap: 2rem;">
-        <div class="service-card">
-            <div class="service-icon">💬</div>
-            <div class="service-title">HAI-Chat</div>
-            <div class="service-description">AI 챗봇과 대화하고 문서를 분석해보세요</div>
-        </div>
+    <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+                border-radius: 20px; margin: 2rem 0; border: 2px solid #e9ecef; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
+        <h3 style="color: #495057; margin-bottom: 1rem; font-weight: 600;">AI 챗봇에 오신 것을 환영합니다!</h3>
+        <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            AI와 대화하고 문서를 분석해보세요.<br>
+            아래에 메시지를 입력하여 시작하세요.
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
     # Admin features (only for admin users)
     user_info = st.session_state.get("user_info")
     if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
-        st.markdown("---")
         st.markdown("### 🔧 관리자 기능")
         
         col1, col2, col3 = st.columns(3)
@@ -617,45 +605,47 @@ def main():
     st.markdown("---")
     
     # Chat header
-    st.markdown("### 💬 HAI-Chat 대화")
-    
-    # Add spacing before chat messages
-    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    st.markdown("### 💬 AI 챗봇 대화")
     
     # Display chat history
     if st.session_state.messages:
         for message in st.session_state.messages:
             ChatComponents.render_message(message)
     else:
-        # Show welcome message for new chat
-        st.markdown("""
-        <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
-                    border-radius: 20px; margin: 2rem 0; border: 2px solid #e9ecef; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
-            <h3 style="color: #495057; margin-bottom: 1rem; font-weight: 600;">HAI-Chat에 오신 것을 환영합니다!</h3>
-            <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
-                AI와 대화하고 문서를 분석해보세요.<br>
-                아래에 메시지를 입력하여 시작하세요.
-            </p>
-            <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-                <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💬</div>
-                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">일반 대화</div>
-                    <div style="font-size: 0.9rem; color: #6c757d;">AI와 자유롭게 대화하세요</div>
-                </div>
-                <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📚</div>
-                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">문서 분석</div>
-                    <div style="font-size: 0.9rem; color: #6c757d;">업로드한 문서를 분석해보세요</div>
-                </div>
-                <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 200px;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</div>
-                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">웹 검색</div>
-                    <div style="font-size: 0.9rem; color: #6c757d;">실시간 정보를 검색해보세요</div>
-                </div>
+        # Show feature cards for new chat
+        st.markdown("#### 🚀 사용 가능한 기능")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
+                <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">일반 대화</div>
+                <div style="font-size: 0.9rem; color: #6c757d;">AI와 자유롭게 대화하세요</div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+                <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">문서 분석</div>
+                <div style="font-size: 0.9rem; color: #6c757d;">업로드한 문서를 분석해보세요</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+                <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">웹 검색</div>
+                <div style="font-size: 0.9rem; color: #6c757d;">실시간 정보를 검색해보세요</div>
+            </div>
+            """, unsafe_allow_html=True)
     
 
     # Model selection section
@@ -677,6 +667,22 @@ def main():
             "timestamp": datetime.now().strftime("%H:%M:%S")
         }
         st.session_state.messages.append(user_message)
+        
+        # Update session title if this is the first user message
+        if len(st.session_state.messages) == 1 and st.session_state.get("is_new_session", False):
+            # This is the first message in a new session, update the session title
+            # Clean up the prompt and create a meaningful title
+            clean_prompt = prompt.strip()
+            clean_prompt = clean_prompt.replace("질문:", "").replace("문의:", "").replace("요청:", "").strip()
+            
+            # Add timestamp for uniqueness
+            timestamp = datetime.now().strftime("%m/%d %H:%M")
+            
+            if len(clean_prompt) > 40:
+                clean_prompt = clean_prompt[:40] + "..."
+            
+            st.session_state.session_title = f"{clean_prompt} ({timestamp})"
+            st.session_state.is_new_session = False
         
         # Display user message
         with st.chat_message("user"):

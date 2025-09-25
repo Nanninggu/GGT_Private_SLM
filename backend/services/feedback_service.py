@@ -6,6 +6,8 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +51,41 @@ class FeedbackService:
     """Service for managing user feedback and analytics"""
     
     def __init__(self):
-        self.feedback_storage = {}  # In-memory storage (replace with database in production)
+        self.feedback_storage = {}  # In-memory storage (fallback)
         self.analytics_cache = {}
+        self.db_config = self._get_db_config()
+    
+    def _get_db_config(self):
+        """Get database configuration"""
+        try:
+            from config.settings import Settings
+            settings = Settings()
+            return {
+                'host': '127.0.0.1',
+                'port': 5433,
+                'database': 'postgres',
+                'user': 'postgres',
+                'password': 'test1234'
+            }
+        except Exception as e:
+            logger.warning(f"Could not get database config: {e}")
+            return {
+                'host': '127.0.0.1',
+                'port': 5433,
+                'database': 'postgres',
+                'user': 'postgres',
+                'password': 'test1234'
+            }
+    
+    def _get_db_connection(self):
+        """Get database connection"""
+        if not self.db_config:
+            return None
+        try:
+            return psycopg2.connect(**self.db_config)
+        except Exception as e:
+            logger.error(f"Failed to connect to database: {e}")
+            return None
     
     def submit_feedback(self, 
                        user_id: str, 
@@ -70,7 +105,48 @@ class FeedbackService:
             if feedback_type != FeedbackType.RATING and is_positive is None:
                 return {"success": False, "error": "is_positive must be provided for non-rating feedback"}
             
-            # Create feedback record
+            # Try to save to database first
+            conn = self._get_db_connection()
+            if conn:
+                try:
+                    with conn.cursor() as cursor:
+                        # Insert feedback into database
+                        cursor.execute("""
+                            INSERT INTO feedback (user_id, session_id, message_id, feedback_type, rating, is_positive, comment, created_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            RETURNING id
+                        """, (
+                            user_id,
+                            session_id,
+                            message_id,
+                            feedback_type.value,
+                            rating,
+                            is_positive,
+                            comment,
+                            datetime.now()
+                        ))
+                        
+                        feedback_id = cursor.fetchone()[0]
+                        conn.commit()
+                        
+                        logger.info(f"Feedback saved to database: {feedback_id} by user {user_id}")
+                        
+                        # Clear analytics cache to force refresh
+                        self.analytics_cache.clear()
+                        
+                        return {
+                            "success": True,
+                            "feedback_id": feedback_id,
+                            "message": "피드백이 성공적으로 제출되었습니다"
+                        }
+                        
+                except Exception as e:
+                    logger.error(f"Failed to save feedback to database: {e}")
+                    conn.rollback()
+                finally:
+                    conn.close()
+            
+            # Fallback to in-memory storage
             feedback_id = f"feedback_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id}"
             feedback = UserFeedback(
                 id=feedback_id,
@@ -84,18 +160,18 @@ class FeedbackService:
                 metadata=metadata or {}
             )
             
-            # Store feedback
+            # Store feedback in memory
             self.feedback_storage[feedback_id] = feedback
             
             # Clear analytics cache to force refresh
             self.analytics_cache.clear()
             
-            logger.info(f"Feedback submitted: {feedback_type.value} by user {user_id}")
+            logger.info(f"Feedback submitted (in-memory): {feedback_type.value} by user {user_id}")
             
             return {
                 "success": True,
                 "feedback_id": feedback_id,
-                "message": "피드백이 성공적으로 제출되었습니다"
+                "message": "피드백이 성공적으로 제출되었습니다 (로컬 저장)"
             }
             
         except Exception as e:

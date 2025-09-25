@@ -283,3 +283,30 @@ class DBChatRepository:
         except Exception as e:
             logger.error(f"Error getting session stats {session_id}: {e}")
             return {"message_count": 0, "last_activity": None}
+    
+    async def execute_query(self, query: str, params: tuple = None) -> Optional[List]:
+        """Execute a raw SQL query and return results"""
+        try:
+            if not self._initialized:
+                await self.initialize()
+            
+            async with self.db_service.get_session() as db_session:
+                if params:
+                    # Convert tuple to dict for SQLAlchemy
+                    param_dict = {}
+                    for i, param in enumerate(params):
+                        param_dict[f"param_{i}"] = param
+                    # Replace %s with :param_0, :param_1, etc.
+                    formatted_query = query
+                    for i in range(len(params)):
+                        formatted_query = formatted_query.replace("%s", f":param_{i}", 1)
+                    result = await db_session.execute(text(formatted_query), param_dict)
+                else:
+                    result = await db_session.execute(text(query))
+                
+                # Fetch all results
+                rows = result.fetchall()
+                return [row for row in rows]
+        except Exception as e:
+            logger.error(f"Error executing query: {e}")
+            return None

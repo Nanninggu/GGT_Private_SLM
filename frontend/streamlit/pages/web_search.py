@@ -813,7 +813,24 @@ def main():
         
         for i, collection in enumerate(collections):
             with [col1, col2, col3][i % 3]:
-                st.info(f"📂 {collection}")
+                # 컬렉션 정보를 사용자 친화적으로 표시
+                collection_name = collection.get('name', 'Unknown')
+                document_count = collection.get('document_count', 0)
+                description = collection.get('metadata', {}).get('description', '설명 없음')
+                
+                st.markdown(f"""
+                <div class="collection-card">
+                    <h4 style="color: #212529; margin-bottom: 0.5rem; font-weight: 700; font-size: 1rem;">
+                        📂 {collection_name}
+                    </h4>
+                    <p style="color: #6c757d; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        <strong>문서 수:</strong> {document_count}개
+                    </p>
+                    <p style="color: #6c757d; margin-bottom: 0; font-size: 0.85rem; line-height: 1.3;">
+                        {description}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

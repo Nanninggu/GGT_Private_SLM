@@ -45,6 +45,7 @@ class LangChainVectorService:
             )
             
             # Initialize PGVector store
+            # Use psycopg2 for LangChain PGVector compatibility
             connection_string = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
             
             self.documents = PGVector(

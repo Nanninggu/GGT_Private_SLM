@@ -1018,6 +1018,78 @@ async def get_session_stats(session_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Chat Session Management APIs
+@app.post("/api/chat/sessions/create")
+async def create_chat_session(request: dict):
+    """Create a new chat session with title"""
+    try:
+        session_id = request.get("session_id")
+        user_id = request.get("user_id", "default")
+        title = request.get("title", "새 대화")
+        
+        result = await chat_service.create_chat_session(session_id, user_id, title)
+        return {
+            "success": True,
+            "session": result,
+            "message": "Chat session created successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/chat/sessions/{session_id}/title")
+async def update_session_title(session_id: str, request: dict):
+    """Update chat session title"""
+    try:
+        title = request.get("title")
+        user_id = request.get("user_id", "default")
+        
+        if not title:
+            raise HTTPException(status_code=400, detail="Title is required")
+        
+        result = await chat_service.update_session_title(session_id, title, user_id)
+        return {
+            "success": result,
+            "message": "Session title updated successfully" if result else "Failed to update session title"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat/sessions/user/{user_id}")
+async def get_user_sessions(user_id: str):
+    """Get all sessions for a user"""
+    try:
+        sessions = await chat_service.get_user_sessions(user_id)
+        return {
+            "success": True,
+            "sessions": sessions
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat/sessions/{session_id}")
+async def get_session_info(session_id: str):
+    """Get session information"""
+    try:
+        session_info = await chat_service.get_session_info(session_id)
+        return {
+            "success": True,
+            "session": session_info
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/chat/sessions/{session_id}")
+async def delete_chat_session(session_id: str):
+    """Delete a chat session from database"""
+    try:
+        result = await chat_service.delete_chat_session(session_id)
+        return {
+            "success": result,
+            "message": "Session deleted successfully" if result else "Failed to delete session"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Document management endpoints
 @app.post("/api/documents")
 async def add_document(request: DocumentRequest):
@@ -1699,7 +1771,7 @@ async def change_collection_type(collection_name: str, request: dict, current_us
             raise HTTPException(status_code=400, detail="Type must be 'personal' or 'shared'")
         
         # Get current collection info
-        collections = await langchain_rag_service.get_available_collections(current_user.id)
+        collections = await langchain_rag_service.get_collections(current_user.id)
         current_collection = None
         for collection in collections:
             if collection.get("name") == collection_name:
@@ -2132,6 +2204,74 @@ async def get_sample_test_queries():
         return result
     except Exception as e:
         logger.error(f"Failed to get sample queries: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Feedback endpoints
+class FeedbackRequest(BaseModel):
+    user_id: str
+    session_id: str
+    message_id: str
+    feedback_type: str
+    rating: Optional[int] = None
+    is_positive: Optional[bool] = None
+    comment: Optional[str] = None
+    timestamp: Optional[str] = None
+
+@app.post("/api/feedback/submit")
+async def submit_feedback(request: FeedbackRequest):
+    """Submit user feedback"""
+    try:
+        from services.feedback_service import feedback_service, FeedbackType
+        
+        # Convert string to FeedbackType enum
+        try:
+            feedback_type = FeedbackType(request.feedback_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid feedback type: {request.feedback_type}")
+        
+        result = feedback_service.submit_feedback(
+            user_id=request.user_id,
+            session_id=request.session_id,
+            message_id=request.message_id,
+            feedback_type=feedback_type,
+            rating=request.rating,
+            is_positive=request.is_positive,
+            comment=request.comment
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to submit feedback: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/feedback/analytics")
+async def get_feedback_analytics(user_id: Optional[str] = None, days: int = 30):
+    """Get feedback analytics"""
+    try:
+        from services.feedback_service import feedback_service
+        
+        analytics = feedback_service.get_feedback_analytics(user_id=user_id, days=days)
+        
+        return {
+            "success": True,
+            "analytics": {
+                "total_feedback": analytics.total_feedback,
+                "positive_feedback": analytics.positive_feedback,
+                "negative_feedback": analytics.negative_feedback,
+                "average_rating": analytics.average_rating,
+                "feedback_by_type": analytics.feedback_by_type,
+                "recent_trends": analytics.recent_trends,
+                "quality_issues": analytics.quality_issues,
+                "improvement_suggestions": analytics.improvement_suggestions
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get feedback analytics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Model management endpoints

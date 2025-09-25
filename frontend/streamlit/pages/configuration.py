@@ -2,6 +2,13 @@
 Configuration Page - 시스템 설정 및 관리
 """
 import streamlit as st
+
+# 페이지 설정
+st.set_page_config(
+    page_title="설정",
+    page_icon="⚙️",
+    layout="wide"
+)
 import sys
 import os
 import time
@@ -135,8 +142,6 @@ def main():
         margin-bottom: 3rem;
         color: #212529;
         text-align: center;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         position: relative;
         overflow: hidden;
     }
@@ -190,9 +195,7 @@ def main():
         background: #ffffff;
         padding: 3rem;
         border-radius: 24px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
         margin-bottom: 2.5rem;
-        border: 2px solid #f1f3f4;
         position: relative;
         overflow: hidden;
     }
@@ -214,14 +217,11 @@ def main():
         border-radius: 20px;
         border-left: 4px solid #6c757d;
         margin-bottom: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         transition: all 0.3s ease;
     }
     
     .status-card:hover {
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        border-color: #e9ecef;
+        background: #f8f9fa;
     }
     
     .status-online {
@@ -239,21 +239,18 @@ def main():
         border-radius: 16px;
         font-weight: 600;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         border: 2px solid transparent;
         font-size: 1rem;
         padding: 0.75rem 1.5rem;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        background: #f8f9fa;
     }
     
     /* Modern Enterprise input styling */
     .stTextInput > div > div > input {
         border-radius: 16px;
-        border: 2px solid #f1f3f4;
         padding: 1rem 1.25rem;
         font-size: 1rem;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -262,15 +259,12 @@ def main():
     }
     
     .stTextInput > div > div > input:focus {
-        border-color: #6c757d;
-        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
         background: #ffffff;
     }
     
     /* Modern Enterprise selectbox styling */
     .stSelectbox > div > div {
         border-radius: 16px;
-        border: 2px solid #f1f3f4;
         background: #ffffff;
     }
     
@@ -283,15 +277,11 @@ def main():
         background: #ffffff;
         padding: 1.25rem;
         border-radius: 16px;
-        border: 2px solid #f1f3f4;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
     
     .stRadio > div > label:hover {
-        border-color: #6c757d;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         background: #f8f9fa;
     }
     
@@ -306,16 +296,59 @@ def main():
     .stTabs > div > div > div > div {
         background: #ffffff;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
+    }
+    
+    /* Tab selection styling - Red underline for selected tab */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0;
+        background: #ffffff;
+        border-bottom: 1px solid #e9ecef;
+        padding: 0;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        border: none;
+        padding: 1rem 1.5rem;
+        margin: 0;
+        border-radius: 0;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #f8f9fa;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background: transparent;
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"]::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #dc3545;
+        border-radius: 2px 2px 0 0;
+    }
+    
+    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]) {
+        color: #6c757d;
+    }
+    
+    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]):hover {
+        color: #495057;
     }
     
     /* Modern Enterprise expander styling */
     .streamlit-expander {
-        border: 2px solid #f1f3f4;
         border-radius: 16px;
         background: #ffffff;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
     
     /* Modern Enterprise metric styling */
@@ -323,15 +356,12 @@ def main():
         background: #ffffff;
         padding: 2rem;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         text-align: center;
         transition: all 0.3s ease;
     }
     
     .metric-card:hover {
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        border-color: #e9ecef;
+        background: #f8f9fa;
     }
     
     /* Collection management cards */
@@ -339,15 +369,12 @@ def main():
         background: #ffffff;
         padding: 2rem;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         margin-bottom: 1.5rem;
         transition: all 0.3s ease;
     }
     
     .collection-card:hover {
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        border-color: #e9ecef;
+        background: #f8f9fa;
     }
     
     /* Session management cards */
@@ -355,15 +382,12 @@ def main():
         background: #ffffff;
         padding: 1.5rem;
         border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         margin-bottom: 1rem;
         transition: all 0.3s ease;
     }
     
     .session-card:hover {
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        border-color: #e9ecef;
+        background: #f8f9fa;
     }
     
     /* Responsive design */
@@ -435,8 +459,9 @@ def render_vector_db_management(chat_controller):
     if st.session_state.get("collections_data"):
         collections_response = st.session_state.collections_data
     else:
-        collections_response = chat_controller.get_collections_response()
-        st.session_state.collections_data = collections_response
+        with st.spinner("컬렉션 목록을 불러오는 중..."):
+            collections_response = chat_controller.get_collections_response()
+            st.session_state.collections_data = collections_response
     
     if not collections_response.get("success", False):
         st.error(f"컬렉션 목록을 가져올 수 없습니다: {collections_response.get('error', '알 수 없는 오류')}")
@@ -523,16 +548,30 @@ def render_vector_db_management(chat_controller):
                                 # Show confirmation dialog
                                 if st.session_state.get(f"confirm_delete_{name}", False):
                                     try:
-                                        if chat_controller.delete_collection(name):
-                                            st.success(f"✅ 컬렉션 '{name}'이 삭제되었습니다.")
-                                            st.session_state[f"confirm_delete_{name}"] = False
-                                            # 컬렉션 데이터 새로고침
-                                            if hasattr(chat_controller, '_collections_cache'):
-                                                delattr(chat_controller, '_collections_cache')
-                                            collections_response = chat_controller.get_collections_response()
-                                            st.session_state.collections_data = collections_response
-                                        else:
-                                            st.error(f"❌ 컬렉션 '{name}' 삭제에 실패했습니다.")
+                                        # Show loading indicator
+                                        with st.spinner("컬렉션을 삭제하는 중..."):
+                                            if chat_controller.delete_collection(name):
+                                                st.success(f"✅ 컬렉션 '{name}'이 삭제되었습니다.")
+                                                st.session_state[f"confirm_delete_{name}"] = False
+                                                
+                                                # 즉시 UI에서 해당 컬렉션 제거 (캐시 무효화)
+                                                if hasattr(chat_controller, '_collections_cache'):
+                                                    delattr(chat_controller, '_collections_cache')
+                                                
+                                                # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                                if 'collections_data' in st.session_state:
+                                                    del st.session_state.collections_data
+                                                
+                                                # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                                st.markdown("""
+                                                <script>
+                                                setTimeout(function() {
+                                                    window.location.reload();
+                                                }, 1000);
+                                                </script>
+                                                """, unsafe_allow_html=True)
+                                            else:
+                                                st.error(f"❌ 컬렉션 '{name}' 삭제에 실패했습니다.")
                                     except Exception as e:
                                         st.error(f"❌ 컬렉션 삭제 중 오류가 발생했습니다: {str(e)}")
                                 else:
@@ -594,8 +633,17 @@ def render_vector_db_management(chat_controller):
                                 # 컬렉션 데이터 새로고침
                                 if hasattr(chat_controller, '_collections_cache'):
                                     delattr(chat_controller, '_collections_cache')
-                                collections_response = chat_controller.get_collections_response()
-                                st.session_state.collections_data = collections_response
+                                # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                if 'collections_data' in st.session_state:
+                                    del st.session_state.collections_data
+                                # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                st.markdown("""
+                                <script>
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 1000);
+                                </script>
+                                """, unsafe_allow_html=True)
                             else:
                                 error_msg = response.get('error', '알 수 없는 오류')
                                 if "already exists" in error_msg:
@@ -603,8 +651,17 @@ def render_vector_db_management(chat_controller):
                                     # 컬렉션 데이터 새로고침
                                     if hasattr(chat_controller, '_collections_cache'):
                                         delattr(chat_controller, '_collections_cache')
-                                    collections_response = chat_controller.get_collections_response()
-                                    st.session_state.collections_data = collections_response
+                                    # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                    if 'collections_data' in st.session_state:
+                                        del st.session_state.collections_data
+                                    # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                    st.markdown("""
+                                    <script>
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 1000);
+                                    </script>
+                                    """, unsafe_allow_html=True)
                                 else:
                                     st.error(f"{collection_type_text} 컬렉션 생성에 실패했습니다: {error_msg}")
                         except Exception as e:
@@ -664,8 +721,17 @@ def render_vector_db_management(chat_controller):
                                     # 컬렉션 데이터 새로고침
                                     if hasattr(chat_controller, '_collections_cache'):
                                         delattr(chat_controller, '_collections_cache')
-                                    collections_response = chat_controller.get_collections_response()
-                                    st.session_state.collections_data = collections_response
+                                    # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                    if 'collections_data' in st.session_state:
+                                        del st.session_state.collections_data
+                                    # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                    st.markdown("""
+                                    <script>
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 1000);
+                                    </script>
+                                    """, unsafe_allow_html=True)
                                 else:
                                     error_msg = response.get('error', '알 수 없는 오류')
                                     st.error(f"컬렉션 타입 변경에 실패했습니다: {error_msg}")
@@ -705,8 +771,17 @@ def render_vector_db_management(chat_controller):
                                         # 컬렉션 데이터 새로고침
                                         if hasattr(chat_controller, '_collections_cache'):
                                             delattr(chat_controller, '_collections_cache')
-                                        collections_response = chat_controller.get_collections_response()
-                                        st.session_state.collections_data = collections_response
+                                        # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                        if 'collections_data' in st.session_state:
+                                            del st.session_state.collections_data
+                                        # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                        st.markdown("""
+                                        <script>
+                                        setTimeout(function() {
+                                            window.location.reload();
+                                        }, 1000);
+                                        </script>
+                                        """, unsafe_allow_html=True)
                                     else:
                                         error_msg = response.get('error', '알 수 없는 오류')
                                         if "already exists" in error_msg:
@@ -714,8 +789,17 @@ def render_vector_db_management(chat_controller):
                                             # 컬렉션 데이터 새로고침
                                             if hasattr(chat_controller, '_collections_cache'):
                                                 delattr(chat_controller, '_collections_cache')
-                                            collections_response = chat_controller.get_collections_response()
-                                            st.session_state.collections_data = collections_response
+                                            # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                            if 'collections_data' in st.session_state:
+                                                del st.session_state.collections_data
+                                            # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                            st.markdown("""
+                                            <script>
+                                            setTimeout(function() {
+                                                window.location.reload();
+                                            }, 1000);
+                                            </script>
+                                            """, unsafe_allow_html=True)
                                         elif "not found" in error_msg:
                                             st.error(f"컬렉션 '{old_name}'을 찾을 수 없습니다.")
                                         else:
@@ -752,8 +836,17 @@ def render_vector_db_management(chat_controller):
                             # 컬렉션 데이터 새로고침
                             if hasattr(chat_controller, '_collections_cache'):
                                 delattr(chat_controller, '_collections_cache')
-                            collections_response = chat_controller.get_collections_response()
-                            st.session_state.collections_data = collections_response
+                            # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                            if 'collections_data' in st.session_state:
+                                del st.session_state.collections_data
+                            # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                            st.markdown("""
+                            <script>
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1000);
+                            </script>
+                            """, unsafe_allow_html=True)
                         else:
                             error_msg = response.get('error', '알 수 없는 오류')
                             if "already selected" in error_msg or "이미 선택된" in error_msg:
@@ -761,8 +854,17 @@ def render_vector_db_management(chat_controller):
                                 # 컬렉션 데이터 새로고침
                                 if hasattr(chat_controller, '_collections_cache'):
                                     delattr(chat_controller, '_collections_cache')
-                                collections_response = chat_controller.get_collections_response()
-                                st.session_state.collections_data = collections_response
+                                # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                if 'collections_data' in st.session_state:
+                                    del st.session_state.collections_data
+                                # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                st.markdown("""
+                                <script>
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 1000);
+                                </script>
+                                """, unsafe_allow_html=True)
                             else:
                                 st.error(f"컬렉션 전환에 실패했습니다: {error_msg}")
                     except Exception as e:

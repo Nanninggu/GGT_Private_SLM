@@ -494,6 +494,14 @@ class LangChainRagService:
             logger.error(f"Failed to get collections: {e}")
             return []
     
+    async def get_available_collections(self, user_id: str = None) -> List[Dict[str, Any]]:
+        """Get list of available collections (alias for get_collections)"""
+        try:
+            return await self.get_collections(user_id)
+        except Exception as e:
+            logger.error(f"Failed to get available collections: {e}")
+            return []
+    
     async def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         """Get detailed information about a specific collection"""
         try:

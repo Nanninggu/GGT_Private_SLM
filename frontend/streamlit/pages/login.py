@@ -2,6 +2,13 @@
 Login page for HAI Portal
 """
 import streamlit as st
+
+# 페이지 설정
+st.set_page_config(
+    page_title="로그인",
+    page_icon="🔐",
+    layout="wide"
+)
 import requests
 import json
 import sys

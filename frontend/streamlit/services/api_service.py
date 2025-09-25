@@ -10,7 +10,7 @@ import json
 class APIService:
     """Service for backend API communication"""
 
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8002"):
         self.base_url = base_url
         self.timeout = 60  # 기본 타임아웃을 60초로 증가
         self.upload_timeout = 600  # 파일 업로드 전용 타임아웃을 10분으로 증가
@@ -138,6 +138,76 @@ class APIService:
         try:
             response = requests.delete(
                 f"{self.base_url}/api/chat/sessions/all",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    # Database-based session management methods
+    def create_chat_session(self, session_id: str, user_id: str = "default", title: str = "새 대화") -> Dict[str, Any]:
+        """Create a new chat session in database"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/chat/sessions/create",
+                json={
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "title": title
+                },
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def update_session_title(self, session_id: str, title: str, user_id: str = "default") -> Dict[str, Any]:
+        """Update chat session title in database"""
+        try:
+            response = requests.put(
+                f"{self.base_url}/api/chat/sessions/{session_id}/title",
+                json={
+                    "title": title,
+                    "user_id": user_id
+                },
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_user_sessions(self, user_id: str = "default") -> Dict[str, Any]:
+        """Get all sessions for a user"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/chat/sessions/user/{user_id}",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_session_info(self, session_id: str) -> Dict[str, Any]:
+        """Get session information"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/chat/sessions/{session_id}",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
+    def delete_chat_session(self, session_id: str) -> Dict[str, Any]:
+        """Delete a chat session from database"""
+        try:
+            response = requests.delete(
+                f"{self.base_url}/api/chat/sessions/{session_id}",
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -1068,6 +1138,36 @@ class APIService:
             response = requests.delete(
                 f"{self.base_url}/api/users/{user_id}",
                 headers=headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+
+    def submit_feedback(self, feedback_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Submit user feedback to backend"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/feedback/submit",
+                json=feedback_data,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+
+    def get_feedback_analytics(self, user_id: Optional[str] = None, days: int = 30) -> Dict[str, Any]:
+        """Get feedback analytics from backend"""
+        try:
+            params = {"days": days}
+            if user_id:
+                params["user_id"] = user_id
+            
+            response = requests.get(
+                f"{self.base_url}/api/feedback/analytics",
+                params=params,
                 timeout=self.timeout
             )
             response.raise_for_status()

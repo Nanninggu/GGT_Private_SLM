@@ -2,6 +2,13 @@
 User Management Page for HAI Portal
 """
 import streamlit as st
+
+# 페이지 설정
+st.set_page_config(
+    page_title="사용자 관리",
+    page_icon="👥",
+    layout="wide"
+)
 import sys
 import os
 from datetime import datetime
@@ -470,8 +477,6 @@ def main():
         margin-bottom: 3rem;
         color: #212529;
         text-align: center;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         position: relative;
         overflow: hidden;
     }
@@ -507,21 +512,18 @@ def main():
         border-radius: 16px;
         font-weight: 600;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         border: 2px solid transparent;
         font-size: 1rem;
         padding: 0.75rem 1.5rem;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        background: #f8f9fa;
     }
     
     /* Modern Enterprise input styling */
     .stTextInput > div > div > input {
         border-radius: 16px;
-        border: 2px solid #f1f3f4;
         padding: 1rem 1.25rem;
         font-size: 1rem;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -530,15 +532,12 @@ def main():
     }
     
     .stTextInput > div > div > input:focus {
-        border-color: #6c757d;
-        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
         background: #ffffff;
     }
     
     /* Modern Enterprise selectbox styling */
     .stSelectbox > div > div {
         border-radius: 16px;
-        border: 2px solid #f1f3f4;
         background: #ffffff;
     }
     
@@ -551,15 +550,11 @@ def main():
         background: #ffffff;
         padding: 1.25rem;
         border-radius: 16px;
-        border: 2px solid #f1f3f4;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
     
     .stRadio > div > label:hover {
-        border-color: #6c757d;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         background: #f8f9fa;
     }
     
@@ -567,25 +562,66 @@ def main():
     .stTabs > div > div > div > div {
         background: #ffffff;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
+    }
+    
+    /* Tab selection styling - Red underline for selected tab */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0;
+        background: #ffffff;
+        border-bottom: 1px solid #e9ecef;
+        padding: 0;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        border: none;
+        padding: 1rem 1.5rem;
+        margin: 0;
+        border-radius: 0;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #f8f9fa;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background: transparent;
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"]::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #dc3545;
+        border-radius: 2px 2px 0 0;
+    }
+    
+    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]) {
+        color: #6c757d;
+    }
+    
+    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]):hover {
+        color: #495057;
     }
     
     /* Modern Enterprise data table styling - Pure White */
     .stDataFrame {
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         background: #ffffff;
     }
     
     /* Modern Enterprise expander styling */
     .streamlit-expander {
-        border: 2px solid #f1f3f4;
         border-radius: 16px;
         background: #ffffff;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
     
     /* User management cards */
@@ -593,15 +629,12 @@ def main():
         background: #ffffff;
         padding: 2rem;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         margin-bottom: 1.5rem;
         transition: all 0.3s ease;
     }
     
     .user-card:hover {
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        border-color: #e9ecef;
+        background: #f8f9fa;
     }
     
     /* Form sections */
@@ -609,8 +642,6 @@ def main():
         background: #ffffff;
         padding: 2.5rem;
         border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         margin-bottom: 2rem;
     }
     
@@ -626,15 +657,12 @@ def main():
         background: #ffffff;
         padding: 1.5rem;
         border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
         margin-bottom: 1rem;
         transition: all 0.3s ease;
     }
     
     .user-list-item:hover {
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        border-color: #e9ecef;
+        background: #f8f9fa;
     }
     
     /* Responsive design */
@@ -682,20 +710,6 @@ def main():
     
     with tab2:
         render_user_creation_form()
-    
-    # Back to main page button
-    st.markdown("---")
-    if st.button("← 메인 페이지로 돌아가기", key="back_to_main"):
-        # Clear any user management specific state
-        for key in list(st.session_state.keys()):
-            if key.startswith("selected_user_") or key.startswith("user_created") or key.startswith("form_counter"):
-                del st.session_state[key]
-        
-        # Set page to main
-        st.session_state.current_page = "main"
-        
-        # Use a simple rerun
-        st.rerun()
 
 if __name__ == "__main__":
     main()

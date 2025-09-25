@@ -120,19 +120,11 @@ class ChatComponents:
 
         if role == "user":
             with st.chat_message("user"):
-                st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); 
-                color: white; padding: 1.5rem; border-radius: 20px; 
-                margin: 1rem 0 2rem 0; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-                border: 2px solid rgba(255,255,255,0.1); 
-                position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; 
-                    background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.5) 100%);"></div>
-        <div style="position: relative; z-index: 1;">
-            {content}
-        </div>
-    </div>
-                """, unsafe_allow_html=True)
+                # Use Streamlit's built-in styling with custom container
+                with st.container():
+                    st.markdown(f"**{content}**")
+                    if timestamp:
+                        st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
                 
                 # User message with PDF icon
                 col1, col2 = st.columns([1, 0.08])
@@ -145,6 +137,7 @@ class ChatComponents:
                     
                     with col2_1:
                         if st.button("📄", key=f"download_user_message_pdf_{message_id}", help="PDF 저장", use_container_width=True, type="primary"):
+                            # Generate and download PDF directly
                             if PDFService:
                                 try:
                                     pdf_service = PDFService()
@@ -159,10 +152,11 @@ class ChatComponents:
                                     filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                                     
                                     st.download_button(
-                                        label="📥 메시지 PDF 다운로드",
+                                        label="📥 PDF 다운로드",
                                         data=pdf_content,
                                         file_name=filename,
-                                        mime="application/pdf"
+                                        mime="application/pdf",
+                                        key=f"download_user_pdf_{message_id}"
                                     )
                                 except Exception as e:
                                     st.error(f"PDF 생성 오류: {str(e)}")
@@ -171,6 +165,7 @@ class ChatComponents:
                     
                     with col2_2:
                         if st.button("📝", key=f"download_user_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="secondary"):
+                            # Generate and download Markdown directly
                             if APIService:
                                 try:
                                     api_service = APIService()
@@ -185,7 +180,8 @@ class ChatComponents:
                                             label="📥 마크다운 다운로드",
                                             data=result.get("content", ""),
                                             file_name=filename,
-                                            mime="text/markdown"
+                                            mime="text/markdown",
+                                            key=f"download_user_md_{message_id}"
                                         )
                                     else:
                                         st.error(f"마크다운 생성 오류: {result.get('error', '알 수 없는 오류')}")
@@ -193,20 +189,14 @@ class ChatComponents:
                                     st.error(f"마크다운 생성 오류: {str(e)}")
                             else:
                                 st.info("API 서비스가 사용할 수 없습니다.")
+                
         else:
             with st.chat_message("assistant"):
-                st.markdown(f"""
-    <div style="background: #ffffff; padding: 1.5rem; border-radius: 20px; 
-                border-left: 4px solid #6c757d; margin: 1rem 0 2rem 0; 
-                box-shadow: 0 8px 32px rgba(0,0,0,0.08); border: 2px solid #f1f3f4;
-                position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; 
-                    background: linear-gradient(90deg, #6c757d 0%, #495057 100%);"></div>
-        <div style="position: relative; z-index: 1;">
-            {content}
-        </div>
-    </div>
-                """, unsafe_allow_html=True)
+                # Use Streamlit's built-in styling with custom container
+                with st.container():
+                    st.markdown(content)
+                    if timestamp:
+                        st.caption(f"🤖 AI • {ChatComponents._format_timestamp(timestamp)}")
                 
                 # Display model information
                 model_info = message.get("model_info", {})
@@ -266,6 +256,7 @@ class ChatComponents:
                     
                     with col2_1:
                         if st.button("📄", key=f"download_message_pdf_{message_id}", help="PDF 저장", use_container_width=True, type="primary"):
+                            # Generate and download PDF directly
                             if PDFService:
                                 try:
                                     pdf_service = PDFService()
@@ -277,13 +268,14 @@ class ChatComponents:
                                         True
                                     )
                                     
-                                    filename = f"message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                                    filename = f"assistant_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                                     
                                     st.download_button(
-                                        label="📥 메시지 PDF 다운로드",
+                                        label="📥 PDF 다운로드",
                                         data=pdf_content,
                                         file_name=filename,
-                                        mime="application/pdf"
+                                        mime="application/pdf",
+                                        key=f"download_assistant_pdf_{message_id}"
                                     )
                                 except Exception as e:
                                     st.error(f"PDF 생성 오류: {str(e)}")
@@ -292,6 +284,7 @@ class ChatComponents:
                     
                     with col2_2:
                         if st.button("📝", key=f"download_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="secondary"):
+                            # Generate and download Markdown directly
                             if APIService:
                                 try:
                                     api_service = APIService()
@@ -300,13 +293,14 @@ class ChatComponents:
                                     result = api_service.export_single_message_markdown(message, True)
                                     
                                     if result.get("success"):
-                                        filename = f"message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                                        filename = f"assistant_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
                                         
                                         st.download_button(
                                             label="📥 마크다운 다운로드",
                                             data=result.get("content", ""),
                                             file_name=filename,
-                                            mime="text/markdown"
+                                            mime="text/markdown",
+                                            key=f"download_assistant_md_{message_id}"
                                         )
                                     else:
                                         st.error(f"마크다운 생성 오류: {result.get('error', '알 수 없는 오류')}")
@@ -314,6 +308,8 @@ class ChatComponents:
                                     st.error(f"마크다운 생성 오류: {str(e)}")
                             else:
                                 st.info("API 서비스가 사용할 수 없습니다.")
+                
+
 
     @staticmethod
     def _render_sources_and_accuracy(sources: List[Dict[str, Any]], accuracy: Dict[str, Any]):
@@ -351,24 +347,30 @@ class ChatComponents:
             if fallback_used:
                 st.warning("⚠️ 관련 문서를 찾을 수 없어 일반 지식으로 답변했습니다.")
             
-            # Render accuracy information
-            st.markdown(f"""
-            <div style="display: flex; align-items: center; margin: 1rem 0 1rem 0; padding: 1rem; 
-                        background: #f8f9fa; border-radius: 8px; border-left: 3px solid {color};
-                        box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <span style="font-size: 1.2rem; margin-right: 0.75rem;">{emoji}</span>
-                <div style="flex: 1;">
-                    <strong style="color: {color}; font-size: 1.1rem;">답변 신뢰도: {confidence_percent}%</strong>
-                    <small style="color: #666; margin-left: 0.5rem; font-size: 0.9rem;">({status})</small>
-                    <br>
-                    <small style="color: #666; font-size: 0.9rem;">
-                        컨텍스트 문서: {context_count}개 | 평균 유사도: {similarity_percent}%
-                    </small>
-                </div>
-                <div style="background: {color}; height: 10px; border-radius: 5px; 
-                            width: {confidence_percent}%; min-width: 30px; margin-left: 1rem;"></div>
-            </div>
-            """, unsafe_allow_html=True)
+            # Render accuracy information using Streamlit components
+            col1, col2, col3 = st.columns([1, 3, 1])
+            
+            with col1:
+                st.markdown(f"<div style='text-align: center; font-size: 2rem;'>{emoji}</div>", unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"**답변 신뢰도: {confidence_percent}%** ({status})")
+                st.markdown(f"컨텍스트 문서: {context_count}개 | 평균 유사도: {similarity_percent}%")
+            
+            with col3:
+                # Progress bar for confidence
+                st.progress(confidence_score)
+                st.caption(f"{confidence_percent}%")
+            
+            # Color-coded status indicator
+            if confidence_score >= 0.8:
+                st.success(f"🟢 신뢰도가 매우 높습니다 ({confidence_percent}%)")
+            elif confidence_score >= 0.6:
+                st.warning(f"🟡 신뢰도가 높습니다 ({confidence_percent}%)")
+            elif confidence_score >= 0.4:
+                st.warning(f"🟠 신뢰도가 보통입니다 ({confidence_percent}%)")
+            else:
+                st.error(f"🔴 신뢰도가 낮습니다 ({confidence_percent}%)")
         
         # Render sources information
         if sources:
@@ -482,94 +484,70 @@ class ChatComponents:
         """Render feedback UI for user interaction"""
         st.markdown("---")
         
-        # Feedback section header
-        st.markdown("**💬 이 응답이 도움이 되었나요?**")
-        
-        # Create a single row layout for all feedback elements
+        # Feedback section header with better styling
         st.markdown("""
-        <div style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0; flex-wrap: wrap;">
+        <div style="margin: 1rem 0 1.5rem 0; padding: 0.75rem 0; border-bottom: 1px solid #e9ecef;">
+            <h4 style="margin: 0; color: #495057; font-size: 1rem; font-weight: 600;">
+                💬 이 응답이 도움이 되었나요?
+            </h4>
+        </div>
+        
+        <style>
+        /* Feedback button styling */
+        .stButton > button {
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            border: 1px solid #e9ecef !important;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+        
+        /* Star rating button - same style as other buttons */
+        .stButton > button[kind="secondary"]:has-text("⭐") {
+            background: #f8f9fa !important;
+            color: #495057 !important;
+            border-color: #dee2e6 !important;
+        }
+        
+        .stButton > button[kind="secondary"]:has-text("⭐"):hover {
+            background: #e9ecef !important;
+            border-color: #adb5bd !important;
+        }
+        </style>
         """, unsafe_allow_html=True)
         
-        # Feedback buttons and controls in one row
-        col1, col2, col3, col4, col5, col6 = st.columns([0.8, 0.8, 1.2, 0.8, 1.2, 1.2])
-        
-        with col1:
-            # Thumbs up
-            if st.button("👍", key=f"thumbs_up_{message_id}", help="도움이 되었습니다", use_container_width=True):
-                ChatComponents._submit_feedback(message_id, "thumbs_up", True)
-                st.success("피드백을 주셔서 감사합니다!")
+        # Main feedback row - only star rating, centered in half screen width with left alignment
+        col1, col2, col3 = st.columns([1, 2, 1])
         
         with col2:
-            # Thumbs down
-            if st.button("👎", key=f"thumbs_down_{message_id}", help="도움이 되지 않았습니다", use_container_width=True):
-                ChatComponents._submit_feedback(message_id, "thumbs_up", False)
-                st.success("피드백을 주셔서 감사합니다!")
-        
-        with col3:
-            # Star rating selectbox
-            rating = st.selectbox(
-                "별점",
-                [1, 2, 3, 4, 5],
-                index=4,  # Default to 5 stars
-                key=f"rating_{message_id}",
-                help="1-5점으로 평가해주세요"
-            )
-        
-        with col4:
-            # Star rating submit button
-            if st.button("⭐ 평가", key=f"submit_rating_{message_id}", use_container_width=True):
-                ChatComponents._submit_feedback(message_id, "rating", rating=rating)
-                st.success(f"{rating}점 평가를 주셔서 감사합니다!")
-        
-        with col5:
-            # Additional feedback button
-            if st.button("💬 상세 피드백", key=f"detailed_feedback_{message_id}", use_container_width=True):
-                st.session_state[f"show_feedback_form_{message_id}"] = True
-        
-        with col6:
-            # Empty column for spacing
-            pass
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Detailed feedback form
-        if st.session_state.get(f"show_feedback_form_{message_id}", False):
-            with st.form(key=f"feedback_form_{message_id}"):
-                st.markdown("**상세 피드백을 남겨주세요**")
-                
-                # Feedback type selection
-                feedback_type = st.selectbox(
-                    "피드백 유형",
-                    ["정확성", "완전성", "명확성", "관련성", "기타"],
-                    key=f"feedback_type_{message_id}"
+            # Star rating section - clean and simple
+            st.markdown("**별점 평가**")
+            
+            # Functional buttons row - only star rating
+            col2_1, col2_2 = st.columns([1, 1])
+            
+            with col2_1:
+                rating = st.selectbox(
+                    "점수 선택",
+                    [1, 2, 3, 4, 5],
+                    index=4,  # Default to 5 stars
+                    key=f"rating_{message_id}",
+                    help="1-5점으로 평가해주세요",
+                    label_visibility="collapsed"
                 )
-                
-                # Comment
-                comment = st.text_area(
-                    "의견을 남겨주세요",
-                    placeholder="응답에 대한 구체적인 의견을 남겨주세요...",
-                    key=f"comment_{message_id}"
-                )
-                
-                # Submit buttons
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.form_submit_button("제출", type="primary"):
-                        ChatComponents._submit_feedback(
-                            message_id, 
-                            feedback_type.lower(), 
-                            comment=comment
-                        )
-                        st.success("상세 피드백을 주셔서 감사합니다!")
-                        st.session_state[f"show_feedback_form_{message_id}"] = False
-                
-                with col2:
-                    if st.form_submit_button("취소"):
-                        st.session_state[f"show_feedback_form_{message_id}"] = False
+            
+            with col2_2:
+                if st.button("⭐ 평가", key=f"submit_rating_{message_id}", use_container_width=True, type="secondary"):
+                    ChatComponents._submit_feedback(message_id, "rating", rating=rating)
+                    st.success(f"피드백이 제출되었습니다. {rating}점 평가를 주셔서 감사합니다!")
 
     @staticmethod
     def _submit_feedback(message_id: str, feedback_type: str, is_positive: bool = None, rating: int = None, comment: str = None):
-        """Submit feedback to backend"""
+        """Submit feedback to backend and database"""
         try:
             # Get user info from session state
             user_info = st.session_state.get("user_info", {})
@@ -584,15 +562,65 @@ class ChatComponents:
                 "feedback_type": feedback_type,
                 "is_positive": is_positive,
                 "rating": rating,
-                "comment": comment
+                "comment": comment,
+                "timestamp": datetime.now().isoformat()
             }
             
-            # Submit to backend (this would be an API call in real implementation)
-            # For now, we'll just show success message
-            st.success("피드백이 제출되었습니다.")
+            # Store in local session state first (always works)
+            if "feedback_history" not in st.session_state:
+                st.session_state.feedback_history = []
             
-            # In a real implementation, you would call the backend API here
-            # response = api_service.submit_feedback(feedback_data)
+            st.session_state.feedback_history.append({
+                "message_id": message_id,
+                "feedback_type": feedback_type,
+                "rating": rating,
+                "is_positive": is_positive,
+                "comment": comment,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+            # Try to submit to database directly
+            try:
+                import sys
+                import os
+                
+                # Add backend path to sys.path
+                backend_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend')
+                backend_path = os.path.abspath(backend_path)
+                if backend_path not in sys.path:
+                    sys.path.insert(0, backend_path)
+                
+                from services.feedback_service import feedback_service, FeedbackType
+                
+                # Convert feedback_type string to enum
+                feedback_type_enum = FeedbackType(feedback_data['feedback_type'])
+                
+                # Submit directly to feedback service
+                result = feedback_service.submit_feedback(
+                    user_id=feedback_data['user_id'],
+                    session_id=feedback_data['session_id'],
+                    message_id=feedback_data['message_id'],
+                    feedback_type=feedback_type_enum,
+                    rating=feedback_data.get('rating'),
+                    is_positive=feedback_data.get('is_positive'),
+                    comment=feedback_data.get('comment')
+                )
+                
+                if result.get("success"):
+                    # Database submission successful
+                    st.info("피드백이 데이터베이스에 저장되었습니다.")
+                else:
+                    st.warning(f"데이터베이스 저장 실패 (로컬 저장됨): {result.get('error', '알 수 없는 오류')}")
+                    
+            except Exception as e:
+                # Database service error, but local storage worked
+                st.warning(f"데이터베이스 연결 실패 (로컬 저장됨): {str(e)}")
+            
+            # Always show success message
+            if feedback_type == "rating" and rating:
+                st.success(f"피드백이 제출되었습니다. {rating}점 평가를 주셔서 감사합니다!")
+            else:
+                st.success("피드백이 제출되었습니다. 피드백을 주셔서 감사합니다!")
             
         except Exception as e:
             st.error(f"피드백 제출 중 오류가 발생했습니다: {str(e)}")
@@ -786,24 +814,50 @@ class ChatComponents:
                 except:
                     pass  # Continue even if save fails
             
-            # Set flag to create new chat
-            st.session_state.create_new_chat = True
+            # Generate new session ID immediately
+            import uuid
+            new_session_id = str(uuid.uuid4())
+            
+            # Update session state immediately
+            st.session_state.session_id = new_session_id
+            st.session_state.messages = []
+            st.session_state.last_loaded_session = None
+            st.session_state.is_new_session = True
+            
+            # Generate unique title with timestamp
+            timestamp = datetime.now().strftime("%m/%d %H:%M")
+            st.session_state.session_title = f"새 대화 ({timestamp})"
+            
+            # Create session in database
+            if chat_controller.api_service:
+                try:
+                    response = chat_controller.api_service.create_chat_session(
+                        new_session_id,
+                        st.session_state.get("user_id", "default"),
+                        st.session_state.session_title
+                    )
+                    if not response.get("success"):
+                        st.warning(f"DB에 세션 저장 실패: {response.get('error', '알 수 없는 오류')}")
+                except Exception as e:
+                    st.warning(f"DB에 세션 저장 중 오류: {str(e)}")
+            
+            # Clear any confirmation states
+            for key in list(st.session_state.keys()):
+                if key.startswith("confirm_delete_") or key.startswith("show_"):
+                    del st.session_state[key]
+            
+            # Force refresh session list
+            st.session_state.force_refresh = True
             
             # Show success message with better styling
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
-                        color: white; padding: 0.75rem; border-radius: 8px; 
-                        text-align: center; margin: 0.5rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                ✨ 새 채팅이 시작되었습니다!
-            </div>
-            """, unsafe_allow_html=True)
+            st.success("✨ 새 채팅이 시작되었습니다!")
             
-            # Use JavaScript to reload the page
+            # Use JavaScript to reload the page safely
             st.markdown("""
             <script>
             setTimeout(function() {
                 window.location.reload();
-            }, 100);
+            }, 500);
             </script>
             """, unsafe_allow_html=True)
         
@@ -876,10 +930,30 @@ class ChatComponents:
         try:
             # Force refresh sessions if needed
             if st.session_state.get("force_refresh", False):
-                sessions = chat_controller.get_available_sessions()
+                # Try to get sessions from database first
+                if chat_controller.api_service:
+                    response = chat_controller.api_service.get_user_sessions(st.session_state.get("user_id", "default"))
+                    if response.get("success") and response.get("sessions"):
+                        sessions = [session["session_id"] for session in response["sessions"]]
+                    else:
+                        # Fallback to file-based sessions
+                        sessions = chat_controller.get_available_sessions()
+                else:
+                    # Fallback to file-based sessions
+                    sessions = chat_controller.get_available_sessions()
                 st.session_state.force_refresh = False
             else:
-                sessions = chat_controller.get_available_sessions()
+                # Try to get sessions from database first
+                if chat_controller.api_service:
+                    response = chat_controller.api_service.get_user_sessions(st.session_state.get("user_id", "default"))
+                    if response.get("success") and response.get("sessions"):
+                        sessions = [session["session_id"] for session in response["sessions"]]
+                    else:
+                        # Fallback to file-based sessions
+                        sessions = chat_controller.get_available_sessions()
+                else:
+                    # Fallback to file-based sessions
+                    sessions = chat_controller.get_available_sessions()
             current_session = st.session_state.get("session_id", "default")
             
             if not sessions:
@@ -920,6 +994,90 @@ class ChatComponents:
                     background: linear-gradient(135deg, #e1f5fe 0%, #e8f5e8 100%);
                     transform: translateY(-1px);
                 }
+                
+                /* Enhanced delete button styling */
+                div[data-testid="stButton"] > button[kind="secondary"] {
+                    background: #f8f9fa !important;
+                    color: #dc3545 !important;
+                    border: 1px solid #dc3545 !important;
+                    border-radius: 8px !important;
+                    padding: 0.25rem 0.5rem !important;
+                    font-size: 0.8rem !important;
+                    transition: all 0.3s ease !important;
+                    min-width: 32px !important;
+                    height: 32px !important;
+                }
+                
+                div[data-testid="stButton"] > button[kind="secondary"]:hover {
+                    background: #dc3545 !important;
+                    color: white !important;
+                    transform: scale(1.1) !important;
+                    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3) !important;
+                }
+                
+                /* Checkbox styling for delete selection */
+                .stCheckbox > label {
+                    font-size: 0.8rem !important;
+                    margin-bottom: 0 !important;
+                    padding: 0.25rem !important;
+                }
+                
+                .stCheckbox > label > div[data-testid="stMarkdownContainer"] {
+                    display: none !important;
+                }
+                
+                /* Simple delete UI styling */
+                .delete-ui-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+                
+                /* Edit button styling */
+                .edit-button {
+                    background: #f8f9fa !important;
+                    color: #6c757d !important;
+                    border: 1px solid #6c757d !important;
+                    border-radius: 8px !important;
+                    padding: 0.25rem 0.5rem !important;
+                    font-size: 0.8rem !important;
+                    transition: all 0.3s ease !important;
+                    min-width: 32px !important;
+                    height: 32px !important;
+                }
+                
+                .edit-button:hover {
+                    background: #6c757d !important;
+                    color: white !important;
+                    transform: scale(1.1) !important;
+                    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3) !important;
+                }
+                
+                /* Confirmation dialog styling */
+                .confirmation-dialog {
+                    background: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    border-radius: 8px;
+                    padding: 0.75rem;
+                    margin: 0.25rem 0;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                
+                .confirmation-dialog .warning-icon {
+                    font-size: 1rem;
+                    margin-right: 0.5rem;
+                }
+                
+                .confirmation-dialog .warning-title {
+                    color: #856404;
+                    font-weight: bold;
+                    margin-bottom: 0.25rem;
+                }
+                
+                .confirmation-dialog .warning-message {
+                    color: #856404;
+                    font-size: 0.8rem;
+                }
                 </style>
                 """, unsafe_allow_html=True)
                 
@@ -940,87 +1098,154 @@ class ChatComponents:
                     session_class = "session-item current" if is_current else "session-item"
                     st.markdown(f'<div class="{session_class}">', unsafe_allow_html=True)
                     
-                    # Create session button with current session highlighting
-                    col1, col2 = st.columns([1, 0.1])
+                    # Check if this session is being edited
+                    is_editing = st.session_state.get(f"editing_title_{session_id}", False)
                     
-                    with col1:
-                        # Style the button based on whether it's the current session
-                        button_style = "primary" if is_current else "secondary"
-                        button_text = f"💬 {session_title}"
-                        if is_current:
-                            button_text = f"▶️ {session_title}"
+                    if is_editing:
+                        # Edit mode - show text input
+                        st.markdown("**제목 편집:**")
+                        new_title = st.text_input(
+                            "새 제목",
+                            value=session_title,
+                            key=f"edit_title_{session_id}",
+                            help="채팅 제목을 수정하세요"
+                        )
                         
-                        # Add message count and last activity info
-                        message_count = session_metadata.get("message_count", 0)
-                        last_activity = session_metadata.get("last_activity", "")
-                        
-                        if st.button(
-                            button_text,
-                            key=f"session_{session_id}",
-                            help=f"세션 ID: {session_id[:8]}...\n메시지 수: {message_count}개\n마지막 활동: {last_activity}" + (" (현재 세션)" if is_current else ""),
-                            use_container_width=True,
-                            type=button_style
-                        ):
-                            # Only switch if it's not the current session
-                            if not is_current:
-                                # Clear any confirmation states
-                                for key in list(st.session_state.keys()):
-                                    if key.startswith("confirm_delete_"):
-                                        del st.session_state[key]
-                                # Switch to this session
-                                chat_controller.switch_to_session(session_id)
-                    
-                    with col2:
-                        # Delete session button with confirmation (show for all sessions except default)
-                        if session_id != "default":
-                            if st.button("🗑️", key=f"delete_{session_id}", help="채팅 삭제"):
-                                # Set confirmation state
-                                st.session_state[f"confirm_delete_{session_id}"] = True
-                        
-                        # Confirmation dialog for individual delete
-                        if st.session_state.get(f"confirm_delete_{session_id}", False):
-                            st.markdown(f"""
-                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; 
-                                        padding: 0.75rem; margin: 0.25rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                    <span style="font-size: 1rem;">⚠️</span>
-                                    <strong style="color: #856404;">'{session_title}' 채팅을 삭제하시겠습니까?</strong>
-                                </div>
-                                <div style="color: #856404; font-size: 0.8rem;">
-                                    이 작업은 되돌릴 수 없습니다.
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            # Use buttons without columns in sidebar
-                            if st.button("✅ 삭제", key=f"confirm_delete_yes_{session_id}", type="primary", use_container_width=True):
-                                # Delete session
-                                try:
-                                    delete_success = chat_controller.delete_session(session_id)
+                        col_save, col_cancel = st.columns(2)
+                        with col_save:
+                            if st.button("💾 저장", key=f"save_title_{session_id}", type="primary", use_container_width=True):
+                                if new_title.strip():
+                                    # Update session title in database
+                                    from controllers.chat_controller import ChatController
+                                    chat_controller = ChatController()
                                     
-                                    if delete_success:
-                                        # Clear confirmation state
-                                        if f"confirm_delete_{session_id}" in st.session_state:
-                                            del st.session_state[f"confirm_delete_{session_id}"]
+                                    if chat_controller.api_service:
+                                        response = chat_controller.api_service.update_session_title(
+                                            session_id, 
+                                            new_title.strip(),
+                                            st.session_state.get("user_id", "default")
+                                        )
                                         
-                                        # Force refresh session list
-                                        st.session_state.force_refresh = True
-                                        
-                                        # Show success message
-                                        st.success(f"'{session_title}' 채팅이 성공적으로 삭제되었습니다.")
-                                        
-                                        # Clear confirmation state
-                                        if f"confirm_delete_{session_id}" in st.session_state:
-                                            del st.session_state[f"confirm_delete_{session_id}"]
+                                        if response.get("success"):
+                                            # Update local session state as backup
+                                            st.session_state[f"session_title_{session_id}"] = new_title.strip()
+                                            # Clear editing state
+                                            if f"editing_title_{session_id}" in st.session_state:
+                                                del st.session_state[f"editing_title_{session_id}"]
+                                            st.success("제목이 저장되었습니다!")
+                                            st.rerun()
+                                        else:
+                                            st.error(f"제목 저장 실패: {response.get('error', '알 수 없는 오류')}")
                                     else:
-                                        st.error("채팅 삭제에 실패했습니다.")
-                                except Exception as e:
-                                    st.error(f"삭제 중 오류가 발생했습니다: {str(e)}")
+                                        # Fallback to session state if API is not available
+                                        st.session_state[f"session_title_{session_id}"] = new_title.strip()
+                                        if f"editing_title_{session_id}" in st.session_state:
+                                            del st.session_state[f"editing_title_{session_id}"]
+                                        st.success("제목이 저장되었습니다! (로컬 저장)")
+                                        st.rerun()
+                                else:
+                                    st.error("제목을 입력해주세요.")
+                        
+                        with col_cancel:
+                            if st.button("❌ 취소", key=f"cancel_edit_{session_id}", use_container_width=True):
+                                # Clear editing state
+                                if f"editing_title_{session_id}" in st.session_state:
+                                    del st.session_state[f"editing_title_{session_id}"]
+                                st.rerun()
+                    else:
+                        # Normal mode - show session button and controls
+                        col1, col2, col3 = st.columns([1, 0.05, 0.05])
+                        
+                        with col1:
+                            # Style the button based on whether it's the current session
+                            button_style = "primary" if is_current else "secondary"
+                            button_text = f"💬 {session_title}"
+                            if is_current:
+                                button_text = f"▶️ {session_title}"
                             
-                            if st.button("❌ 취소", key=f"confirm_delete_no_{session_id}", use_container_width=True):
-                                # Clear confirmation state
-                                if f"confirm_delete_{session_id}" in st.session_state:
-                                    del st.session_state[f"confirm_delete_{session_id}"]
+                            # Add message count and last activity info
+                            message_count = session_metadata.get("message_count", 0)
+                            last_activity = session_metadata.get("last_activity", "")
+                            
+                            if st.button(
+                                button_text,
+                                key=f"session_{session_id}",
+                                help=f"세션 ID: {session_id[:8]}...\n메시지 수: {message_count}개\n마지막 활동: {last_activity}" + (" (현재 세션)" if is_current else ""),
+                                use_container_width=True,
+                                type=button_style
+                            ):
+                                # Only switch if it's not the current session
+                                if not is_current:
+                                    # Clear any confirmation states
+                                    for key in list(st.session_state.keys()):
+                                        if key.startswith("confirm_delete_"):
+                                            del st.session_state[key]
+                                    # Switch to this session
+                                    chat_controller.switch_to_session(session_id)
+                        
+                        with col2:
+                            # Edit button
+                            if st.button("✏️", key=f"edit_{session_id}", help="제목 편집", type="secondary"):
+                                st.session_state[f"editing_title_{session_id}"] = True
+                                st.rerun()
+                        
+                        with col3:
+                            # Delete controls
+                            if session_id != "default":
+                                # Checkbox to select for deletion
+                                is_selected = st.checkbox(
+                                    "", 
+                                    key=f"select_{session_id}", 
+                                    help="삭제할 채팅 선택"
+                                )
+                                
+                                # X button to delete (only show when selected)
+                                if is_selected:
+                                    if st.button("❌", key=f"delete_{session_id}", help="선택된 채팅 삭제", type="secondary"):
+                                        # Delete session from database and file system
+                                        try:
+                                            # Check if we're deleting the current session
+                                            is_current_session = session_id == st.session_state.get("session_id", "default")
+                                            
+                                            # Delete from database first
+                                            db_delete_success = True
+                                            if chat_controller.api_service:
+                                                try:
+                                                    response = chat_controller.api_service.delete_chat_session(session_id)
+                                                    db_delete_success = response.get("success", False)
+                                                except Exception as e:
+                                                    st.warning(f"DB 삭제 실패: {str(e)}")
+                                                    db_delete_success = False
+                                            
+                                            # Delete from file system
+                                            file_delete_success = chat_controller.delete_session(session_id)
+                                            
+                                            if db_delete_success or file_delete_success:
+                                                # If we deleted the current session, switch to default
+                                                if is_current_session:
+                                                    st.session_state.session_id = "default"
+                                                    st.session_state.messages = []
+                                                    st.session_state.last_loaded_session = None
+                                                    st.session_state.is_new_session = True
+                                                
+                                                # Force refresh session list
+                                                st.session_state.force_refresh = True
+                                                
+                                                # Show success message
+                                                st.success(f"✅ '{session_title}' 채팅이 삭제되었습니다.")
+                                                
+                                                # Force page refresh to update UI
+                                                st.rerun()
+                                            else:
+                                                st.error("채팅 삭제에 실패했습니다.")
+                                        except Exception as e:
+                                            st.error(f"삭제 중 오류가 발생했습니다: {str(e)}")
+                                else:
+                                    # Show empty space when not selected
+                                    st.markdown("", help="체크박스를 선택하면 삭제 버튼이 나타납니다")
+                            else:
+                                # Show placeholder for default session (no delete option)
+                                st.markdown("", help="기본 세션은 삭제할 수 없습니다")
                     
                     # Close session item container
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -1037,28 +1262,28 @@ class ChatComponents:
     
     @staticmethod
     def get_session_title(session_id: str) -> str:
-        """Get a user-friendly title for a session"""
+        """Get a user-friendly title for a session from database"""
         try:
             from controllers.chat_controller import ChatController
             chat_controller = ChatController()
             
-            # Get session history
+            # Try to get session info from database first
             if chat_controller.api_service:
-                response = chat_controller.api_service.get_chat_history(session_id)
-                if response.get("success") and response.get("messages"):
-                    # Find first user message
-                    for msg in response["messages"]:
-                        if msg.get("role") == "user":
-                            content = msg.get("content", "")
-                            # Truncate long messages
-                            if len(content) > 50:
-                                content = content[:50] + "..."
-                            return content
-                    return "빈 채팅"
-                else:
-                    return "새 채팅"
-            else:
-                return "새 채팅"
+                response = chat_controller.api_service.get_session_info(session_id)
+                if response.get("success") and response.get("session"):
+                    session_info = response["session"]
+                    return session_info.get("title", "알 수 없는 채팅")
+            
+            # Fallback to session state if DB is not available
+            if f"session_title_{session_id}" in st.session_state:
+                return st.session_state[f"session_title_{session_id}"]
+            
+            if session_id == st.session_state.get("session_id") and st.session_state.get("session_title"):
+                return st.session_state.session_title
+            
+            # Generate a unique title for new sessions
+            timestamp = datetime.now().strftime("%m/%d %H:%M")
+            return f"새 대화 ({timestamp})"
         except:
             return "알 수 없는 채팅"
     
@@ -1118,13 +1343,7 @@ class ChatComponents:
             # Get current session ID first
             current_session = st.session_state.get("session_id", "default")
             
-            # HAI Portal branding - Modern design
-            st.markdown("""
-            <div style="text-align: center; padding: 1.5rem 0; border-bottom: 2px solid #6c757d; margin-bottom: 1rem;">
-                <h1 style="color: #495057; margin: 0; font-size: 1.8rem; font-weight: 700;">HAI Portal</h1>
-                <p style="color: #6c757d; margin: 0.5rem 0 0 0; font-size: 0.9rem;">AI 기반 지능형 서비스</p>
-            </div>
-            """, unsafe_allow_html=True)
+            # HAI Portal branding - removed
             
             # Chat History Section
             action = ChatComponents.render_chat_history_sidebar()
@@ -1210,13 +1429,9 @@ class ChatComponents:
                     st.markdown("**📋 사용 가능한 컬렉션:**")
                     for collection in collections:
                         collection_name = collection.get('name', 'Unknown')
-                        document_count = collection.get('document_count', 0)
-                        description = collection.get('metadata', {}).get('description', '')
                         
-                        # Create a formatted list item
-                        list_item = f"• **{collection_name}** ({document_count}개 문서)"
-                        if description:
-                            list_item += f" - {description}"
+                        # Create a formatted list item - only show collection name
+                        list_item = f"• **{collection_name}**"
                         
                         st.markdown(list_item)
                     
@@ -1301,11 +1516,20 @@ class ChatComponents:
                         
                         st.info(f"선택된 컬렉션: {', '.join(collection_display_names)}")
                         
-                        # Collection management buttons
-                        col1, col2, col3, col4 = st.columns(4)
+                        # Collection management - Clean dropdown and action buttons
+                        st.markdown("---")
                         
-                        with col1:
-                            if st.button("ℹ️ 컬렉션 정보", key="show_collection_info"):
+                        # Action selection dropdown
+                        action_options = ["컬렉션 정보 보기", "컬렉션 활성화", "별명 관리", "그룹으로 묶기"]
+                        selected_action = st.selectbox(
+                            "📋 컬렉션 관리 작업을 선택하세요:",
+                            options=action_options,
+                            key="collection_action_select"
+                        )
+                        
+                        # Execute selected action
+                        if selected_action == "컬렉션 정보 보기":
+                            if st.button("ℹ️ 정보 보기", key="show_collection_info", use_container_width=True):
                                 for collection_name in selected_collections:
                                     collection_info = chat_controller.get_collection_info(collection_name)
                                     if collection_info:
@@ -1313,15 +1537,14 @@ class ChatComponents:
                                         st.json(collection_info)
                                         st.markdown("---")
                         
-                        with col2:
+                        elif selected_action == "컬렉션 활성화":
                             if len(selected_collections) == 1:
                                 # Single collection - direct activation
-                                if st.button("🔄 활성화", key="activate_single_collection"):
+                                if st.button("🔄 활성화", key="activate_single_collection", use_container_width=True):
                                     collection_name = selected_collections[0]
                                     result = chat_controller.switch_collection(collection_name)
                                     if result.get("success"):
                                         st.session_state.current_collection = collection_name
-                                        # Clear active group when activating individual collection
                                         st.session_state.active_group = None
                                         st.success(f"'{collection_name}' 컬렉션이 활성화되었습니다.")
                                     else:
@@ -1334,28 +1557,25 @@ class ChatComponents:
                                     format_func=lambda x: aliases.get(x, x) if x in aliases and aliases[x] else x,
                                     key="collection_activation_select"
                                 )
-                                if st.button("🔄 선택된 컬렉션 활성화", key="activate_selected_collection"):
+                                if st.button("🔄 선택된 컬렉션 활성화", key="activate_selected_collection", use_container_width=True):
                                     result = chat_controller.switch_collection(selected_for_activation)
                                     if result.get("success"):
                                         st.session_state.current_collection = selected_for_activation
-                                        # Clear active group when activating individual collection
                                         st.session_state.active_group = None
                                         st.success(f"'{selected_for_activation}' 컬렉션이 활성화되었습니다.")
                                     else:
                                         st.error(f"컬렉션 활성화 실패: {result.get('error', '알 수 없는 오류')}")
                         
-                        with col3:
-                            manage_aliases_clicked = st.button("📝 별명 관리", key="manage_aliases")
-                            if manage_aliases_clicked:
+                        elif selected_action == "별명 관리":
+                            if st.button("📝 별명 관리", key="manage_aliases", use_container_width=True):
                                 st.session_state.show_alias_management = True
                         
-                        with col4:
+                        elif selected_action == "그룹으로 묶기":
                             if len(selected_collections) > 1:
-                                create_group_clicked = st.button("🔗 그룹으로 묶기", key="create_collection_group")
-                                if create_group_clicked:
+                                if st.button("🔗 그룹으로 묶기", key="create_collection_group", use_container_width=True):
                                     st.session_state.show_group_creation = True
                             else:
-                                st.button("🔗 그룹으로 묶기", key="create_collection_group", disabled=True, help="2개 이상의 컬렉션을 선택해야 합니다.")
+                                st.warning("2개 이상의 컬렉션을 선택해야 그룹으로 묶을 수 있습니다.")
                         
                         # Alias management UI
                         if st.session_state.get("show_alias_management", False):
@@ -1617,23 +1837,12 @@ class ChatComponents:
                     if st.button("🔄 컬렉션 목록 새로고침", key="refresh_collections"):
                         st.session_state.force_refresh = True
                     
-            # Collection management button
-            if st.button("🗂️ 컬렉션 관리", key="collection_management", use_container_width=True):
-                st.switch_page("pages/collection_management.py")
-            
-            # User management button (admin only)
+            # Menu management button (admin only)
             user_info = st.session_state.get("user_info")
             if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
-                if st.button("👥 사용자 관리", key="user_management", use_container_width=True):
-                    st.session_state.current_page = "user_management"
-                    
-                    # Show message about creating collections
-                    st.markdown("""
-                    **컬렉션 생성 방법:**
-                    1. 컬렉션 관리 페이지에서 직접 생성
-                    2. 파일 업로드 페이지에서 문서를 업로드
-                    3. LangChain RAG 모드로 업로드
-                    """)
+                if st.button("📋 메뉴 관리", key="menu_management", use_container_width=True):
+                    st.session_state.current_page = "menu_management"
+                    st.rerun()
             
             # Logout button
             st.markdown("---")
@@ -1841,11 +2050,17 @@ class FileUploadComponents:
     def render_rag_mode_selector() -> str:
         """Render RAG mode selector for file upload"""
         st.write("**RAG 모드 선택:**")
-        rag_mode = st.radio(
-            "업로드할 RAG 시스템을 선택하세요:",
-            ["기본 RAG", "LangChain RAG"],
-            help="기본 RAG: 단순한 벡터 검색\nLangChain RAG: 고급 체인 처리 및 메모리"
-        )
+        
+        # Create two columns for horizontal layout
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            rag_mode = st.radio(
+                "업로드할 RAG 시스템을 선택하세요:",
+                ["기본 RAG", "LangChain RAG"],
+                help="기본 RAG: 단순한 벡터 검색\nLangChain RAG: 고급 체인 처리 및 메모리",
+                horizontal=True
+            )
         return rag_mode
 
     @staticmethod

@@ -1,14 +1,7 @@
 """
-Login page for HAI Portal
+Login page
 """
 import streamlit as st
-
-# 페이지 설정
-st.set_page_config(
-    page_title="로그인",
-    page_icon="🔐",
-    layout="wide"
-)
 import requests
 import json
 import sys
@@ -19,7 +12,8 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.api_service import APIService
-from utils.session_manager import session_manager
+from services.session_management_service import session_manager
+from utils.helpers import UIHelpers, SessionManager
 
 # Page configuration is handled in main.py
 
@@ -50,263 +44,34 @@ def register_user(username: str, email: str, password: str, confirm_password: st
 def main():
     """Main login page function"""
     
-    # Modern Enterprise UI - Pure White Login Theme
-    st.markdown("""
-    <style>
-    /* Hide Streamlit default UI elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    .stDecoration {display:none;}
-    .stApp > header {display:none;}
-    .stApp > div[data-testid="stToolbar"] {display:none;}
-    .stApp > div[data-testid="stDecoration"] {display:none;}
-    .stApp > div[data-testid="stStatusWidget"] {display:none;}
+    # Load enterprise theme
+    UIHelpers.load_enterprise_theme()
     
-    /* Hide the hamburger menu */
-    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    # Hide Streamlit default header elements
+    UIHelpers.hide_streamlit_header()
     
-    /* Hide the top bar completely */
-    .stApp > div[data-testid="stHeader"] {display:none;}
-    
-    /* Global styling - Pure White Background */
-    .stApp {
-        background-color: #ffffff;
-    }
-    
-    /* Adjust main content padding */
-    .main .block-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        background-color: #ffffff;
-    }
-    
-    /* Modern Enterprise page header - Clean White Design */
-    .page-header {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        padding: 4rem 2rem;
-        border-radius: 24px;
-        margin-bottom: 3rem;
-        color: #212529;
-        text-align: center;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
-    }
-    
-    .page-title {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 0.75rem;
-        letter-spacing: -0.03em;
-        color: #212529;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .page-subtitle {
-        font-size: 1.3rem;
-        opacity: 0.8;
-        font-weight: 500;
-        color: #6c757d;
-    }
-    
-    /* Modern Enterprise login container - Pure White */
-    .login-container {
-        max-width: 500px;
-        margin: 0 auto;
-        padding: 4rem;
-        background: #ffffff;
-        border-radius: 28px;
-        box-shadow: 0 12px 48px rgba(0,0,0,0.08);
-        border: 2px solid #f1f3f4;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .login-container::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
-    }
-    
-    .login-form {
-        margin-bottom: 2.5rem;
-    }
-    
-    /* Modern Enterprise button styling */
-    .stButton > button {
-        width: 100%;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        color: #495057;
-        border: 2px solid #e9ecef;
-        padding: 1.25rem 2rem;
-        border-radius: 16px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-        text-transform: none;
-        letter-spacing: 0.01em;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        border-color: #6c757d;
-        color: #212529;
-    }
-    
-    .register-link {
-        text-align: center;
-        margin-top: 2rem;
-    }
-    
-    .register-link a {
-        color: #6c757d;
-        text-decoration: none;
-        font-weight: 600;
-        transition: color 0.3s ease;
-        font-size: 1rem;
-    }
-    
-    .register-link a:hover {
-        color: #495057;
-        text-decoration: underline;
-    }
-    
-    /* Modern Enterprise form styling */
-    .stTextInput > div > div > input {
-        border-radius: 16px;
-        border: 2px solid #f1f3f4;
-        padding: 1.25rem 1.5rem;
-        font-size: 1.1rem;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #ffffff;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border-color: #6c757d;
-        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
-        outline: none;
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise error/success messages */
-    .stAlert {
-        border-radius: 16px;
-        border: 2px solid;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-        background: #ffffff;
-    }
-    
-    .stAlert[data-testid="alert"] {
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise form labels */
-    .stTextInput > label {
-        font-weight: 700;
-        color: #212529;
-        margin-bottom: 0.75rem;
-        font-size: 1rem;
-    }
-    
-    /* Modern Enterprise radio button styling */
-    .stRadio > div {
-        gap: 1.5rem;
-    }
-    
-    .stRadio > div > label {
-        background: #ffffff;
-        padding: 1.5rem;
-        border-radius: 16px;
-        border: 2px solid #f1f3f4;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    }
-    
-    .stRadio > div > label:hover {
-        border-color: #6c757d;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-        background: #f8f9fa;
-    }
-    
-    /* Modern Enterprise selectbox styling */
-    .stSelectbox > div > div {
-        border-radius: 16px;
-        border: 2px solid #f1f3f4;
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise checkbox styling */
-    .stCheckbox > label {
-        font-weight: 600;
-        color: #212529;
-        font-size: 1rem;
-    }
-    
-    /* Form section styling */
-    .form-section {
-        background: #ffffff;
-        padding: 2.5rem;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
-        margin-bottom: 2rem;
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .login-container {
-            padding: 3rem 2rem;
-            margin: 1rem;
-        }
-        
-        .page-header {
-            padding: 3rem 1.5rem;
-        }
-        
-        .page-title {
-            font-size: 2.5rem;
-        }
-        
-        .form-section {
-            padding: 2rem 1.5rem;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Check if redirected from session expiry
+    session_expired = st.session_state.get("session_expired", False)
     
     # Page header
-    st.markdown("""
-    <div class="page-header">
-        <div class="page-title">🔐 로그인</div>
-        <div class="page-subtitle">HAI Portal에 로그인하여 AI 채팅 서비스를 이용하세요</div>
-    </div>
-    """, unsafe_allow_html=True)
+    if session_expired:
+        st.markdown("""
+        <div class="page-header">
+            <div class="page-title">🔒 세션 만료</div>
+            <div class="page-subtitle">세션이 만료되었습니다. 다시 로그인해주세요</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.error("🔒 세션이 만료되었습니다. 보안을 위해 다시 로그인해주세요.")
+    else:
+        st.markdown("""
+        <div class="page-header">
+            <div class="page-title">🔐 로그인</div>
+            <div class="page-subtitle">AI 채팅 서비스를 이용하세요</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Initialize session state with persistent session manager
-    session_manager.initialize_session()
+    SessionManager.initialize_session()
     
     # Initialize other session state
     if "login_mode" not in st.session_state:
@@ -359,10 +124,6 @@ def main():
     # Main container
     st.markdown("""
     <div class="login-container">
-        <div class="login-header">
-            <div class="login-title">HAI Portal</div>
-            <div class="login-subtitle">AI 기반 지능형 서비스 플랫폼</div>
-        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -394,10 +155,25 @@ def main():
                     st.session_state.refresh_token = result.get("refresh_token")
                     st.session_state.login_time = datetime.now().isoformat()
                     
-                    # Save session to persistent storage
-                    session_manager.save_current_session()
+                    # Clear any session expiry flags
+                    if "session_expired" in st.session_state:
+                        del st.session_state.session_expired
                     
-                    st.success("로그인에 성공했습니다!")
+                    # Initialize user session with new session management service
+                    user_info = result.get("user")
+                    user_id = user_info.get("id", "default")
+                    
+                    if session_manager and user_id != "default":
+                        session_manager.initialize_user_session(user_id, user_info)
+                        st.success("로그인에 성공했습니다! 사용자별 세션이 초기화되었습니다.")
+                    else:
+                        # Fallback to old session management
+                        try:
+                            SessionManager.save_current_session()
+                        except Exception as e:
+                            print(f"세션 저장 중 오류 (무시됨): {e}")
+                        st.success("로그인에 성공했습니다!")
+                    
                     st.session_state.current_page = "main"
                     st.rerun()
                 else:
@@ -444,10 +220,21 @@ def main():
                     st.session_state.refresh_token = result.get("refresh_token")
                     st.session_state.login_time = datetime.now().isoformat()
                     
-                    # Save session to persistent storage
-                    session_manager.save_current_session()
+                    # Initialize user session with new session management service
+                    user_info = result.get("user")
+                    user_id = user_info.get("id", "default")
                     
-                    st.success("회원가입이 완료되었습니다! 자동으로 로그인됩니다.")
+                    if session_manager and user_id != "default":
+                        session_manager.initialize_user_session(user_id, user_info)
+                        st.success("회원가입이 완료되었습니다! 사용자별 세션이 초기화되었습니다.")
+                    else:
+                        # Fallback to old session management
+                        try:
+                            SessionManager.save_current_session()
+                        except Exception as e:
+                            print(f"세션 저장 중 오류 (무시됨): {e}")
+                        st.success("회원가입이 완료되었습니다! 자동으로 로그인됩니다.")
+                    
                     st.session_state.current_page = "main"
                     st.rerun()
                 else:
@@ -461,7 +248,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 0.9rem;">
-        HAI Portal v1.0.0 | AI 기반 지능형 서비스 플랫폼
+        AI 채팅 서비스 v1.0.0
     </div>
     """, unsafe_allow_html=True)
 

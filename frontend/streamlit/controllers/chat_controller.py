@@ -29,7 +29,13 @@ class ChatController:
     def _initialize_session_state(self):
         """Initialize Streamlit session state"""
         if "session_id" not in st.session_state:
-            st.session_state.session_id = "default"  # Use "default" as initial session
+            # Get user-specific default session ID
+            user_info = st.session_state.get("user_info") or {}
+            current_user_id = user_info.get("id", "default")
+            if current_user_id == "default":
+                st.session_state.session_id = "default"
+            else:
+                st.session_state.session_id = f"user_{current_user_id}_default_session"
         if "messages" not in st.session_state:
             st.session_state.messages = []
         if "backend_connected" not in st.session_state:
@@ -80,8 +86,16 @@ class ChatController:
         if st.session_state.backend_connected and self.api_service:
             self.api_service.clear_session(st.session_state.session_id)
 
+        # Switch to user-specific default session
+        user_info = st.session_state.get("user_info") or {}
+        current_user_id = user_info.get("id", "default")
+        if current_user_id == "default":
+            new_session_id = "default"
+        else:
+            new_session_id = f"user_{current_user_id}_default_session"
+            
         st.session_state.messages = []
-        st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.session_id = new_session_id
         st.success("채팅이 초기화되었습니다.")
     
     def save_current_session(self):
@@ -94,17 +108,26 @@ class ChatController:
             current_session_id = st.session_state.get("session_id", "default")
             
             if current_messages:
-                # Save to backend API
-                for message in current_messages:
-                    if self.api_service:
-                        self.api_service.save_message(message, current_session_id)
-                
-                # Also save to file system directly
-                self._save_session_to_file(current_session_id, current_messages)
-                return True
+                # Use the new save_session method for better reliability
+                result = self.api_service.save_session(current_session_id, current_messages)
+                if result.get("success", False):
+                    # Also save to file system as backup
+                    self._save_session_to_file(current_session_id, current_messages)
+                    return True
+                else:
+                    # If backend save fails, still try file save
+                    file_success = self._save_session_to_file(current_session_id, current_messages)
+                    return file_success
             return False
         except Exception as e:
-            st.error(f"세션 저장 중 오류가 발생했습니다: {str(e)}")
+            # Try file save as fallback
+            try:
+                current_session_id = st.session_state.get("session_id", "default")
+                current_messages = st.session_state.get("messages", [])
+                if current_messages:
+                    return self._save_session_to_file(current_session_id, current_messages)
+            except:
+                pass
             return False
 
     def _save_session_to_file(self, session_id: str, messages: List[Dict[str, Any]]) -> bool:
@@ -218,19 +241,78 @@ class ChatController:
 
     def get_available_sessions(self) -> List[str]:
         """Get list of available sessions from file system and backend"""
-        # Try to get sessions from file system first
+        all_sessions = []
+        
+        # Get sessions from file system
         file_sessions = self._get_sessions_from_file()
         if file_sessions:
-            return file_sessions
+            all_sessions.extend(file_sessions)
         
-        # If no file sessions, try backend
-        if not self.check_backend_connection() or not self.api_service:
-            return []
-
-        response = self.api_service.get_sessions()
-        if response["success"]:
-            return response["sessions"]
+        # Get sessions from backend if available
+        if self.check_backend_connection() and self.api_service:
+            response = self.api_service.get_sessions()
+            if response.get("success") and response.get("sessions"):
+                all_sessions.extend(response["sessions"])
+        
+        # Remove duplicates while preserving order
+        if all_sessions:
+            seen = set()
+            unique_sessions = []
+            for session in all_sessions:
+                if session not in seen:
+                    seen.add(session)
+                    unique_sessions.append(session)
+            return unique_sessions
+        
         return []
+    
+    def get_user_sessions(self, user_id: str) -> List[str]:
+        """Get list of sessions for a specific user"""
+        if not self.check_backend_connection() or not self.api_service:
+            # Fallback to file system with user filtering
+            return self._get_user_sessions_from_file(user_id)
+        
+        try:
+            response = self.api_service.get_user_sessions(user_id)
+            if response.get("success") and response.get("sessions"):
+                # Extract session IDs from the response
+                sessions = []
+                for session in response["sessions"]:
+                    if isinstance(session, dict):
+                        sessions.append(session.get("session_id", ""))
+                    else:
+                        sessions.append(str(session))
+                return [s for s in sessions if s]  # Filter out empty strings
+            else:
+                # Fallback to file system if backend fails
+                return self._get_user_sessions_from_file(user_id)
+        except Exception as e:
+            st.warning(f"사용자 세션 조회 실패, 파일 시스템으로 대체: {str(e)}")
+            return self._get_user_sessions_from_file(user_id)
+    
+    def _get_user_sessions_from_file(self, user_id: str) -> List[str]:
+        """Get user-specific sessions from file system"""
+        try:
+            import os
+            
+            data_dir = "./data"
+            if not os.path.exists(data_dir):
+                return []
+            
+            user_sessions = []
+            for filename in os.listdir(data_dir):
+                if filename.startswith("session_") and filename.endswith(".json"):
+                    session_id = filename[8:-5]  # Remove "session_" prefix and ".json" suffix
+                    # Check if session belongs to the user (based on session ID pattern)
+                    if session_id.startswith(f"user_{user_id}_"):
+                        user_sessions.append(session_id)
+            
+            # Sort by modification time (newest first)
+            user_sessions.sort(key=lambda x: os.path.getmtime(os.path.join(data_dir, f"session_{x}.json")), reverse=True)
+            return user_sessions
+        except Exception as e:
+            st.error(f"파일에서 사용자 세션 목록을 불러올 수 없습니다: {str(e)}")
+            return []
 
     def _get_sessions_from_file(self) -> List[str]:
         """Get sessions from file system"""
@@ -267,13 +349,17 @@ class ChatController:
     def delete_session(self, session_id: str) -> bool:
         """Delete a chat session"""
         try:
-            if session_id == "default":
+            user_info = st.session_state.get("user_info") or {}
+            current_user_id = user_info.get("id", "default")
+            user_default_session = f"user_{current_user_id}_default_session" if current_user_id != "default" else "default"
+            
+            if session_id == user_default_session:
                 st.error("기본 세션은 삭제할 수 없습니다.")
                 return False
             
-            # If we're deleting the current session, switch to default first
+            # If we're deleting the current session, switch to user default first
             if st.session_state.get("session_id") == session_id:
-                st.session_state.session_id = "default"
+                st.session_state.session_id = user_default_session
                 st.session_state.messages = []
                 st.session_state.last_loaded_session = None
                 st.session_state.is_new_session = True
@@ -345,12 +431,16 @@ class ChatController:
             return []
 
     def clear_all_sessions(self) -> Dict[str, Any]:
-        """Clear all sessions except default"""
+        """Clear all sessions except user default"""
         try:
             # Clear current session immediately
-            st.session_state.session_id = "default"
+            user_info = st.session_state.get("user_info") or {}
+            current_user_id = user_info.get("id", "default")
+            user_default_session = f"user_{current_user_id}_default_session" if current_user_id != "default" else "default"
+            
+            st.session_state.session_id = user_default_session
             st.session_state.messages = []
-            st.session_state.last_loaded_session = "default"
+            st.session_state.last_loaded_session = user_default_session
             st.session_state.is_new_session = True
             
             # Clear any confirmation states

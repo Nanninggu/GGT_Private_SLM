@@ -19,6 +19,10 @@ try:
     from services.api_service import APIService
 except ImportError:
     APIService = None
+try:
+    from services.session_management_service import session_manager
+except ImportError:
+    session_manager = None
 
 try:
     from config import ADMIN_USER_ID
@@ -743,8 +747,8 @@ class ChatComponents:
         """, unsafe_allow_html=True)
 
     @staticmethod
-    def render_chat_history_sidebar():
-        """Render chat history sidebar like ChatGPT/Gemini"""
+    def render_session_sidebar():
+        """Render session management sidebar with management features"""
         try:
             from controllers.chat_controller import ChatController
             
@@ -754,10 +758,30 @@ class ChatComponents:
             st.error("채팅 컨트롤러를 불러올 수 없습니다.")
             return None
         
-        # Chat History Header with improved styling
-        sessions = chat_controller.get_available_sessions()
-        session_count = len(sessions) if sessions else 0
+        # Get current user info
+        user_info = st.session_state.get("user_info", {})
+        user_id = user_info.get("id", "default")
         
+        # Use new session management service if available
+        if session_manager and user_id != "default":
+            user_sessions = session_manager.get_user_sessions(user_id)
+            session_count = len(user_sessions)
+        else:
+            # Fallback to old system
+            user_sessions = []
+            if chat_controller.api_service:
+                response = chat_controller.api_service.get_user_sessions(user_id)
+                if response.get("success") and response.get("sessions"):
+                    user_sessions = response["sessions"]
+            
+            # Fallback to file-based sessions if no database sessions
+            if not user_sessions:
+                sessions = chat_controller.get_available_sessions()
+                user_sessions = [{"session_id": session_id, "title": f"세션 {session_id[:8]}...", "created_at": None, "message_count": 0} for session_id in sessions]
+            
+            session_count = len(user_sessions) if user_sessions else 0
+        
+        # Chat History Header with improved styling
         st.markdown(f"""
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.5rem 0;">
             <h3 style="margin: 0; color: #495057; font-size: 1.1rem; font-weight: 600;">💬 채팅 히스토리 ({session_count}개)</h3>
@@ -766,6 +790,18 @@ class ChatComponents:
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Search and filter section
+        if session_count > 0:
+            search_query = st.text_input("🔍 세션 검색", placeholder="세션 제목이나 내용으로 검색...", key="session_search")
+            if search_query:
+                # Filter sessions based on search query
+                filtered_sessions = []
+                for session in user_sessions:
+                    title = session.get("title", "").lower()
+                    if search_query.lower() in title:
+                        filtered_sessions.append(session)
+                user_sessions = filtered_sessions
         
         # New Chat Button with enhanced styling
         st.markdown("""
@@ -804,62 +840,94 @@ class ChatComponents:
         """, unsafe_allow_html=True)
         
         if st.button("💬 새 채팅", key="new_chat_btn", use_container_width=True, type="primary"):
-            # Save current chat if it has messages
-            current_messages = st.session_state.get("messages", [])
-            if current_messages:
-                # Save current session before creating new one
-                try:
-                    if chat_controller.api_service:
-                        chat_controller.api_service.save_session(st.session_state.session_id, current_messages)
-                except:
-                    pass  # Continue even if save fails
-            
-            # Generate new session ID immediately
-            import uuid
-            new_session_id = str(uuid.uuid4())
-            
-            # Update session state immediately
-            st.session_state.session_id = new_session_id
-            st.session_state.messages = []
-            st.session_state.last_loaded_session = None
-            st.session_state.is_new_session = True
-            
-            # Generate unique title with timestamp
-            timestamp = datetime.now().strftime("%m/%d %H:%M")
-            st.session_state.session_title = f"새 대화 ({timestamp})"
-            
-            # Create session in database
-            if chat_controller.api_service:
-                try:
-                    response = chat_controller.api_service.create_chat_session(
-                        new_session_id,
-                        st.session_state.get("user_id", "default"),
-                        st.session_state.session_title
-                    )
-                    if not response.get("success"):
-                        st.warning(f"DB에 세션 저장 실패: {response.get('error', '알 수 없는 오류')}")
-                except Exception as e:
-                    st.warning(f"DB에 세션 저장 중 오류: {str(e)}")
-            
-            # Clear any confirmation states
-            for key in list(st.session_state.keys()):
-                if key.startswith("confirm_delete_") or key.startswith("show_"):
-                    del st.session_state[key]
-            
-            # Force refresh session list
-            st.session_state.force_refresh = True
-            
-            # Show success message with better styling
-            st.success("✨ 새 채팅이 시작되었습니다!")
-            
-            # Use JavaScript to reload the page safely
-            st.markdown("""
-            <script>
-            setTimeout(function() {
-                window.location.reload();
-            }, 500);
-            </script>
-            """, unsafe_allow_html=True)
+            # Use new session management service if available
+            if session_manager and user_id != "default":
+                # Save current session first
+                session_manager.save_current_session(user_id)
+                
+                # Create new session
+                new_session_id = session_manager.create_new_session(user_id)
+                
+                if new_session_id:
+                    # Clear any confirmation states
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("confirm_delete_") or key.startswith("show_"):
+                            del st.session_state[key]
+                    
+                    # Force refresh session list
+                    st.session_state.force_refresh = True
+                    
+                    # Show success message
+                    st.success("✨ 새 채팅이 시작되었습니다!")
+                    
+                    # Use JavaScript to reload the page safely
+                    st.markdown("""
+                    <script>
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 500);
+                    </script>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.error("새 채팅 생성에 실패했습니다.")
+            else:
+                # Fallback to old system
+                # Save current chat if it has messages
+                current_messages = st.session_state.get("messages", [])
+                if current_messages:
+                    # Save current session before creating new one
+                    try:
+                        if chat_controller.api_service:
+                            chat_controller.api_service.save_session(st.session_state.session_id, current_messages)
+                    except:
+                        pass  # Continue even if save fails
+                
+                # Generate new session ID immediately
+                import uuid
+                new_session_id = str(uuid.uuid4())
+                
+                # Update session state immediately
+                st.session_state.session_id = new_session_id
+                st.session_state.messages = []
+                st.session_state.last_loaded_session = None
+                st.session_state.is_new_session = True
+                
+                # Generate unique title with timestamp (will be updated when first question is asked)
+                timestamp = datetime.now().strftime("%m/%d %H:%M")
+                st.session_state.session_title = f"새 대화 ({timestamp})"
+                
+                # Create session in database
+                if chat_controller.api_service:
+                    try:
+                        response = chat_controller.api_service.create_chat_session(
+                            new_session_id,
+                            st.session_state.get("user_id", "default"),
+                            st.session_state.session_title
+                        )
+                        if not response.get("success"):
+                            st.warning(f"DB에 세션 저장 실패: {response.get('error', '알 수 없는 오류')}")
+                    except Exception as e:
+                        st.warning(f"DB에 세션 저장 중 오류: {str(e)}")
+                
+                # Clear any confirmation states
+                for key in list(st.session_state.keys()):
+                    if key.startswith("confirm_delete_") or key.startswith("show_"):
+                        del st.session_state[key]
+                
+                # Force refresh session list
+                st.session_state.force_refresh = True
+                
+                # Show success message with better styling
+                st.success("✨ 새 채팅이 시작되었습니다!")
+                
+                # Use JavaScript to reload the page safely
+                st.markdown("""
+                <script>
+                setTimeout(function() {
+                    window.location.reload();
+                }, 500);
+                </script>
+                """, unsafe_allow_html=True)
         
         # Clear All Chats Button with confirmation
         if st.button("🗑️ 전체 삭제", key="clear_all_chats_btn", use_container_width=True, type="secondary"):
@@ -926,335 +994,202 @@ class ChatComponents:
         
         st.markdown("---")
         
-        # Display actual chat history
-        try:
-            # Force refresh sessions if needed
-            if st.session_state.get("force_refresh", False):
-                # Try to get sessions from database first
-                if chat_controller.api_service:
-                    response = chat_controller.api_service.get_user_sessions(st.session_state.get("user_id", "default"))
-                    if response.get("success") and response.get("sessions"):
-                        sessions = [session["session_id"] for session in response["sessions"]]
-                    else:
-                        # Fallback to file-based sessions
-                        sessions = chat_controller.get_available_sessions()
-                else:
-                    # Fallback to file-based sessions
-                    sessions = chat_controller.get_available_sessions()
-                st.session_state.force_refresh = False
-            else:
-                # Try to get sessions from database first
-                if chat_controller.api_service:
-                    response = chat_controller.api_service.get_user_sessions(st.session_state.get("user_id", "default"))
-                    if response.get("success") and response.get("sessions"):
-                        sessions = [session["session_id"] for session in response["sessions"]]
-                    else:
-                        # Fallback to file-based sessions
-                        sessions = chat_controller.get_available_sessions()
-                else:
-                    # Fallback to file-based sessions
-                    sessions = chat_controller.get_available_sessions()
-            current_session = st.session_state.get("session_id", "default")
+        # Display session list
+        current_session = st.session_state.get("session_id", "default")
+        
+        if not user_sessions:
+            st.markdown("""
+            <div style="text-align: center; padding: 2rem 1rem; color: #6c757d;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">💭</div>
+                <div>아직 채팅 기록이 없습니다</div>
+                <div style="font-size: 0.8rem; margin-top: 0.5rem;">새 채팅을 시작해보세요!</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Sort sessions by last activity (newest first)
+            user_sessions.sort(key=lambda x: x.get("last_activity", x.get("created_at", "")), reverse=True)
             
-            if not sessions:
-                st.markdown("""
-                <div style="text-align: center; padding: 2rem 1rem; color: #6c757d;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💭</div>
-                    <div>아직 채팅 기록이 없습니다</div>
-                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">새 채팅을 시작해보세요!</div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                # Display sessions in reverse chronological order (newest first)
-                sessions.reverse()
+            # Create scrollable container for sessions
+            st.markdown("""
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+            """, unsafe_allow_html=True)
+            
+            # Display each session
+            for session in user_sessions:
+                session_id = session.get("session_id")
+                session_title = session.get("title", "알 수 없는 채팅")
+                message_count = session.get("message_count", 0)
+                last_activity = session.get("last_activity", "")
+                is_current = session_id == current_session
                 
-                # Add CSS styles for session items
-                st.markdown("""
-                <style>
-                .session-item {
-                    margin-bottom: 0.5rem;
-                    padding: 0.5rem;
-                    border-radius: 12px;
-                    transition: all 0.3s ease;
-                    border: 1px solid transparent;
-                }
-                .session-item:hover {
-                    background: #f8f9fa;
-                    border-color: #e9ecef;
-                    transform: translateY(-1px);
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }
-                .session-item.current {
-                    background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
-                    border-left: 4px solid #2196f3;
-                    border-color: #bbdefb;
-                    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
-                }
-                .session-item.current:hover {
-                    background: linear-gradient(135deg, #e1f5fe 0%, #e8f5e8 100%);
-                    transform: translateY(-1px);
-                }
+                # Format last activity
+                if last_activity:
+                    try:
+                        if isinstance(last_activity, str):
+                            dt = datetime.fromisoformat(last_activity.replace('Z', '+00:00'))
+                            last_activity = dt.strftime("%m/%d %H:%M")
+                    except:
+                        last_activity = "알 수 없음"
                 
-                /* Enhanced delete button styling */
-                div[data-testid="stButton"] > button[kind="secondary"] {
-                    background: #f8f9fa !important;
-                    color: #dc3545 !important;
-                    border: 1px solid #dc3545 !important;
-                    border-radius: 8px !important;
-                    padding: 0.25rem 0.5rem !important;
-                    font-size: 0.8rem !important;
-                    transition: all 0.3s ease !important;
-                    min-width: 32px !important;
-                    height: 32px !important;
-                }
-                
-                div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                    background: #dc3545 !important;
-                    color: white !important;
-                    transform: scale(1.1) !important;
-                    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3) !important;
-                }
-                
-                /* Checkbox styling for delete selection */
-                .stCheckbox > label {
-                    font-size: 0.8rem !important;
-                    margin-bottom: 0 !important;
-                    padding: 0.25rem !important;
-                }
-                
-                .stCheckbox > label > div[data-testid="stMarkdownContainer"] {
-                    display: none !important;
-                }
-                
-                /* Simple delete UI styling */
-                .delete-ui-container {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                }
-                
-                /* Edit button styling */
-                .edit-button {
-                    background: #f8f9fa !important;
-                    color: #6c757d !important;
-                    border: 1px solid #6c757d !important;
-                    border-radius: 8px !important;
-                    padding: 0.25rem 0.5rem !important;
-                    font-size: 0.8rem !important;
-                    transition: all 0.3s ease !important;
-                    min-width: 32px !important;
-                    height: 32px !important;
-                }
-                
-                .edit-button:hover {
-                    background: #6c757d !important;
-                    color: white !important;
-                    transform: scale(1.1) !important;
-                    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3) !important;
-                }
-                
-                /* Confirmation dialog styling */
-                .confirmation-dialog {
-                    background: #fff3cd;
-                    border: 1px solid #ffeaa7;
-                    border-radius: 8px;
-                    padding: 0.75rem;
-                    margin: 0.25rem 0;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                
-                .confirmation-dialog .warning-icon {
-                    font-size: 1rem;
-                    margin-right: 0.5rem;
-                }
-                
-                .confirmation-dialog .warning-title {
-                    color: #856404;
-                    font-weight: bold;
-                    margin-bottom: 0.25rem;
-                }
-                
-                .confirmation-dialog .warning-message {
-                    color: #856404;
-                    font-size: 0.8rem;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-                
-                # Create scrollable container for sessions
-                st.markdown("""
-                <div style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
-                """, unsafe_allow_html=True)
-                
-                for i, session_id in enumerate(sessions):
-                    # Get session title and metadata
-                    session_title = ChatComponents.get_session_title(session_id)
-                    session_metadata = ChatComponents.get_session_metadata(session_id)
-                    
-                    # Determine if this is the current session
-                    is_current = session_id == current_session
-                    
-                    # Create session item container with enhanced styling
-                    session_class = "session-item current" if is_current else "session-item"
-                    st.markdown(f'<div class="{session_class}">', unsafe_allow_html=True)
-                    
-                    # Check if this session is being edited
-                    is_editing = st.session_state.get(f"editing_title_{session_id}", False)
-                    
-                    if is_editing:
-                        # Edit mode - show text input
-                        st.markdown("**제목 편집:**")
-                        new_title = st.text_input(
-                            "새 제목",
-                            value=session_title,
-                            key=f"edit_title_{session_id}",
-                            help="채팅 제목을 수정하세요"
-                        )
-                        
-                        col_save, col_cancel = st.columns(2)
-                        with col_save:
-                            if st.button("💾 저장", key=f"save_title_{session_id}", type="primary", use_container_width=True):
-                                if new_title.strip():
-                                    # Update session title in database
-                                    from controllers.chat_controller import ChatController
-                                    chat_controller = ChatController()
-                                    
-                                    if chat_controller.api_service:
-                                        response = chat_controller.api_service.update_session_title(
-                                            session_id, 
-                                            new_title.strip(),
-                                            st.session_state.get("user_id", "default")
-                                        )
-                                        
-                                        if response.get("success"):
-                                            # Update local session state as backup
-                                            st.session_state[f"session_title_{session_id}"] = new_title.strip()
-                                            # Clear editing state
-                                            if f"editing_title_{session_id}" in st.session_state:
-                                                del st.session_state[f"editing_title_{session_id}"]
-                                            st.success("제목이 저장되었습니다!")
-                                            st.rerun()
-                                        else:
-                                            st.error(f"제목 저장 실패: {response.get('error', '알 수 없는 오류')}")
-                                    else:
-                                        # Fallback to session state if API is not available
-                                        st.session_state[f"session_title_{session_id}"] = new_title.strip()
-                                        if f"editing_title_{session_id}" in st.session_state:
-                                            del st.session_state[f"editing_title_{session_id}"]
-                                        st.success("제목이 저장되었습니다! (로컬 저장)")
-                                        st.rerun()
-                                else:
-                                    st.error("제목을 입력해주세요.")
-                        
-                        with col_cancel:
-                            if st.button("❌ 취소", key=f"cancel_edit_{session_id}", use_container_width=True):
-                                # Clear editing state
-                                if f"editing_title_{session_id}" in st.session_state:
-                                    del st.session_state[f"editing_title_{session_id}"]
-                                st.rerun()
-                    else:
-                        # Normal mode - show session button and controls
-                        col1, col2, col3 = st.columns([1, 0.05, 0.05])
+                # Create session item
+                with st.container():
+                    # Session name and actions in horizontal layout
+                    if session_id != "default":
+                        # Create horizontal layout for session name and action buttons
+                        col1, col2, col3 = st.columns([3, 1, 1])
                         
                         with col1:
-                            # Style the button based on whether it's the current session
-                            button_style = "primary" if is_current else "secondary"
+                            # Session button
+                            button_type = "primary" if is_current else "secondary"
                             button_text = f"💬 {session_title}"
                             if is_current:
                                 button_text = f"▶️ {session_title}"
                             
-                            # Add message count and last activity info
-                            message_count = session_metadata.get("message_count", 0)
-                            last_activity = session_metadata.get("last_activity", "")
-                            
                             if st.button(
                                 button_text,
                                 key=f"session_{session_id}",
-                                help=f"세션 ID: {session_id[:8]}...\n메시지 수: {message_count}개\n마지막 활동: {last_activity}" + (" (현재 세션)" if is_current else ""),
+                                help=f"메시지: {message_count}개\n마지막 활동: {last_activity}",
                                 use_container_width=True,
-                                type=button_style
+                                type=button_type
                             ):
-                                # Only switch if it's not the current session
                                 if not is_current:
-                                    # Clear any confirmation states
-                                    for key in list(st.session_state.keys()):
-                                        if key.startswith("confirm_delete_"):
-                                            del st.session_state[key]
-                                    # Switch to this session
-                                    chat_controller.switch_to_session(session_id)
+                                    # Use new session management service if available
+                                    if session_manager and user_id != "default":
+                                        session_manager.switch_to_session(user_id, session_id)
+                                    else:
+                                        chat_controller.switch_to_session(session_id)
                         
                         with col2:
-                            # Edit button
-                            if st.button("✏️", key=f"edit_{session_id}", help="제목 편집", type="secondary"):
+                            if st.button("✏️", key=f"edit_{session_id}", help="제목 편집", use_container_width=True):
                                 st.session_state[f"editing_title_{session_id}"] = True
-                                st.rerun()
                         
                         with col3:
-                            # Delete controls
-                            if session_id != "default":
-                                # Checkbox to select for deletion
-                                is_selected = st.checkbox(
-                                    "", 
-                                    key=f"select_{session_id}", 
-                                    help="삭제할 채팅 선택"
-                                )
-                                
-                                # X button to delete (only show when selected)
-                                if is_selected:
-                                    if st.button("❌", key=f"delete_{session_id}", help="선택된 채팅 삭제", type="secondary"):
-                                        # Delete session from database and file system
-                                        try:
-                                            # Check if we're deleting the current session
-                                            is_current_session = session_id == st.session_state.get("session_id", "default")
-                                            
-                                            # Delete from database first
-                                            db_delete_success = True
-                                            if chat_controller.api_service:
-                                                try:
-                                                    response = chat_controller.api_service.delete_chat_session(session_id)
-                                                    db_delete_success = response.get("success", False)
-                                                except Exception as e:
-                                                    st.warning(f"DB 삭제 실패: {str(e)}")
-                                                    db_delete_success = False
-                                            
-                                            # Delete from file system
-                                            file_delete_success = chat_controller.delete_session(session_id)
-                                            
-                                            if db_delete_success or file_delete_success:
-                                                # If we deleted the current session, switch to default
-                                                if is_current_session:
-                                                    st.session_state.session_id = "default"
-                                                    st.session_state.messages = []
-                                                    st.session_state.last_loaded_session = None
-                                                    st.session_state.is_new_session = True
-                                                
-                                                # Force refresh session list
-                                                st.session_state.force_refresh = True
-                                                
-                                                # Show success message
-                                                st.success(f"✅ '{session_title}' 채팅이 삭제되었습니다.")
-                                                
-                                                # Force page refresh to update UI
-                                                st.rerun()
-                                            else:
-                                                st.error("채팅 삭제에 실패했습니다.")
-                                        except Exception as e:
-                                            st.error(f"삭제 중 오류가 발생했습니다: {str(e)}")
+                            if st.button("🗑️", key=f"delete_{session_id}", help="삭제", use_container_width=True):
+                                st.session_state[f"confirm_delete_{session_id}"] = True
+                    else:
+                        # Default session - no action buttons
+                        button_type = "primary" if is_current else "secondary"
+                        button_text = f"💬 {session_title}"
+                        if is_current:
+                            button_text = f"▶️ {session_title}"
+                        
+                        if st.button(
+                            button_text,
+                            key=f"session_{session_id}",
+                            help=f"메시지: {message_count}개\n마지막 활동: {last_activity}",
+                            use_container_width=True,
+                            type=button_type
+                        ):
+                            if not is_current:
+                                # Use new session management service if available
+                                if session_manager and user_id != "default":
+                                    session_manager.switch_to_session(user_id, session_id)
                                 else:
-                                    # Show empty space when not selected
-                                    st.markdown("", help="체크박스를 선택하면 삭제 버튼이 나타납니다")
-                            else:
-                                # Show placeholder for default session (no delete option)
-                                st.markdown("", help="기본 세션은 삭제할 수 없습니다")
+                                    chat_controller.switch_to_session(session_id)
                     
-                    # Close session item container
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Close scrollable container
-                st.markdown("</div>", unsafe_allow_html=True)
-        
-        except Exception as e:
-            st.error(f"채팅 목록을 불러올 수 없습니다: {str(e)}")
+                    # Show edit form if editing
+                    if st.session_state.get(f"editing_title_{session_id}", False):
+                        with st.expander("제목 편집", expanded=True):
+                            new_title = st.text_input(
+                                "새 제목",
+                                value=session_title,
+                                key=f"edit_title_{session_id}"
+                            )
+                            
+                            # Use horizontal layout for buttons
+                            st.markdown("""
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            """, unsafe_allow_html=True)
+                            
+                            if st.button("💾", key=f"save_title_{session_id}", help="저장", use_container_width=True):
+                                if new_title.strip():
+                                    # Use new session management service if available
+                                    if session_manager and user_id != "default":
+                                        if session_manager.update_session_title(user_id, session_id, new_title.strip()):
+                                            st.success("제목이 저장되었습니다!")
+                                            del st.session_state[f"editing_title_{session_id}"]
+                                        else:
+                                            st.error("제목 저장에 실패했습니다.")
+                                    else:
+                                        # Fallback to old system
+                                        if chat_controller.api_service:
+                                            response = chat_controller.api_service.update_session_title(
+                                                session_id, 
+                                                new_title.strip(),
+                                                st.session_state.get("user_id", "default")
+                                            )
+                                            if response.get("success"):
+                                                st.success("제목이 저장되었습니다!")
+                                                del st.session_state[f"editing_title_{session_id}"]
+                                            else:
+                                                st.error(f"저장 실패: {response.get('error', '알 수 없는 오류')}")
+                                        else:
+                                            st.session_state[f"session_title_{session_id}"] = new_title.strip()
+                                            st.success("제목이 저장되었습니다! (로컬 저장)")
+                                            del st.session_state[f"editing_title_{session_id}"]
+                                else:
+                                    st.error("제목을 입력해주세요.")
+                            
+                            if st.button("❌", key=f"cancel_edit_{session_id}", help="취소", use_container_width=True):
+                                del st.session_state[f"editing_title_{session_id}"]
+                            
+                            st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    # Show delete confirmation if needed
+                    if st.session_state.get(f"confirm_delete_{session_id}", False):
+                        st.warning("⚠️ 이 세션을 삭제하시겠습니까?")
+                        
+                        # Use horizontal layout for buttons
+                        st.markdown("""
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        """, unsafe_allow_html=True)
+                        
+                        if st.button("✅", key=f"confirm_yes_{session_id}", help="삭제", use_container_width=True):
+                            try:
+                                # Use new session management service if available
+                                if session_manager and user_id != "default":
+                                    if session_manager.delete_session(user_id, session_id):
+                                        # Force refresh
+                                        st.session_state.force_refresh = True
+                                        del st.session_state[f"confirm_delete_{session_id}"]
+                                        st.success("세션이 삭제되었습니다!")
+                                    else:
+                                        st.error("세션 삭제에 실패했습니다.")
+                                else:
+                                    # Fallback to old system
+                                    # Delete from database
+                                    if chat_controller.api_service:
+                                        chat_controller.api_service.delete_chat_session(session_id)
+                                    
+                                    # Delete from file system
+                                    chat_controller.delete_session(session_id)
+                                    
+                                    # If current session, switch to default
+                                    if is_current:
+                                        st.session_state.session_id = "default"
+                                        st.session_state.messages = []
+                                        st.session_state.last_loaded_session = None
+                                    
+                                    # Force refresh
+                                    st.session_state.force_refresh = True
+                                    del st.session_state[f"confirm_delete_{session_id}"]
+                                    st.success("세션이 삭제되었습니다!")
+                            except Exception as e:
+                                st.error(f"삭제 실패: {str(e)}")
+                        
+                        if st.button("❌", key=f"confirm_no_{session_id}", help="취소", use_container_width=True):
+                            del st.session_state[f"confirm_delete_{session_id}"]
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    # Show session metadata
+                    if message_count > 0 or last_activity:
+                        st.caption(f"📊 {message_count}개 메시지 • {last_activity}")
+                    
+                    st.markdown("---")
+            
+            # Close scrollable container
+            st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -1306,7 +1241,6 @@ class ChatComponents:
                     last_activity_raw = stats.get("last_activity", "")
                     if last_activity_raw:
                         try:
-                            from datetime import datetime
                             dt = datetime.fromisoformat(last_activity_raw.replace('Z', '+00:00'))
                             last_activity = dt.strftime("%m/%d %H:%M")
                         except:
@@ -1345,8 +1279,8 @@ class ChatComponents:
             
             # HAI Portal branding - removed
             
-            # Chat History Section
-            action = ChatComponents.render_chat_history_sidebar()
+            # Session Management Section
+            action = ChatComponents.render_session_sidebar()
             
             # User info - Modern design
             user_info = st.session_state.get("user_info")
@@ -1684,13 +1618,12 @@ class ChatComponents:
                                     # Creating new group
                                     if st.button("✅ 그룹 생성", key="create_group"):
                                         if group_name and group_name.strip():
-                                            import datetime
                                             group_id = f"group_{len(st.session_state.collection_groups) + 1}"
                                             st.session_state.collection_groups[group_id] = {
                                                 "name": group_name.strip(),
                                                 "description": group_description.strip() if group_description else "",
                                                 "collections": selected_collections.copy(),
-                                                "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                                             }
                                             st.success(f"'{group_name.strip()}' 그룹이 생성되었습니다!")
                                             st.session_state.show_group_creation = False

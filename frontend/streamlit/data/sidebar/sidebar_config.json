@@ -1,0 +1,892 @@
+{
+  "menus": [
+    {
+      "id": "main",
+      "name": "🏠 메인",
+      "page": "main.py",
+      "visible": true,
+      "order": 1,
+      "icon": "🏠",
+      "description": "메인 페이지"
+    },
+    {
+      "id": "configuration",
+      "name": "⚙️ 설정",
+      "page": "pages/configuration.py",
+      "visible": true,
+      "order": 2,
+      "icon": "⚙️",
+      "description": "시스템 설정"
+    },
+    {
+      "id": "session_management",
+      "name": "💬 세션 관리",
+      "page": "pages/session_management.py",
+      "visible": true,
+      "order": 3,
+      "icon": "💬",
+      "description": "세션 관리"
+    },
+    {
+      "id": "login",
+      "name": "🔐 로그인",
+      "page": "pages/login.py",
+      "visible": true,
+      "order": 4,
+      "icon": "🔐",
+      "description": "로그인 페이지"
+    },
+    {
+      "id": "사용자_관리",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 5,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:35.967839"
+    },
+    {
+      "id": "사용자_관리_1",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 6,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.011947"
+    },
+    {
+      "id": "사용자_관리_2",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 7,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.054252"
+    },
+    {
+      "id": "사용자_관리_3",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 8,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.099229"
+    },
+    {
+      "id": "사용자_관리_4",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 9,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.147664"
+    },
+    {
+      "id": "사용자_관리_5",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 10,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.207663"
+    },
+    {
+      "id": "사용자_관리_6",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 11,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.252437"
+    },
+    {
+      "id": "사용자_관리_7",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 12,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.300066"
+    },
+    {
+      "id": "사용자_관리_8",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 13,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.350076"
+    },
+    {
+      "id": "사용자_관리_9",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 14,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.400653"
+    },
+    {
+      "id": "사용자_관리_10",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 15,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.452838"
+    },
+    {
+      "id": "사용자_관리_11",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 16,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.503884"
+    },
+    {
+      "id": "사용자_관리_12",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 17,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.559495"
+    },
+    {
+      "id": "사용자_관리_13",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 18,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.622460"
+    },
+    {
+      "id": "사용자_관리_14",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 19,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.678221"
+    },
+    {
+      "id": "사용자_관리_15",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 20,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.737642"
+    },
+    {
+      "id": "사용자_관리_16",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 21,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.795444"
+    },
+    {
+      "id": "사용자_관리_17",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 22,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.854430"
+    },
+    {
+      "id": "사용자_관리_18",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 23,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.914788"
+    },
+    {
+      "id": "사용자_관리_19",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 24,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:36.978596"
+    },
+    {
+      "id": "사용자_관리_20",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 25,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.040807"
+    },
+    {
+      "id": "사용자_관리_21",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 26,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.113713"
+    },
+    {
+      "id": "사용자_관리_22",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 27,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.179266"
+    },
+    {
+      "id": "사용자_관리_23",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 28,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.248257"
+    },
+    {
+      "id": "사용자_관리_24",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 29,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.315567"
+    },
+    {
+      "id": "사용자_관리_25",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 30,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.384455"
+    },
+    {
+      "id": "사용자_관리_26",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 31,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.453251"
+    },
+    {
+      "id": "사용자_관리_27",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 32,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.523531"
+    },
+    {
+      "id": "사용자_관리_28",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 33,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.594859"
+    },
+    {
+      "id": "사용자_관리_29",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 34,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.668795"
+    },
+    {
+      "id": "사용자_관리_30",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 35,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.746611"
+    },
+    {
+      "id": "사용자_관리_31",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 36,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.821904"
+    },
+    {
+      "id": "사용자_관리_32",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 37,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.899135"
+    },
+    {
+      "id": "사용자_관리_33",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 38,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:37.978488"
+    },
+    {
+      "id": "사용자_관리_34",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 39,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.065278"
+    },
+    {
+      "id": "사용자_관리_35",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 40,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.148995"
+    },
+    {
+      "id": "사용자_관리_36",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 41,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.231528"
+    },
+    {
+      "id": "사용자_관리_37",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 42,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.316673"
+    },
+    {
+      "id": "사용자_관리_38",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 43,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.401814"
+    },
+    {
+      "id": "사용자_관리_39",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 44,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.487833"
+    },
+    {
+      "id": "사용자_관리_40",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 45,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.575772"
+    },
+    {
+      "id": "사용자_관리_41",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 46,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.671728"
+    },
+    {
+      "id": "사용자_관리_42",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 47,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.762395"
+    },
+    {
+      "id": "사용자_관리_43",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 48,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.852767"
+    },
+    {
+      "id": "사용자_관리_44",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 49,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:38.953417"
+    },
+    {
+      "id": "사용자_관리_45",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 50,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.047586"
+    },
+    {
+      "id": "사용자_관리_46",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 51,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.150289"
+    },
+    {
+      "id": "사용자_관리_47",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 52,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.254520"
+    },
+    {
+      "id": "사용자_관리_48",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 53,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.370622"
+    },
+    {
+      "id": "사용자_관리_49",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 54,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.475123"
+    },
+    {
+      "id": "사용자_관리_50",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 55,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.576595"
+    },
+    {
+      "id": "사용자_관리_51",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 56,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.678161"
+    },
+    {
+      "id": "사용자_관리_52",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 57,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.780308"
+    },
+    {
+      "id": "사용자_관리_53",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 58,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.891898"
+    },
+    {
+      "id": "사용자_관리_54",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 59,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:39.998617"
+    },
+    {
+      "id": "사용자_관리_55",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 60,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.108683"
+    },
+    {
+      "id": "사용자_관리_56",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 61,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.218054"
+    },
+    {
+      "id": "사용자_관리_57",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 62,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.325975"
+    },
+    {
+      "id": "사용자_관리_58",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 63,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.439273"
+    },
+    {
+      "id": "사용자_관리_59",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 64,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.560719"
+    },
+    {
+      "id": "사용자_관리_60",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 65,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.681606"
+    },
+    {
+      "id": "사용자_관리_61",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 66,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.801393"
+    },
+    {
+      "id": "사용자_관리_62",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 67,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:40.919395"
+    },
+    {
+      "id": "사용자_관리_63",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 68,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.036684"
+    },
+    {
+      "id": "사용자_관리_64",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 69,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.159760"
+    },
+    {
+      "id": "사용자_관리_65",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 70,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.286478"
+    },
+    {
+      "id": "사용자_관리_66",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 71,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.410787"
+    },
+    {
+      "id": "사용자_관리_67",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 72,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.538012"
+    },
+    {
+      "id": "사용자_관리_68",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 73,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.663025"
+    },
+    {
+      "id": "사용자_관리_69",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 74,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.792554"
+    },
+    {
+      "id": "사용자_관리_70",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 75,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:41.926824"
+    },
+    {
+      "id": "사용자_관리_71",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 76,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.055510"
+    },
+    {
+      "id": "사용자_관리_72",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 77,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.186694"
+    },
+    {
+      "id": "사용자_관리_73",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 78,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.319575"
+    },
+    {
+      "id": "사용자_관리_74",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 79,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.453057"
+    },
+    {
+      "id": "사용자_관리_75",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 80,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.593996"
+    },
+    {
+      "id": "사용자_관리_76",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 81,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.741930"
+    },
+    {
+      "id": "사용자_관리_77",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 82,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:42.879218"
+    },
+    {
+      "id": "사용자_관리_78",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 83,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.019255"
+    },
+    {
+      "id": "사용자_관리_79",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 84,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.162975"
+    },
+    {
+      "id": "사용자_관리_80",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 85,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.308130"
+    },
+    {
+      "id": "사용자_관리_81",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 86,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.453084"
+    },
+    {
+      "id": "사용자_관리_82",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 87,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.604629"
+    },
+    {
+      "id": "사용자_관리_83",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 88,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.749093"
+    },
+    {
+      "id": "사용자_관리_84",
+      "name": "사용자 관리",
+      "page": "pages/user_management.py",
+      "visible": true,
+      "order": 89,
+      "icon": "📄",
+      "description": "사용자 관리",
+      "created_at": "2025-09-28T00:17:43.904772"
+    }
+  ],
+  "last_updated": "2025-09-28T00:17:43.904782",
+  "version": "1.0.0"
+}

@@ -179,6 +179,22 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
     
+    def generate_session_title(self, session_id: str, first_question: str, user_id: str = "default") -> Dict[str, Any]:
+        """Generate session title based on first question"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/chat/sessions/{session_id}/generate-title",
+                json={
+                    "first_question": first_question,
+                    "user_id": user_id
+                },
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "error": str(e)}
+    
     def get_user_sessions(self, user_id: str = "default") -> Dict[str, Any]:
         """Get all sessions for a user"""
         try:

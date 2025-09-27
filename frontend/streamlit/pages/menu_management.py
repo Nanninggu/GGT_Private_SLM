@@ -2,15 +2,9 @@
 Menu Management Page for HAI Portal
 """
 import streamlit as st
-
-# 페이지 설정
-st.set_page_config(
-    page_title="메뉴 관리",
-    page_icon="📋",
-    layout="wide"
-)
 import sys
 import os
+import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -20,6 +14,8 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from services.api_service import APIService
+from services.sidebar_management_service import sidebar_manager
+from utils.helpers import UIHelpers
 
 def check_auth_status():
     """Check if user is authenticated"""
@@ -81,19 +77,11 @@ def get_default_menu_config():
                 "description": "시스템 설정"
             },
             {
-                "id": "accessibility_demo",
-                "title": "접근성 체크 및 데모",
-                "icon": "♿",
-                "enabled": True,
-                "order": 5,
-                "description": "접근성 테스트 도구"
-            },
-            {
                 "id": "user_management",
                 "title": "사용자 관리",
                 "icon": "👥",
                 "enabled": True,
-                "order": 6,
+                "order": 5,
                 "description": "사용자 계정 관리",
                 "admin_only": True
             },
@@ -102,7 +90,7 @@ def get_default_menu_config():
                 "title": "메뉴 관리",
                 "icon": "📋",
                 "enabled": True,
-                "order": 7,
+                "order": 6,
                 "description": "메뉴 설정 관리",
                 "admin_only": True
             }
@@ -323,8 +311,148 @@ def render_menu_statistics():
         disabled_items = total_items - enabled_items
         st.metric("비활성 메뉴", disabled_items)
 
+def render_sidebar_management():
+    """사이드바 네비게이션 관리"""
+    st.markdown("### 🧭 사이드바 네비게이션 관리")
+    st.write("Streamlit Navigation Sidebar의 메뉴 항목을 관리할 수 있습니다.")
+    
+    # 현재 사이드바 메뉴 목록
+    menus = sidebar_manager.get_menus()
+    
+    if not menus:
+        st.info("등록된 사이드바 메뉴가 없습니다.")
+        return
+    
+    # 메뉴 목록 표시
+    st.markdown("#### 📋 현재 사이드바 메뉴")
+    
+    for i, menu in enumerate(menus):
+        with st.container():
+            col1, col2, col3, col4, col5 = st.columns([1, 3, 2, 1, 1])
+            
+            with col1:
+                st.write(f"**{menu.get('order', i+1)}**")
+            
+            with col2:
+                st.write(f"{menu.get('icon', '📄')} **{menu.get('name', '')}**")
+                st.caption(menu.get('description', ''))
+                st.caption(f"페이지: {menu.get('page', '')}")
+            
+            with col3:
+                visible = st.checkbox(
+                    "표시",
+                    value=menu.get('visible', True),
+                    key=f"sidebar_visible_{menu['id']}",
+                    help="사이드바에 표시할지 여부"
+                )
+                if visible != menu.get('visible', True):
+                    sidebar_manager.toggle_menu_visibility(menu['id'])
+                    st.rerun()
+            
+            with col4:
+                new_order = st.number_input(
+                    "순서",
+                    min_value=1,
+                    max_value=len(menus),
+                    value=menu.get('order', i+1),
+                    key=f"sidebar_order_{menu['id']}",
+                    help="메뉴 순서"
+                )
+                if new_order != menu.get('order', i+1):
+                    sidebar_manager.update_menu(menu['id'], order=new_order)
+                    st.rerun()
+            
+            with col5:
+                if st.button("삭제", key=f"delete_sidebar_{menu['id']}", type="secondary"):
+                    if sidebar_manager.delete_menu(menu['id']):
+                        st.success("메뉴가 삭제되었습니다.")
+                        st.rerun()
+                    else:
+                        st.error("메뉴 삭제에 실패했습니다.")
+    
+    st.markdown("---")
+    
+    # 새 메뉴 추가
+    st.markdown("#### ➕ 새 메뉴 추가")
+    
+    with st.form("add_sidebar_menu"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            new_name = st.text_input("메뉴 이름", placeholder="예: 설정")
+            new_page = st.text_input("페이지 경로", placeholder="예: pages/configuration.py")
+        
+        with col2:
+            new_icon = st.text_input("아이콘", placeholder="예: ⚙️", value="📄")
+            new_description = st.text_input("설명", placeholder="예: 시스템 설정")
+        
+        if st.form_submit_button("메뉴 추가", type="primary"):
+            if new_name and new_page:
+                if sidebar_manager.add_menu(
+                    name=new_name,
+                    page=new_page,
+                    icon=new_icon,
+                    description=new_description
+                ):
+                    st.success("새 메뉴가 추가되었습니다.")
+                    st.rerun()
+                else:
+                    st.error("메뉴 추가에 실패했습니다.")
+            else:
+                st.error("메뉴 이름과 페이지 경로를 입력해주세요.")
+    
+    # 사이드바 미리보기
+    st.markdown("---")
+    st.markdown("#### 👀 사이드바 미리보기")
+    
+    with st.expander("현재 사이드바 모습", expanded=True):
+        # 사이드바 미리보기 렌더링
+        visible_menus = sidebar_manager.get_visible_menus()
+        
+        if visible_menus:
+            st.markdown("**사이드바 메뉴:**")
+            for menu in visible_menus:
+                st.markdown(f"• {menu.get('icon', '📄')} {menu.get('name', '')}")
+        else:
+            st.info("표시되는 메뉴가 없습니다.")
+    
+    # 설정 내보내기/가져오기
+    st.markdown("---")
+    st.markdown("#### 🔧 설정 관리")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📤 설정 내보내기", use_container_width=True):
+            config = sidebar_manager.export_config()
+            st.download_button(
+                label="설정 파일 다운로드",
+                data=json.dumps(config, ensure_ascii=False, indent=2),
+                file_name=f"sidebar_config_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                mime="application/json"
+            )
+    
+    with col2:
+        uploaded_file = st.file_uploader("설정 파일 업로드", type=['json'])
+        if uploaded_file is not None:
+            try:
+                config = json.load(uploaded_file)
+                if sidebar_manager.import_config(config):
+                    st.success("설정이 성공적으로 가져와졌습니다.")
+                    st.rerun()
+                else:
+                    st.error("설정 가져오기에 실패했습니다.")
+            except Exception as e:
+                st.error(f"파일 읽기 실패: {str(e)}")
+
 def main():
     """Main menu management page function"""
+    # Load enterprise theme
+    UIHelpers.load_enterprise_theme()
+    
+    # Hide Streamlit default header elements
+    UIHelpers.hide_streamlit_header()
+    
     # Check authentication
     if not check_auth_status():
         st.warning("로그인이 필요합니다.")
@@ -341,200 +469,6 @@ def main():
             st.session_state.current_page = "main"
             st.rerun()
         return
-    
-    # Modern Enterprise UI - Pure White Menu Management Theme
-    st.markdown("""
-    <style>
-    /* Hide Streamlit default UI elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    .stDecoration {display:none;}
-    .stApp > header {display:none;}
-    .stApp > div[data-testid="stToolbar"] {display:none;}
-    .stApp > div[data-testid="stDecoration"] {display:none;}
-    .stApp > div[data-testid="stStatusWidget"] {display:none;}
-    
-    /* Hide the hamburger menu */
-    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
-    
-    /* Hide the top bar completely */
-    .stApp > div[data-testid="stHeader"] {display:none;}
-    
-    /* Global styling - Pure White Background */
-    .stApp {
-        background-color: #ffffff;
-    }
-    
-    /* Adjust main content padding */
-    .main .block-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        background-color: #ffffff;
-    }
-    
-    /* Modern Enterprise page header - Clean White Design */
-    .page-header {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        padding: 4rem 2rem;
-        border-radius: 24px;
-        margin-bottom: 3rem;
-        color: #212529;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
-    }
-    
-    .page-title {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 0.75rem;
-        letter-spacing: -0.03em;
-        color: #212529;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .page-subtitle {
-        font-size: 1.3rem;
-        opacity: 0.8;
-        font-weight: 500;
-        color: #6c757d;
-    }
-    
-    /* Modern Enterprise button styling */
-    .stButton > button {
-        border-radius: 16px;
-        font-weight: 600;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent;
-        font-size: 1rem;
-        padding: 0.75rem 1.5rem;
-    }
-    
-    .stButton > button:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Modern Enterprise input styling */
-    .stTextInput > div > div > input {
-        border-radius: 16px;
-        padding: 1rem 1.25rem;
-        font-size: 1rem;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #ffffff;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise selectbox styling */
-    .stSelectbox > div > div {
-        border-radius: 16px;
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise checkbox styling */
-    .stCheckbox > label {
-        font-weight: 600;
-        color: #212529;
-        font-size: 1rem;
-    }
-    
-    /* Modern Enterprise tabs styling */
-    .stTabs > div > div > div > div {
-        background: #ffffff;
-        border-radius: 20px;
-    }
-    
-    /* Tab selection styling - Red underline for selected tab */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0;
-        background: #ffffff;
-        border-bottom: 1px solid #e9ecef;
-        padding: 0;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        border: none;
-        padding: 1rem 1.5rem;
-        margin: 0;
-        border-radius: 0;
-        position: relative;
-        transition: all 0.3s ease;
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background: #f8f9fa;
-    }
-    
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: transparent;
-        color: #dc3545;
-        font-weight: 600;
-    }
-    
-    .stTabs [data-baseweb="tab"][aria-selected="true"]::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: #dc3545;
-        border-radius: 2px 2px 0 0;
-    }
-    
-    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]) {
-        color: #6c757d;
-    }
-    
-    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]):hover {
-        color: #495057;
-    }
-    
-    /* Menu management cards */
-    .menu-card {
-        background: #ffffff;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-    }
-    
-    .menu-card:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .page-header {
-            padding: 3rem 1.5rem;
-        }
-        
-        .page-title {
-            font-size: 2.5rem;
-        }
-        
-        .menu-card {
-            padding: 1.5rem;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
     
     # Page header
     st.markdown("""
@@ -555,15 +489,18 @@ def main():
         render_menu_edit_form(editing_item)
     else:
         # Create tabs for different management sections
-        tab1, tab2, tab3 = st.tabs(["📋 메뉴 목록", "👀 미리보기", "📊 통계"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 메뉴 목록", "🧭 사이드바 관리", "👀 미리보기", "📊 통계"])
         
         with tab1:
             render_menu_list()
         
         with tab2:
-            render_menu_preview()
+            render_sidebar_management()
         
         with tab3:
+            render_menu_preview()
+        
+        with tab4:
             render_menu_statistics()
 
 if __name__ == "__main__":

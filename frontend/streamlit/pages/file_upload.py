@@ -2,13 +2,6 @@
 File Upload Page for Streamlit
 """
 import streamlit as st
-
-# 페이지 설정
-st.set_page_config(
-    page_title="파일 업로드",
-    page_icon="📤",
-    layout="wide"
-)
 import sys
 import os
 
@@ -21,6 +14,7 @@ sys.path.append(grandparent_dir)
 
 from services.api_service import APIService
 from components.chat_components import FileUploadComponents, StatusComponents
+from utils.helpers import UIHelpers
 
 def check_auth_status():
     """Check if user is authenticated"""
@@ -40,6 +34,12 @@ def main():
     """Main file upload page"""
     # Page configuration is handled in main.py
     
+    # Load enterprise theme
+    UIHelpers.load_enterprise_theme()
+    
+    # Hide Streamlit default header elements
+    UIHelpers.hide_streamlit_header()
+    
     # Check authentication
     if not check_auth_status():
         st.warning("로그인이 필요합니다.")
@@ -47,274 +47,6 @@ def main():
             st.session_state.current_page = "login"
             st.rerun()
         return
-    
-    # Modern Enterprise UI - Pure White File Upload Theme
-    st.markdown("""
-    <style>
-    /* Hide Streamlit default UI elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    .stDecoration {display:none;}
-    .stApp > header {display:none;}
-    .stApp > div[data-testid="stToolbar"] {display:none;}
-    .stApp > div[data-testid="stDecoration"] {display:none;}
-    .stApp > div[data-testid="stStatusWidget"] {display:none;}
-    
-    /* Hide the hamburger menu */
-    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
-    
-    /* Hide the top bar completely */
-    .stApp > div[data-testid="stHeader"] {display:none;}
-    
-    /* Global styling - Pure White Background */
-    .stApp {
-        background-color: #ffffff;
-    }
-    
-    /* Adjust main content padding */
-    .main .block-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        background-color: #ffffff;
-    }
-    
-    /* Modern Enterprise page header - Clean White Design */
-    .page-header {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        padding: 4rem 2rem;
-        border-radius: 24px;
-        margin-bottom: 3rem;
-        color: #212529;
-        text-align: center;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
-    }
-    
-    .page-title {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 0.75rem;
-        letter-spacing: -0.03em;
-        color: #212529;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .page-subtitle {
-        font-size: 1.3rem;
-        opacity: 0.8;
-        font-weight: 500;
-        color: #6c757d;
-    }
-    
-    .breadcrumb {
-        color: #6c757d;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-        font-weight: 600;
-    }
-    
-    .breadcrumb a {
-        color: #6c757d;
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-    
-    .breadcrumb a:hover {
-        color: #495057;
-        text-decoration: underline;
-    }
-    
-    /* Modern Enterprise button styling */
-    .stButton > button {
-        border-radius: 16px;
-        font-weight: 600;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        border: 2px solid transparent;
-        font-size: 1rem;
-        padding: 0.75rem 1.5rem;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-    
-    /* Modern Enterprise file uploader styling - Pure White */
-    .stFileUploader > div {
-        border-radius: 20px;
-        border: 2px solid #f1f3f4;
-        background: #ffffff;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        transition: all 0.3s ease;
-    }
-    
-    .stFileUploader > div:hover {
-        border-color: #6c757d;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise input styling */
-    .stTextInput > div > div > input {
-        border-radius: 16px;
-        border: 2px solid #f1f3f4;
-        padding: 1rem 1.25rem;
-        font-size: 1rem;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #ffffff;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border-color: #6c757d;
-        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.1);
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise selectbox styling */
-    .stSelectbox > div > div {
-        border-radius: 16px;
-        border: 2px solid #f1f3f4;
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise radio button styling - Horizontal layout */
-    .stRadio > div {
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .stRadio > div > label {
-        background: #ffffff;
-        padding: 1rem 1.5rem;
-        border-radius: 16px;
-        border: 2px solid #f1f3f4;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        flex: 1;
-        min-width: 200px;
-        text-align: center;
-    }
-    
-    .stRadio > div > label:hover {
-        border-color: #6c757d;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        background: #f8f9fa;
-    }
-    
-    /* Modern Enterprise checkbox styling */
-    .stCheckbox > label {
-        font-weight: 600;
-        color: #212529;
-        font-size: 1rem;
-    }
-    
-    /* Modern Enterprise progress bar - Clean White Design */
-    .stProgress > div > div > div {
-        border-radius: 16px;
-        background: #f1f3f4;
-        height: 12px;
-    }
-    
-    .stProgress > div > div > div > div {
-        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-        border-radius: 16px;
-        height: 12px;
-    }
-    
-    /* Upload info panel styling */
-    .upload-info-panel {
-        background: #ffffff;
-        padding: 2.5rem;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
-        margin-bottom: 2rem;
-    }
-    
-    .upload-info-panel h3 {
-        color: #212529;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        font-size: 1.3rem;
-    }
-    
-    .upload-info-panel p {
-        color: #6c757d;
-        line-height: 1.6;
-        margin-bottom: 1rem;
-    }
-    
-    .upload-info-panel ul {
-        color: #6c757d;
-        line-height: 1.6;
-        margin-left: 1.5rem;
-    }
-    
-    .upload-info-panel li {
-        margin-bottom: 0.5rem;
-    }
-    
-    /* File upload area styling */
-    .file-upload-area {
-        background: #ffffff;
-        padding: 3rem;
-        border-radius: 24px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
-        border: 2px solid #f1f3f4;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .file-upload-area::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .page-header {
-            padding: 3rem 1.5rem;
-        }
-        
-        .page-title {
-            font-size: 2.5rem;
-        }
-        
-        .file-upload-area {
-            padding: 2rem 1.5rem;
-        }
-        
-        .upload-info-panel {
-            padding: 2rem 1.5rem;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
     # Breadcrumb navigation removed - clean top layout
 

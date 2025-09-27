@@ -1054,6 +1054,31 @@ async def update_session_title(session_id: str, request: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/chat/sessions/{session_id}/generate-title")
+async def generate_session_title(session_id: str, request: dict):
+    """Generate session title based on first question"""
+    try:
+        first_question = request.get("first_question", "")
+        user_id = request.get("user_id", "default")
+        
+        if not first_question:
+            raise HTTPException(status_code=400, detail="First question is required")
+        
+        # Generate title using prompt service
+        from backend.services.prompt_service import prompt_service
+        generated_title = prompt_service.generate_session_title(first_question)
+        
+        # Update session title in database
+        result = await chat_service.update_session_title(session_id, generated_title, user_id)
+        
+        return {
+            "success": result,
+            "title": generated_title,
+            "message": "Session title generated and updated successfully" if result else "Failed to update session title"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/chat/sessions/user/{user_id}")
 async def get_user_sessions(user_id: str):
     """Get all sessions for a user"""

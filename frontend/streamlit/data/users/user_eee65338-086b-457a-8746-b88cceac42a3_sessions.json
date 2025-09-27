@@ -1,0 +1,57 @@
+{
+  "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+  "user_info": {
+    "id": "eee65338-086b-457a-8746-b88cceac42a3",
+    "username": "admin",
+    "email": "admin@example.com"
+  },
+  "current_session_id": "782d4b36-7b32-4b58-a4cb-ebfec61ba306",
+  "sessions": {
+    "user_eee65338-086b-457a-8746-b88cceac42a3_default_session": {
+      "session_id": "user_eee65338-086b-457a-8746-b88cceac42a3_default_session",
+      "title": "세션 user_eee...",
+      "created_at": "2025-09-27T19:05:27.921242",
+      "last_activity": "2025-09-28T00:13:56.325350",
+      "message_count": 0,
+      "messages": [],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    },
+    "782d4b36-7b32-4b58-a4cb-ebfec61ba306": {
+      "session_id": "782d4b36-7b32-4b58-a4cb-ebfec61ba306",
+      "title": "새 대화 (09/28 00:13)",
+      "created_at": "2025-09-28T00:13:56.326340",
+      "last_activity": "2025-09-28T00:17:51.675199",
+      "message_count": 0,
+      "messages": [],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    }
+  },
+  "preferences": {
+    "theme": "light",
+    "language": "ko",
+    "rag_mode": "LangChain RAG",
+    "model_type": "fast",
+    "streaming_enabled": true,
+    "selected_collections": [],
+    "collection_aliases": {},
+    "collection_groups": {},
+    "ui_preferences": {
+      "sidebar_expanded": true,
+      "show_timestamps": true,
+      "show_confidence_scores": true,
+      "auto_save": true
+    }
+  },
+  "last_activity": "2025-09-28T00:17:51.645446",
+  "login_time": "2025-09-28T00:17:51.645449"
+}

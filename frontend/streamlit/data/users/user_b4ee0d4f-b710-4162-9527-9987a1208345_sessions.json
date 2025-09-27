@@ -1,0 +1,43 @@
+{
+  "user_id": "b4ee0d4f-b710-4162-9527-9987a1208345",
+  "user_info": {
+    "id": "b4ee0d4f-b710-4162-9527-9987a1208345",
+    "username": "tester",
+    "email": "test@example.com"
+  },
+  "current_session_id": "user_b4ee0d4f-b710-4162-9527-9987a1208345_default_session",
+  "sessions": {
+    "user_b4ee0d4f-b710-4162-9527-9987a1208345_default_session": {
+      "session_id": "user_b4ee0d4f-b710-4162-9527-9987a1208345_default_session",
+      "title": "세션 user_b4e...",
+      "created_at": "2025-09-27T19:11:51.311994",
+      "last_activity": "2025-09-27T23:08:52.289191",
+      "message_count": 0,
+      "messages": [],
+      "metadata": {
+        "user_id": "b4ee0d4f-b710-4162-9527-9987a1208345",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    }
+  },
+  "preferences": {
+    "theme": "light",
+    "language": "ko",
+    "rag_mode": "LangChain RAG",
+    "model_type": "fast",
+    "streaming_enabled": true,
+    "selected_collections": [],
+    "collection_aliases": {},
+    "collection_groups": {},
+    "ui_preferences": {
+      "sidebar_expanded": true,
+      "show_timestamps": true,
+      "show_confidence_scores": true,
+      "auto_save": true
+    }
+  },
+  "last_activity": "2025-09-27T19:11:51.286419",
+  "login_time": "2025-09-27T19:11:51.286424"
+}

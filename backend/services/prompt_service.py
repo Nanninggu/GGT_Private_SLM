@@ -237,6 +237,41 @@ class PromptService:
             # Fallback to simple prompt
             return f"질문: {user_question}\n\n답변:"
 
+    def generate_session_title(self, first_question: str) -> str:
+        """Generate a session title based on the first question"""
+        try:
+            # Clean and truncate the question
+            cleaned_question = first_question.strip()
+            
+            # Remove common question words and clean up
+            question_words = ["질문", "문의", "궁금", "알고싶", "알려주", "도움", "help", "question"]
+            for word in question_words:
+                cleaned_question = cleaned_question.replace(word, "").strip()
+            
+            # Remove special characters and extra spaces
+            import re
+            cleaned_question = re.sub(r'[^\w\s가-힣]', '', cleaned_question)
+            cleaned_question = re.sub(r'\s+', ' ', cleaned_question).strip()
+            
+            # Truncate to reasonable length (max 30 characters)
+            if len(cleaned_question) > 30:
+                cleaned_question = cleaned_question[:30] + "..."
+            
+            # If question is too short or empty, use default
+            if len(cleaned_question) < 3:
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%m/%d %H:%M")
+                return f"새 대화 ({timestamp})"
+            
+            # Add prefix to make it clear it's a chat title
+            return f"💬 {cleaned_question}"
+            
+        except Exception as e:
+            logger.error(f"Failed to generate session title: {e}")
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%m/%d %H:%M")
+            return f"새 대화 ({timestamp})"
+
 # Global prompt service instance
 prompt_service = PromptService()
 

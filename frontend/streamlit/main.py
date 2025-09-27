@@ -14,6 +14,8 @@ from controllers.chat_controller import ChatController
 from components.chat_components import ChatComponents, StatusComponents
 from config import ADMIN_USER_ID
 from utils.session_manager import session_manager
+from services.session_management_service import session_manager as new_session_manager
+from services.sidebar_management_service import sidebar_manager
 
 # Set page configuration once at the top
 st.set_page_config(
@@ -132,6 +134,10 @@ def main():
         from pages.menu_management import main as menu_management_main
         menu_management_main()
         return
+    elif current_page == "session_management":
+        from pages.session_management import main as session_management_main
+        session_management_main()
+        return
     elif current_page == "main":
         # Main page - continue with main page logic
         pass
@@ -150,7 +156,15 @@ def main():
     
     # Save current session periodically
     if st.session_state.get("auth_token"):
-        session_manager.save_current_session()
+        # Use new session management service if available
+        user_info = st.session_state.get("user_info", {})
+        user_id = user_info.get("id", "default")
+        
+        if new_session_manager and user_id != "default":
+            new_session_manager.save_current_session(user_id)
+        else:
+            # Fallback to old session management
+            session_manager.save_current_session()
         
         # Also save chat session to backend
         if st.session_state.backend_connected and st.session_state.get("messages"):
@@ -192,15 +206,26 @@ def main():
                 # Session doesn't exist - just update last_loaded_session
                 st.session_state.last_loaded_session = current_session
 
-    # Render sidebar
+    # Render dynamic sidebar navigation
+    sidebar_manager.render_sidebar()
+    
+    # Render chat sidebar (for session management)
     sidebar_action = ChatComponents.render_sidebar()
 
     # Handle sidebar actions
     if sidebar_action == "clear_chat":
         st.session_state.messages = []
     elif sidebar_action == "logout":
-        # Clear authentication data using session manager
-        session_manager.clear_session()
+        # Use new session management service if available
+        user_info = st.session_state.get("user_info", {})
+        user_id = user_info.get("id", "default")
+        
+        if new_session_manager and user_id != "default":
+            new_session_manager.logout_user(user_id)
+        else:
+            # Fallback to old session management
+            session_manager.clear_session()
+        
         st.session_state.messages = []
         st.session_state.current_page = "login"
         st.success("로그아웃되었습니다.")
@@ -579,6 +604,16 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
+    # Session management features
+    st.markdown("### 💬 세션 관리")
+    
+    col1 = st.columns(1)[0]
+    
+    with col1:
+        if st.button("🔧 세션 관리", key="session_management", use_container_width=True):
+            st.session_state.current_page = "session_management"
+            st.rerun()
+    
     # Admin features (only for admin users)
     user_info = st.session_state.get("user_info")
     if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
@@ -670,18 +705,50 @@ def main():
         
         # Update session title if this is the first user message
         if len(st.session_state.messages) == 1 and st.session_state.get("is_new_session", False):
-            # This is the first message in a new session, update the session title
-            # Clean up the prompt and create a meaningful title
-            clean_prompt = prompt.strip()
-            clean_prompt = clean_prompt.replace("질문:", "").replace("문의:", "").replace("요청:", "").strip()
+            # This is the first message in a new session, generate title based on the question
+            try:
+                if chat_controller.api_service:
+                    # Generate title using the backend API
+                    title_response = chat_controller.api_service.generate_session_title(
+                        st.session_state.session_id,
+                        prompt,
+                        st.session_state.get("user_id", "default")
+                    )
+                    
+                    if title_response.get("success"):
+                        st.session_state.session_title = title_response.get("title", f"새 대화 ({datetime.now().strftime('%m/%d %H:%M')})")
+                    else:
+                        # Fallback to simple title generation
+                        clean_prompt = prompt.strip()
+                        clean_prompt = clean_prompt.replace("질문:", "").replace("문의:", "").replace("요청:", "").strip()
+                        
+                        if len(clean_prompt) > 30:
+                            clean_prompt = clean_prompt[:30] + "..."
+                        
+                        timestamp = datetime.now().strftime("%m/%d %H:%M")
+                        st.session_state.session_title = f"💬 {clean_prompt} ({timestamp})"
+                else:
+                    # Fallback if API service is not available
+                    clean_prompt = prompt.strip()
+                    clean_prompt = clean_prompt.replace("질문:", "").replace("문의:", "").replace("요청:", "").strip()
+                    
+                    if len(clean_prompt) > 30:
+                        clean_prompt = clean_prompt[:30] + "..."
+                    
+                    timestamp = datetime.now().strftime("%m/%d %H:%M")
+                    st.session_state.session_title = f"💬 {clean_prompt} ({timestamp})"
+                    
+            except Exception as e:
+                # Fallback in case of any error
+                clean_prompt = prompt.strip()
+                clean_prompt = clean_prompt.replace("질문:", "").replace("문의:", "").replace("요청:", "").strip()
+                
+                if len(clean_prompt) > 30:
+                    clean_prompt = clean_prompt[:30] + "..."
+                
+                timestamp = datetime.now().strftime("%m/%d %H:%M")
+                st.session_state.session_title = f"💬 {clean_prompt} ({timestamp})"
             
-            # Add timestamp for uniqueness
-            timestamp = datetime.now().strftime("%m/%d %H:%M")
-            
-            if len(clean_prompt) > 40:
-                clean_prompt = clean_prompt[:40] + "..."
-            
-            st.session_state.session_title = f"{clean_prompt} ({timestamp})"
             st.session_state.is_new_session = False
         
         # Display user message

@@ -142,7 +142,7 @@ async def test_configuration():
     try:
         # Test basic settings
         assert settings.APP_NAME == "sllm-pattern"
-        assert settings.SERVER_PORT == 8000
+        assert settings.SERVER_PORT == 8002
         assert settings.API_HOST == "localhost"
         logger.info("✅ Basic configuration test passed")
         

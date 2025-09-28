@@ -57,315 +57,29 @@ def main():
     if not st.session_state.backend_connected:
         st.session_state.backend_connected = chat_controller.check_backend_connection()
     
-    # Modern Enterprise UI - Pure White Configuration Theme
-    st.markdown("""
-    <style>
-    /* Hide Streamlit default UI elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    .stDecoration {display:none;}
-    .stApp > header {display:none;}
-    .stApp > div[data-testid="stToolbar"] {display:none;}
-    .stApp > div[data-testid="stDecoration"] {display:none;}
-    .stApp > div[data-testid="stStatusWidget"] {display:none;}
+    # Hide Streamlit default header elements
+    from utils.helpers import UIHelpers
+    UIHelpers.hide_streamlit_header()
     
-    /* Hide the hamburger menu */
-    .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+    # Apply Material Design 3 Theme
+    from utils.helpers import DesignThemeManager
+    theme_manager = DesignThemeManager()
     
-    /* Hide the top bar completely */
-    .stApp > div[data-testid="stHeader"] {display:none;}
+    # Load theme from file if not already loaded
+    if "theme_loaded" not in st.session_state:
+        try:
+            import json
+            with open("data/theme_settings.json", "r", encoding="utf-8") as f:
+                theme_settings = json.load(f)
+                st.session_state.selected_theme = theme_settings.get("selected_theme", "gemini")
+                st.session_state.theme_loaded = True
+        except:
+            st.session_state.selected_theme = "gemini"
+            st.session_state.theme_loaded = True
     
-    /* Global styling - Pure White Background */
-    .stApp {
-        background-color: #ffffff;
-    }
-    
-    /* Adjust main content padding */
-    .main .block-container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        background-color: #ffffff;
-    }
-    
-    /* Modern Enterprise page header - Clean White Design */
-    .page-header {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        padding: 4rem 2rem;
-        border-radius: 24px;
-        margin-bottom: 3rem;
-        color: #212529;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 50%, #6c757d 100%);
-    }
-    
-    .page-title {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 0.75rem;
-        letter-spacing: -0.03em;
-        color: #212529;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .page-subtitle {
-        font-size: 1.3rem;
-        opacity: 0.8;
-        font-weight: 500;
-        color: #6c757d;
-    }
-    
-    .breadcrumb {
-        color: #6c757d;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-        font-weight: 600;
-    }
-    
-    .breadcrumb a {
-        color: #6c757d;
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-    
-    .breadcrumb a:hover {
-        color: #495057;
-        text-decoration: underline;
-    }
-    
-    /* Modern Enterprise config section - Pure White */
-    .config-section {
-        background: #ffffff;
-        padding: 3rem;
-        border-radius: 24px;
-        margin-bottom: 2.5rem;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .config-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
-    }
-    
-    /* Modern Enterprise status card - Clean White Design */
-    .status-card {
-        background: #ffffff;
-        padding: 2rem;
-        border-radius: 20px;
-        border-left: 4px solid #6c757d;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-    }
-    
-    .status-card:hover {
-        background: #f8f9fa;
-    }
-    
-    .status-online {
-        border-left-color: #10B981;
-        background: #f0fdf4;
-    }
-    
-    .status-offline {
-        border-left-color: #EF4444;
-        background: #fef2f2;
-    }
-    
-    /* Modern Enterprise button styling */
-    .stButton > button {
-        border-radius: 16px;
-        font-weight: 600;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent;
-        font-size: 1rem;
-        padding: 0.75rem 1.5rem;
-    }
-    
-    .stButton > button:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Modern Enterprise input styling */
-    .stTextInput > div > div > input {
-        border-radius: 16px;
-        padding: 1rem 1.25rem;
-        font-size: 1rem;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #ffffff;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise selectbox styling */
-    .stSelectbox > div > div {
-        border-radius: 16px;
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise radio button styling */
-    .stRadio > div {
-        gap: 1.5rem;
-    }
-    
-    .stRadio > div > label {
-        background: #ffffff;
-        padding: 1.25rem;
-        border-radius: 16px;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        font-weight: 600;
-    }
-    
-    .stRadio > div > label:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Modern Enterprise checkbox styling */
-    .stCheckbox > label {
-        font-weight: 600;
-        color: #212529;
-        font-size: 1rem;
-    }
-    
-    /* Modern Enterprise tabs styling */
-    .stTabs > div > div > div > div {
-        background: #ffffff;
-        border-radius: 20px;
-    }
-    
-    /* Tab selection styling - Red underline for selected tab */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0;
-        background: #ffffff;
-        border-bottom: 1px solid #e9ecef;
-        padding: 0;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        border: none;
-        padding: 1rem 1.5rem;
-        margin: 0;
-        border-radius: 0;
-        position: relative;
-        transition: all 0.3s ease;
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background: #f8f9fa;
-    }
-    
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: transparent;
-        color: #dc3545;
-        font-weight: 600;
-    }
-    
-    .stTabs [data-baseweb="tab"][aria-selected="true"]::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: #dc3545;
-        border-radius: 2px 2px 0 0;
-    }
-    
-    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]) {
-        color: #6c757d;
-    }
-    
-    .stTabs [data-baseweb="tab"]:not([aria-selected="true"]):hover {
-        color: #495057;
-    }
-    
-    /* Modern Enterprise expander styling */
-    .streamlit-expander {
-        border-radius: 16px;
-        background: #ffffff;
-    }
-    
-    /* Modern Enterprise metric styling */
-    .metric-card {
-        background: #ffffff;
-        padding: 2rem;
-        border-radius: 20px;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Collection management cards */
-    .collection-card {
-        background: #ffffff;
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-    }
-    
-    .collection-card:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Session management cards */
-    .session-card {
-        background: #ffffff;
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .session-card:hover {
-        background: #f8f9fa;
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .page-header {
-            padding: 3rem 1.5rem;
-        }
-        
-        .page-title {
-            font-size: 2.5rem;
-        }
-        
-        .config-section {
-            padding: 2rem 1.5rem;
-            margin: 1rem;
-        }
-        
-        .collection-card, .session-card {
-            padding: 1.5rem;
-        }
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Get theme from session state or default to gemini
+    selected_theme = st.session_state.get("selected_theme", "gemini")
+    theme_manager.apply_theme(selected_theme)
 
     # Navigation section removed - clean top layout
 
@@ -385,17 +99,180 @@ def main():
         return
     
     # Create tabs for different configuration sections
-    tab1, tab2, tab3 = st.tabs(["🗂️ Vector DB 관리", "📋 세션 관리", "🔗 연결 상태"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🎨 테마 설정", "🗂️ Vector DB 관리", "📋 세션 관리", "🔗 연결 상태"])
     
     with tab1:
-        render_vector_db_management(chat_controller)
+        render_theme_settings()
     
     with tab2:
+        render_vector_db_management(chat_controller)
+    
+    with tab3:
         render_session_management(chat_controller)
         render_debug_settings()
     
-    with tab3:
+    with tab4:
         render_connection_status(chat_controller)
+
+def render_theme_settings():
+    """Render theme settings section"""
+    st.markdown('<div class="config-section">', unsafe_allow_html=True)
+    
+    st.subheader("🎨 테마 설정")
+    st.write("앱의 외관을 커스터마이징할 수 있습니다.")
+    
+    # Initialize theme settings
+    if "selected_theme" not in st.session_state:
+        st.session_state.selected_theme = "gemini"
+    
+    # Theme selection
+    st.markdown("#### 🎨 테마 선택")
+    
+    # Available themes
+    themes = {
+        "gemini": "🤖 Gemini (Google 스타일)",
+        "material3": "🎨 Material Design 3",
+        "enterprise": "🏢 Enterprise (기업용)",
+        "modern": "✨ Modern (모던)",
+        "minimal": "🔲 Minimal (미니멀)",
+        "dark": "🌙 Dark (다크)"
+    }
+    
+    # Theme preview
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        selected_theme = st.radio(
+            "테마 선택",
+            list(themes.keys()),
+            format_func=lambda x: themes[x],
+            index=list(themes.keys()).index(st.session_state.selected_theme),
+            key="theme_selector"
+        )
+    
+    with col2:
+        st.markdown("#### 🎨 테마 미리보기")
+        
+        # Theme preview cards
+        if selected_theme == "gemini":
+            st.markdown("""
+            <div style="background: #fefbff; padding: 1rem; border-radius: 8px; border: 1px solid #e8eaed; margin: 0.5rem 0;">
+                <div style="color: #1a1a1a; font-weight: 500;">Gemini 스타일</div>
+                <div style="color: #5f6368; font-size: 0.9rem;">Google의 Material Design 3 기반</div>
+            </div>
+    """, unsafe_allow_html=True)
+        elif selected_theme == "material3":
+            st.markdown("""
+            <div style="background: #fefbff; padding: 1rem; border-radius: 8px; border: 1px solid #cac4d0; margin: 0.5rem 0;">
+                <div style="color: #1c1b1f; font-weight: 500;">Material Design 3</div>
+                <div style="color: #49454f; font-size: 0.9rem;">Google의 최신 디자인 시스템</div>
+            </div>
+            """, unsafe_allow_html=True)
+        elif selected_theme == "enterprise":
+            st.markdown("""
+            <div style="background: #ffffff; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef; margin: 0.5rem 0;">
+                <div style="color: #212529; font-weight: 500;">Enterprise</div>
+                <div style="color: #6c757d; font-size: 0.9rem;">기업용 깔끔한 디자인</div>
+            </div>
+            """, unsafe_allow_html=True)
+        elif selected_theme == "modern":
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                <div style="color: white; font-weight: 500;">Modern</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">그라데이션 모던 디자인</div>
+            </div>
+            """, unsafe_allow_html=True)
+        elif selected_theme == "minimal":
+            st.markdown("""
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6; margin: 0.5rem 0;">
+                <div style="color: #212529; font-weight: 500;">Minimal</div>
+                <div style="color: #6c757d; font-size: 0.9rem;">심플한 미니멀 디자인</div>
+            </div>
+            """, unsafe_allow_html=True)
+        elif selected_theme == "dark":
+            st.markdown("""
+            <div style="background: #2d2d2d; padding: 1rem; border-radius: 8px; border: 1px solid #666666; margin: 0.5rem 0;">
+                <div style="color: white; font-weight: 500;">Dark</div>
+                <div style="color: #cccccc; font-size: 0.9rem;">다크 모드 디자인</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Apply theme button
+    if st.button("🎨 테마 적용", type="primary"):
+        if selected_theme != st.session_state.selected_theme:
+            st.session_state.selected_theme = selected_theme
+            
+            # Save theme to file
+            try:
+                import json
+                from datetime import datetime
+                
+                theme_settings = {
+                    "selected_theme": selected_theme,
+                    "last_updated": datetime.now().isoformat(),
+                    "user_id": st.session_state.get("user_info", {}).get("id", "default")
+                }
+                
+                # Save to theme_settings.json
+                with open("data/theme_settings.json", "w", encoding="utf-8") as f:
+                    json.dump(theme_settings, f, ensure_ascii=False, indent=2)
+                
+                st.success(f"✅ '{themes[selected_theme]}' 테마가 적용되고 저장되었습니다!")
+            except Exception as e:
+                st.success(f"✅ '{themes[selected_theme]}' 테마가 적용되었습니다! (파일 저장 실패: {e})")
+            
+            st.rerun()
+        else:
+            st.info("이미 선택된 테마입니다.")
+    
+    # Theme information
+    st.markdown("---")
+    st.markdown("#### ℹ️ 테마 정보")
+    
+    theme_info = {
+        "gemini": {
+            "name": "Gemini",
+            "description": "Google의 Gemini AI 인터페이스와 유사한 디자인으로, Material Design 3 기반의 현대적이고 직관적인 UI를 제공합니다.",
+            "features": ["Google Sans 폰트", "둥근 모서리", "부드러운 그림자", "직관적인 색상"]
+        },
+        "material3": {
+            "name": "Material Design 3",
+            "description": "Google의 최신 디자인 시스템인 Material Design 3을 기반으로 한 현대적이고 일관된 사용자 경험을 제공합니다.",
+            "features": ["Roboto 폰트", "동적 색상", "접근성 최적화", "반응형 디자인"]
+        },
+        "enterprise": {
+            "name": "Enterprise",
+            "description": "기업 환경에 최적화된 깔끔하고 전문적인 디자인으로, 업무 효율성을 높이는 UI를 제공합니다.",
+            "features": ["Inter 폰트", "깔끔한 레이아웃", "높은 가독성", "전문적인 외관"]
+        },
+        "modern": {
+            "name": "Modern",
+            "description": "그라데이션과 현대적인 요소를 활용한 세련된 디자인으로, 시각적으로 매력적인 UI를 제공합니다.",
+            "features": ["그라데이션 배경", "부드러운 애니메이션", "현대적인 색상", "세련된 외관"]
+        },
+        "minimal": {
+            "name": "Minimal",
+            "description": "불필요한 요소를 제거하고 핵심 기능에 집중한 미니멀한 디자인으로, 깔끔하고 집중된 UI를 제공합니다.",
+            "features": ["심플한 레이아웃", "최소한의 색상", "깔끔한 타이포그래피", "집중된 경험"]
+        },
+        "dark": {
+            "name": "Dark",
+            "description": "어두운 배경과 밝은 텍스트를 사용한 다크 모드 디자인으로, 눈의 피로를 줄이고 집중도를 높입니다.",
+            "features": ["어두운 배경", "밝은 텍스트", "눈의 피로 감소", "집중도 향상"]
+        }
+    }
+    
+    current_theme_info = theme_info.get(selected_theme, {})
+    
+    if current_theme_info:
+        st.markdown(f"**{current_theme_info['name']}**")
+        st.write(current_theme_info['description'])
+        
+        st.markdown("**주요 특징:**")
+        for feature in current_theme_info['features']:
+            st.write(f"• {feature}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def render_debug_settings():
     """Render debug settings section"""

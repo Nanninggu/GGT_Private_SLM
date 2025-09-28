@@ -159,6 +159,663 @@ class SessionManager:
             print(f"세션 저장 중 오류: {e}")
 
 
+class DesignThemeManager:
+    """디자인 테마 관리자 - 다양한 테마 스타일 제공"""
+    
+    def __init__(self):
+        self.themes = {
+            "enterprise": self._get_enterprise_theme(),
+            "modern": self._get_modern_theme(),
+            "minimal": self._get_minimal_theme(),
+            "dark": self._get_dark_theme(),
+            "material3": self._get_material3_theme(),
+            "gemini": self._get_gemini_theme()
+        }
+    
+    def _get_enterprise_theme(self):
+        """엔터프라이즈 테마"""
+        return ENTERPRISE_THEME_CSS
+    
+    def _get_modern_theme(self):
+        """모던 테마"""
+        return """
+        <style>
+        /* Modern Theme Styles */
+        .stApp {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .main .block-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 1rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .stButton > button {
+            border-radius: 25px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        </style>
+        """
+    
+    def _get_minimal_theme(self):
+        """미니멀 테마"""
+        return """
+        <style>
+        /* Minimal Theme Styles */
+        .stApp {
+            background-color: #f8f9fa;
+        }
+        
+        .main .block-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .stButton > button {
+            border-radius: 6px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            font-weight: 500;
+        }
+        
+        .stTextInput > div > div > input {
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem 0.75rem;
+        }
+        </style>
+        """
+    
+    def _get_dark_theme(self):
+        """다크 테마"""
+        return """
+        <style>
+        /* Dark Theme Styles */
+        .stApp {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .main .block-container {
+            background-color: #2d2d2d;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        
+        .stButton > button {
+            border-radius: 8px;
+            background-color: #4a4a4a;
+            color: #ffffff;
+            border: 1px solid #666666;
+            font-weight: 600;
+        }
+        
+        .stTextInput > div > div > input {
+            border-radius: 8px;
+            border: 1px solid #666666;
+            background-color: #3a3a3a;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+        }
+        </style>
+        """
+    
+    def _get_material3_theme(self):
+        """Material Design 3 테마"""
+        return """
+        <style>
+        /* Material Design 3 Theme */
+        .stApp {
+            background-color: #fefbff;
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Hide Streamlit default UI elements */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stDeployButton {display:none;}
+        .stDecoration {display:none;}
+        .stApp > header {display:none;}
+        .stApp > div[data-testid="stToolbar"] {display:none;}
+        .stApp > div[data-testid="stDecoration"] {display:none;}
+        .stApp > div[data-testid="stStatusWidget"] {display:none;}
+        .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+        .stApp > div[data-testid="stHeader"] {display:none;}
+        
+        /* Main content area */
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+            background-color: #fefbff;
+            max-width: 1200px;
+        }
+        
+        /* M3 Color System */
+        :root {
+            --md-sys-color-primary: #6750a4;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-primary-container: #eaddff;
+            --md-sys-color-on-primary-container: #21005d;
+            --md-sys-color-secondary: #625b71;
+            --md-sys-color-on-secondary: #ffffff;
+            --md-sys-color-secondary-container: #e8def8;
+            --md-sys-color-on-secondary-container: #1d192b;
+            --md-sys-color-tertiary: #7d5260;
+            --md-sys-color-on-tertiary: #ffffff;
+            --md-sys-color-tertiary-container: #ffd8e4;
+            --md-sys-color-on-tertiary-container: #31111d;
+            --md-sys-color-error: #ba1a1a;
+            --md-sys-color-on-error: #ffffff;
+            --md-sys-color-error-container: #ffdad6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #fefbff;
+            --md-sys-color-on-surface: #1c1b1f;
+            --md-sys-color-surface-variant: #e7e0ec;
+            --md-sys-color-on-surface-variant: #49454f;
+            --md-sys-color-outline: #79747e;
+            --md-sys-color-outline-variant: #cac4d0;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #f4eff4;
+            --md-sys-color-inverse-primary: #d0bcff;
+        }
+        
+        /* M3 Typography */
+        .stApp {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 400;
+            color: var(--md-sys-color-on-surface);
+        }
+        
+        h1 { font-size: 2.25rem; font-weight: 400; }
+        h2 { font-size: 1.5rem; font-weight: 400; }
+        h3 { font-size: 1.25rem; font-weight: 500; }
+        h4 { font-size: 1rem; font-weight: 500; }
+        
+        /* M3 Buttons */
+        .stButton > button {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            border-radius: 20px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: 0.1px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 40px;
+        }
+        
+        .stButton > button:hover {
+            background-color: var(--md-sys-color-primary);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+            transform: translateY(-1px);
+        }
+        
+        .stButton > button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        /* M3 Text Input */
+        .stTextInput > div > div > input {
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 4px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 400;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stTextInput > div > div > input:focus {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            outline: none;
+            box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+        }
+        
+        .stTextInput > div > div > input::placeholder {
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        
+        /* M3 Selectbox */
+        .stSelectbox > div > div {
+            background-color: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 4px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stSelectbox > div > div:focus-within {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+        }
+        
+        /* M3 Chat Messages */
+        .stChatMessage {
+            background-color: var(--md-sys-color-surface);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+        
+        /* M3 Chat Input */
+        .stChatInput > div {
+            background-color: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        .stChatInput > div:focus-within {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+        }
+        
+        /* M3 Cards */
+        .modern-card {
+            background-color: var(--md-sys-color-surface);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            margin-bottom: 16px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .modern-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* M3 Sidebar */
+        .css-1d391kg {
+            background-color: var(--md-sys-color-surface);
+        }
+        
+        .css-1d391kg .css-1v0mbdj {
+            background-color: var(--md-sys-color-surface);
+            border-radius: 16px;
+            margin: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+        
+        /* M3 Tabs */
+        .stTabs > div > div > div > div {
+            background-color: var(--md-sys-color-surface);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+        
+        /* M3 Expander */
+        .streamlit-expander {
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: 8px;
+            background-color: var(--md-sys-color-surface);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        /* M3 Radio Buttons */
+        .stRadio > div > label {
+            background-color: var(--md-sys-color-surface);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        .stRadio > div > label:hover {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* M3 Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .status-online {
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-color: var(--md-sys-color-primary);
+        }
+        
+        .status-offline {
+            background-color: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            border-color: var(--md-sys-color-error);
+        }
+        
+        /* M3 Responsive Design */
+        @media (max-width: 768px) {
+            .main .block-container {
+                padding: 16px;
+                margin: 8px;
+            }
+            
+            .stButton > button {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+        }
+        </style>
+        """
+    
+    def _get_gemini_theme(self):
+        """Gemini 스타일 테마 (M3 기반)"""
+        return """
+        <style>
+        /* Gemini Theme - Material Design 3 based */
+        .stApp {
+            background-color: #fefbff;
+            font-family: 'Google Sans', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Hide Streamlit default UI elements */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stDeployButton {display:none;}
+        .stDecoration {display:none;}
+        .stApp > header {display:none;}
+        .stApp > div[data-testid="stToolbar"] {display:none;}
+        .stApp > div[data-testid="stDecoration"] {display:none;}
+        .stApp > div[data-testid="stStatusWidget"] {display:none;}
+        .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+        .stApp > div[data-testid="stHeader"] {display:none;}
+        
+        /* Main content area */
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+            background-color: #fefbff;
+            max-width: 1200px;
+        }
+        
+        /* Gemini Color System */
+        :root {
+            --gemini-primary: #4285f4;
+            --gemini-on-primary: #ffffff;
+            --gemini-primary-container: #e3f2fd;
+            --gemini-on-primary-container: #0d47a1;
+            --gemini-secondary: #34a853;
+            --gemini-on-secondary: #ffffff;
+            --gemini-secondary-container: #e8f5e8;
+            --gemini-on-secondary-container: #1b5e20;
+            --gemini-tertiary: #ea4335;
+            --gemini-on-tertiary: #ffffff;
+            --gemini-tertiary-container: #ffebee;
+            --gemini-on-tertiary-container: #b71c1c;
+            --gemini-surface: #fefbff;
+            --gemini-on-surface: #1a1a1a;
+            --gemini-surface-variant: #f5f5f5;
+            --gemini-on-surface-variant: #5f6368;
+            --gemini-outline: #dadce0;
+            --gemini-outline-variant: #e8eaed;
+            --gemini-shadow: #000000;
+            --gemini-scrim: #000000;
+        }
+        
+        /* Gemini Typography */
+        .stApp {
+            font-family: 'Google Sans', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Google Sans', 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 400;
+            color: var(--gemini-on-surface);
+        }
+        
+        h1 { font-size: 2.25rem; font-weight: 400; }
+        h2 { font-size: 1.5rem; font-weight: 400; }
+        h3 { font-size: 1.25rem; font-weight: 500; }
+        h4 { font-size: 1rem; font-weight: 500; }
+        
+        /* Gemini Buttons */
+        .stButton > button {
+            background-color: var(--gemini-primary);
+            color: var(--gemini-on-primary);
+            border: none;
+            border-radius: 24px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: 0.25px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 40px;
+        }
+        
+        .stButton > button:hover {
+            background-color: var(--gemini-primary);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+            transform: translateY(-1px);
+        }
+        
+        .stButton > button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        /* Gemini Text Input */
+        .stTextInput > div > div > input {
+            background-color: var(--gemini-surface);
+            color: var(--gemini-on-surface);
+            border: 1px solid var(--gemini-outline);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 400;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stTextInput > div > div > input:focus {
+            border-color: var(--gemini-primary);
+            border-width: 2px;
+            outline: none;
+            box-shadow: 0 0 0 1px var(--gemini-primary);
+        }
+        
+        .stTextInput > div > div > input::placeholder {
+            color: var(--gemini-on-surface-variant);
+        }
+        
+        /* Gemini Selectbox */
+        .stSelectbox > div > div {
+            background-color: var(--gemini-surface);
+            border: 1px solid var(--gemini-outline);
+            border-radius: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stSelectbox > div > div:focus-within {
+            border-color: var(--gemini-primary);
+            border-width: 2px;
+            box-shadow: 0 0 0 1px var(--gemini-primary);
+        }
+        
+        /* Gemini Chat Messages */
+        .stChatMessage {
+            background-color: var(--gemini-surface);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--gemini-outline-variant);
+        }
+        
+        /* Gemini Chat Input */
+        .stChatInput > div {
+            background-color: var(--gemini-surface);
+            border: 1px solid var(--gemini-outline);
+            border-radius: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        .stChatInput > div:focus-within {
+            border-color: var(--gemini-primary);
+            border-width: 2px;
+            box-shadow: 0 0 0 1px var(--gemini-primary);
+        }
+        
+        /* Gemini Cards */
+        .modern-card {
+            background-color: var(--gemini-surface);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--gemini-outline-variant);
+            margin-bottom: 16px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .modern-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Gemini Sidebar */
+        .css-1d391kg {
+            background-color: var(--gemini-surface);
+        }
+        
+        .css-1d391kg .css-1v0mbdj {
+            background-color: var(--gemini-surface);
+            border-radius: 16px;
+            margin: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--gemini-outline-variant);
+        }
+        
+        /* Gemini Tabs */
+        .stTabs > div > div > div > div {
+            background-color: var(--gemini-surface);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            border: 1px solid var(--gemini-outline-variant);
+        }
+        
+        /* Gemini Expander */
+        .streamlit-expander {
+            border: 1px solid var(--gemini-outline-variant);
+            border-radius: 12px;
+            background-color: var(--gemini-surface);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        /* Gemini Radio Buttons */
+        .stRadio > div > label {
+            background-color: var(--gemini-surface);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--gemini-outline-variant);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        }
+        
+        .stRadio > div > label:hover {
+            border-color: var(--gemini-primary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Gemini Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .status-online {
+            background-color: var(--gemini-primary-container);
+            color: var(--gemini-on-primary-container);
+            border-color: var(--gemini-primary);
+        }
+        
+        .status-offline {
+            background-color: var(--gemini-tertiary-container);
+            color: var(--gemini-on-tertiary-container);
+            border-color: var(--gemini-tertiary);
+        }
+        
+        /* Gemini Responsive Design */
+        @media (max-width: 768px) {
+            .main .block-container {
+                padding: 16px;
+                margin: 8px;
+            }
+            
+            .stButton > button {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+        }
+        </style>
+        """
+    
+    def apply_theme(self, theme_name: str):
+        """테마 적용"""
+        if theme_name in self.themes:
+            # 테마에 이미 <style> 태그가 포함되어 있으므로 그대로 사용
+            st.markdown(self.themes[theme_name], unsafe_allow_html=True)
+    
+    def apply_custom_theme(self, settings: Dict[str, Any]):
+        """커스텀 테마 적용"""
+        # 커스텀 테마 로직은 기존과 동일하게 유지
+        pass
+
 class UIHelpers:
     """UI helper functions"""
 
@@ -172,44 +829,58 @@ class UIHelpers:
         """Hide Streamlit default header elements (Deploy button, hamburger menu, top bar)"""
         st.markdown("""
         <style>
-        /* Hide Streamlit default header elements */
-        .stDeployButton {
-            display: none;
-        }
+        /* Hide Streamlit default header elements completely */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stDeployButton {display: none !important;}
+        .stDecoration {display: none !important;}
+        .stApp > header {display: none !important;}
+        .stApp > div[data-testid="stToolbar"] {display: none !important;}
+        .stApp > div[data-testid="stDecoration"] {display: none !important;}
+        .stApp > div[data-testid="stStatusWidget"] {display: none !important;}
         
-        /* Hide hamburger menu */
-        .stActionButton {
-            display: none;
-        }
+        /* Hide the hamburger menu */
+        .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display: none !important;}
         
-        /* Hide top bar */
-        .stApp > header {
-            display: none;
-        }
+        /* Hide the top bar completely */
+        .stApp > div[data-testid="stHeader"] {display: none !important;}
         
-        /* Hide the main menu button */
-        .stApp > div[data-testid="stHeader"] {
-            display: none;
-        }
+        /* Hide all header related elements */
+        .stApp > div[data-testid="stHeader"] > div[data-testid="stToolbar"] {display: none !important;}
+        .stApp > div[data-testid="stHeader"] > div[data-testid="stDecoration"] {display: none !important;}
         
-        /* Additional header hiding */
-        .stApp > div[data-testid="stToolbar"] {
-            display: none;
-        }
+        /* Hide action buttons and deploy button */
+        .stActionButton {display: none !important;}
+        .stDeployButton {display: none !important;}
         
-        /* Hide the hamburger menu button */
-        .stApp > div[data-testid="stHeader"] > div[data-testid="stToolbar"] {
-            display: none;
-        }
+        /* Hide status widget */
+        .stStatusWidget {display: none !important;}
         
         /* Ensure content starts from top */
         .stApp > div[data-testid="stAppViewContainer"] {
-            padding-top: 0;
+            padding-top: 0 !important;
         }
         
         /* Hide the main menu */
         .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarContent"] > div[data-testid="stSidebarNav"] {
-            display: none;
+            display: none !important;
+        }
+        
+        /* Additional comprehensive hiding */
+        [data-testid="stHeader"] {display: none !important;}
+        [data-testid="stToolbar"] {display: none !important;}
+        [data-testid="stDecoration"] {display: none !important;}
+        [data-testid="stStatusWidget"] {display: none !important;}
+        
+        /* Hide any remaining header elements */
+        .stApp header {display: none !important;}
+        .stApp .stDeployButton {display: none !important;}
+        .stApp .stActionButton {display: none !important;}
+        
+        /* Ensure no spacing from hidden elements */
+        .main .block-container {
+            padding-top: 1rem !important;
         }
         </style>
         """, unsafe_allow_html=True)

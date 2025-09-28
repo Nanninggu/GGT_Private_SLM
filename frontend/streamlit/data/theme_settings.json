@@ -1,12 +1,5 @@
 {
-  "selected_theme": "enterprise",
-  "custom_primary": "#7b9090",
-  "custom_accent": "#ad9999",
-  "custom_background": "#2574af",
-  "custom_radius": 5,
-  "custom_max_width": 894,
-  "custom_font_size": "Small",
-  "selected_libraries": [],
-  "last_updated": "2025-09-27T07:36:41.772210",
-  "user_id": "default"
+  "selected_theme": "modern",
+  "last_updated": "2025-09-29T01:44:05.341324",
+  "user_id": "eee65338-086b-457a-8746-b88cceac42a3"
 }

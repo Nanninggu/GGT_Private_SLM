@@ -230,11 +230,28 @@ def create_accuracy_distribution_pie(distribution):
 
 def main():
     """Accessibility demo page with unified design"""
-    # Load enterprise theme
-    UIHelpers.load_enterprise_theme()
-    
     # Hide Streamlit default header elements
     UIHelpers.hide_streamlit_header()
+    
+    # Apply Material Design 3 Theme
+    from utils.helpers import DesignThemeManager
+    theme_manager = DesignThemeManager()
+    
+    # Load theme from file if not already loaded
+    if "theme_loaded" not in st.session_state:
+        try:
+            import json
+            with open("data/theme_settings.json", "r", encoding="utf-8") as f:
+                theme_settings = json.load(f)
+                st.session_state.selected_theme = theme_settings.get("selected_theme", "gemini")
+                st.session_state.theme_loaded = True
+        except:
+            st.session_state.selected_theme = "gemini"
+            st.session_state.theme_loaded = True
+    
+    # Get theme from session state or default to gemini
+    selected_theme = st.session_state.get("selected_theme", "gemini")
+    theme_manager.apply_theme(selected_theme)
     
     # Check authentication
     if not check_auth_status():

@@ -921,69 +921,6 @@ class ChatComponents:
                 </script>
                 """, unsafe_allow_html=True)
         
-        # Clear All Chats Button with confirmation
-        if st.button("🗑️ 전체 삭제", key="clear_all_chats_btn", use_container_width=True, type="secondary"):
-            # Show confirmation dialog
-            st.session_state.show_clear_all_confirm = True
-        
-        # Confirmation dialog for clear all
-        if st.session_state.get("show_clear_all_confirm", False):
-            st.markdown("""
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; 
-                        padding: 1rem; margin: 0.5rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                    <span style="font-size: 1.2rem;">⚠️</span>
-                    <strong style="color: #856404;">모든 채팅 기록을 삭제하시겠습니까?</strong>
-                </div>
-                <div style="color: #856404; font-size: 0.9rem;">
-                    이 작업은 되돌릴 수 없습니다. 모든 채팅 세션이 영구적으로 삭제됩니다.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Use buttons without columns in sidebar
-            if st.button("✅ 확인", key="confirm_clear_all", type="primary", use_container_width=True):
-                try:
-                    # Clear current session immediately
-                    st.session_state.messages = []
-                    st.session_state.session_id = "default"
-                    st.session_state.last_loaded_session = None
-                    
-                    # Clear any confirmation states
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("confirm_delete_") or key.startswith("show_"):
-                            del st.session_state[key]
-                    
-                    # Try to clear backend sessions
-                    backend_success = True
-                    try:
-                        if chat_controller.api_service and chat_controller.check_backend_connection():
-                            result = chat_controller.clear_all_sessions()
-                            if not result.get("success", False):
-                                backend_success = False
-                                st.warning(f"백엔드 삭제 중 일부 오류가 발생했습니다: {result.get('warning', '알 수 없는 오류')}")
-                    except Exception as e:
-                        backend_success = False
-                        st.warning(f"백엔드 삭제 중 오류가 발생했습니다: {str(e)}")
-                    
-                    # Show success message
-                    if backend_success:
-                        st.success("모든 채팅이 성공적으로 삭제되었습니다.")
-                    else:
-                        st.warning("현재 채팅이 초기화되었습니다. 일부 백엔드 데이터는 수동으로 정리해야 할 수 있습니다.")
-                    
-                    # Force refresh session list
-                    st.session_state.force_refresh = True
-                    
-                    # Clear confirmation state
-                    st.session_state.show_clear_all_confirm = False
-                except Exception as e:
-                    st.error(f"전체 삭제 중 오류가 발생했습니다: {str(e)}")
-            
-            if st.button("❌ 취소", key="cancel_clear_all", use_container_width=True):
-                st.session_state.show_clear_all_confirm = False
-        
-        
         st.markdown("---")
         
         # Display session list
@@ -1182,8 +1119,6 @@ class ChatComponents:
             
             # Close scrollable container
             st.markdown("</div>", unsafe_allow_html=True)
-        
-        st.markdown("---")
         
         return None
     
@@ -1766,13 +1701,6 @@ class ChatComponents:
                     if st.button("🔄 컬렉션 목록 새로고침", key="refresh_collections"):
                         st.session_state.force_refresh = True
                     
-            # Menu management button (admin only)
-            user_info = st.session_state.get("user_info")
-            if user_info and user_info.get("id") == ADMIN_USER_ID:  # admin user ID
-                if st.button("📋 메뉴 관리", key="menu_management", use_container_width=True):
-                    st.session_state.current_page = "menu_management"
-                    st.rerun()
-            
             # Logout button
             st.markdown("---")
             if st.button("🚪 로그아웃", key="logout", use_container_width=True, type="secondary"):

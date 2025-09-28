@@ -16,6 +16,7 @@ from config import ADMIN_USER_ID
 from utils.session_manager import session_manager
 from services.session_management_service import session_manager as new_session_manager
 from services.sidebar_management_service import sidebar_manager
+from utils.auth_persistence import AuthPersistence
 
 # Set page configuration once at the top
 st.set_page_config(
@@ -26,9 +27,44 @@ st.set_page_config(
 )
 
 def check_auth_status():
-    """Check if user is authenticated with auto token refresh"""
+    """Check if user is authenticated with auto token refresh and persistence"""
+    # 먼저 session_state에서 인증 토큰 확인
     if not st.session_state.get("auth_token"):
-        return False
+        # session_state에 토큰이 없으면 영구 저장된 인증 상태 복원 시도
+        auth_data = AuthPersistence.load_auth_state()
+        if auth_data:
+            # 토큰 만료 확인
+            if not AuthPersistence.is_token_expired(auth_data.get("login_time", "")):
+                # 토큰이 유효하면 session_state에 복원
+                AuthPersistence.restore_auth_to_session(auth_data)
+            else:
+                # 토큰이 만료되었으면 refresh 시도
+                refresh_token = auth_data.get("refresh_token")
+                if refresh_token:
+                    try:
+                        from services.api_service import APIService
+                        api_service = APIService()
+                        result = api_service.refresh_token(refresh_token)
+                        if result.get("success"):
+                            # 새로운 토큰으로 인증 상태 업데이트
+                            AuthPersistence.save_auth_state(
+                                result.get("access_token"),
+                                result.get("refresh_token"),
+                                result.get("user", auth_data.get("user_info", {})),
+                                datetime.now().isoformat()
+                            )
+                        else:
+                            # refresh 실패 시 저장된 인증 상태 삭제
+                            AuthPersistence.clear_auth_state()
+                            return False
+                    except:
+                        AuthPersistence.clear_auth_state()
+                        return False
+                else:
+                    AuthPersistence.clear_auth_state()
+                    return False
+        else:
+            return False
     
     # Check if token is expired based on login time
     login_time = st.session_state.get("login_time")
@@ -76,6 +112,42 @@ def main():
     """Main application function"""
     # Initialize session state with persistent session manager
     session_manager.initialize_session()
+    
+    # 새로고침 시 인증 상태 자동 복원
+    if not st.session_state.get("auth_token") and not st.session_state.get("auth_restored"):
+        auth_data = AuthPersistence.load_auth_state()
+        if auth_data:
+            # 토큰 만료 확인
+            if not AuthPersistence.is_token_expired(auth_data.get("login_time", "")):
+                # 토큰이 유효하면 session_state에 복원
+                AuthPersistence.restore_auth_to_session(auth_data)
+                st.session_state.auth_restored = True
+                st.rerun()  # 복원 후 페이지 새로고침
+            else:
+                # 토큰이 만료되었으면 refresh 시도
+                refresh_token = auth_data.get("refresh_token")
+                if refresh_token:
+                    try:
+                        from services.api_service import APIService
+                        api_service = APIService()
+                        result = api_service.refresh_token(refresh_token)
+                        if result.get("success"):
+                            # 새로운 토큰으로 인증 상태 업데이트
+                            AuthPersistence.save_auth_state(
+                                result.get("access_token"),
+                                result.get("refresh_token"),
+                                result.get("user", auth_data.get("user_info", {})),
+                                datetime.now().isoformat()
+                            )
+                            st.session_state.auth_restored = True
+                            st.rerun()
+                        else:
+                            # refresh 실패 시 저장된 인증 상태 삭제
+                            AuthPersistence.clear_auth_state()
+                    except:
+                        AuthPersistence.clear_auth_state()
+                else:
+                    AuthPersistence.clear_auth_state()
     
     # Initialize other session state
     if "messages" not in st.session_state:
@@ -154,12 +226,31 @@ def main():
             st.rerun()
         return
     
+    # Initialize user session if not already initialized
+    user_info = st.session_state.get("user_info", {})
+    user_id = user_info.get("id", "default")
+    
+    # Check for user change and save previous user's session
+    previous_user_id = st.session_state.get("current_user_id")
+    if previous_user_id and previous_user_id != user_id and new_session_manager:
+        # Save previous user's session before switching
+        if st.session_state.get("messages"):
+            new_session_manager.save_current_session(previous_user_id)
+            if st.session_state.get("debug_mode", False):
+                st.write(f"🔍 Debug - Saved previous user {previous_user_id} session before switching to {user_id}")
+    
+    if new_session_manager and user_id != "default":
+        # Check if user session is initialized
+        if "user_sessions" not in st.session_state or user_id not in st.session_state.user_sessions:
+            new_session_manager.initialize_user_session(user_id, user_info)
+            if st.session_state.get("debug_mode", False):
+                st.write(f"🔍 Debug - Initialized new user session for {user_id}")
+    
+    # Update current user ID
+    st.session_state.current_user_id = user_id
+    
     # Save current session periodically
     if st.session_state.get("auth_token"):
-        # Use new session management service if available
-        user_info = st.session_state.get("user_info", {})
-        user_id = user_info.get("id", "default")
-        
         if new_session_manager and user_id != "default":
             new_session_manager.save_current_session(user_id)
         else:
@@ -187,11 +278,22 @@ def main():
         st.session_state.last_loaded_session = None  # Reset to force reload
         st.rerun()
     
-    # Load chat history if session changed (but not for new sessions)
+    # Load chat history if session changed or if this is a page refresh
     current_session = st.session_state.session_id
-    if (current_session != st.session_state.last_loaded_session and 
-        st.session_state.backend_connected):
-        
+    should_load_history = (
+        current_session != st.session_state.last_loaded_session or 
+        (st.session_state.backend_connected and len(st.session_state.messages) == 0)
+    )
+    
+    # Debug logging
+    if st.session_state.get("debug_mode", False):
+        st.write(f"🔍 Debug - Current session: {current_session}")
+        st.write(f"🔍 Debug - Last loaded session: {st.session_state.last_loaded_session}")
+        st.write(f"🔍 Debug - Should load history: {should_load_history}")
+        st.write(f"🔍 Debug - Backend connected: {st.session_state.backend_connected}")
+        st.write(f"🔍 Debug - Messages count: {len(st.session_state.messages)}")
+    
+    if should_load_history and st.session_state.backend_connected:
         # Skip existence check for new sessions to avoid unnecessary API calls
         if st.session_state.get("is_new_session", False):
             # New session - just update last_loaded_session without checking existence
@@ -200,10 +302,14 @@ def main():
         else:
             # Existing session - check if it exists and load history if it does
             if current_session == "default" or chat_controller.check_session_exists(current_session):
+                if st.session_state.get("debug_mode", False):
+                    st.write(f"🔍 Debug - Loading history for session: {current_session}")
                 chat_controller.load_session_history(current_session)
                 st.session_state.last_loaded_session = current_session
             else:
                 # Session doesn't exist - just update last_loaded_session
+                if st.session_state.get("debug_mode", False):
+                    st.write(f"🔍 Debug - Session {current_session} does not exist")
                 st.session_state.last_loaded_session = current_session
 
     # Render dynamic sidebar navigation
@@ -220,15 +326,28 @@ def main():
         user_info = st.session_state.get("user_info", {})
         user_id = user_info.get("id", "default")
         
+        # 현재 사용자의 세션 저장
         if new_session_manager and user_id != "default":
+            # 현재 메시지가 있으면 저장
+            if st.session_state.get("messages"):
+                new_session_manager.save_current_session(user_id)
             new_session_manager.logout_user(user_id)
         else:
             # Fallback to old session management
+            session_manager.save_current_session()
             session_manager.clear_session()
+        
+        # 영구 저장된 인증 상태도 삭제
+        AuthPersistence.clear_auth_state()
+        
+        # 인증 복원 플래그 초기화
+        if "auth_restored" in st.session_state:
+            del st.session_state.auth_restored
         
         st.session_state.messages = []
         st.session_state.current_page = "login"
         st.success("로그아웃되었습니다.")
+        st.rerun()
     elif sidebar_action == "check_connection":
         st.session_state.backend_connected = chat_controller.check_backend_connection()
         if st.session_state.backend_connected:

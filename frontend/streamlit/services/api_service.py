@@ -345,17 +345,26 @@ class APIService:
     def upload_file_langchain(self, file_content: bytes, filename: str, content_type: str = "text/plain", collection_name: str = "documents") -> Dict[str, Any]:
         """Upload file to LangChain backend for vectorization"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
             files = {
                 'file': (filename, io.BytesIO(file_content), content_type)
             }
             data = {
                 'collection_name': collection_name
             }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             
             response = requests.post(
                 f"{self.base_url}/api/langchain/upload",
                 files=files,
                 data=data,
+                headers=headers,
                 timeout=self.upload_timeout
             )
             response.raise_for_status()
@@ -392,6 +401,11 @@ class APIService:
     def upload_multiple_files_langchain(self, file_list: List[Dict[str, Any]], collection_name: str = "documents") -> Dict[str, Any]:
         """Upload multiple files to LangChain backend for vectorization"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
             files = []
             for file_info in file_list:
                 files.append(('files', (
@@ -403,11 +417,15 @@ class APIService:
             data = {
                 'collection_name': collection_name
             }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             
             response = requests.post(
                 f"{self.base_url}/api/langchain/upload/multiple",
                 files=files,
                 data=data,
+                headers=headers,
                 timeout=self.upload_timeout * 3  # Longer timeout for multiple files (30분)
             )
             response.raise_for_status()
@@ -710,8 +728,18 @@ class APIService:
     def delete_collection(self, collection_name: str) -> Dict[str, Any]:
         """Delete a collection and all its documents"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            
             response = requests.delete(
                 f"{self.base_url}/api/collections/{collection_name}",
+                headers=headers,
                 timeout=self.timeout
             )
             

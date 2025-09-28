@@ -59,17 +59,37 @@ class SidebarManagementService:
                         "description": "세션 관리"
                     },
                     {
+                        "id": "user_management",
+                        "name": "👥 사용자 관리",
+                        "page": "pages/user_management.py",
+                        "visible": True,
+                        "order": 4,
+                        "icon": "👥",
+                        "description": "사용자 계정 관리",
+                        "admin_only": True
+                    },
+                    {
+                        "id": "menu_management",
+                        "name": "📋 메뉴 관리",
+                        "page": "pages/menu_management.py",
+                        "visible": True,
+                        "order": 5,
+                        "icon": "📋",
+                        "description": "메뉴 설정 관리",
+                        "admin_only": True
+                    },
+                    {
                         "id": "login",
                         "name": "🔐 로그인",
                         "page": "pages/login.py",
                         "visible": True,
-                        "order": 4,
+                        "order": 6,
                         "icon": "🔐",
                         "description": "로그인 페이지"
                     }
                 ],
                 "last_updated": datetime.now().isoformat(),
-                "version": "1.0.0"
+                "version": "2.0.0"
             }
             self._save_sidebar_config(default_config)
         
@@ -261,3 +281,4 @@ class SidebarManagementService:
 
 # 전역 인스턴스
 sidebar_manager = SidebarManagementService()
+

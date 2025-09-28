@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from backend.models.chat import ChatSession, ChatMessage, MessageRole, ModelResponse, SourceInfo, AccuracyInfo
 from backend.repositories.db_chat_repository import DBChatRepository
-from backend.services.llm_service import ExaoneLLMService
+from backend.services.ollama_service import ollama_service
 from backend.services.langchain_rag_service import langchain_rag_service
 from backend.services.quality_service import quality_service
 from backend.services.personalization_service import personalization_service
@@ -22,7 +22,7 @@ class ChatService:
 
     def __init__(self):
         self.repository = DBChatRepository()
-        self.llm_service = ExaoneLLMService()
+        self.llm_service = ollama_service
         self.rag_service = langchain_rag_service
         self._initialized = False
 

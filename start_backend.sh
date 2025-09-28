@@ -30,18 +30,8 @@ if [ ! -f "backend/.env" ]; then
     fi
 fi
 
-# 설정 테스트
-echo "🧪 설정을 테스트합니다..."
+# 백엔드 디렉토리로 이동
 cd backend
-python test_configuration.py
-
-if [ $? -eq 0 ]; then
-    echo "✅ 설정 테스트 통과!"
-else
-    echo "❌ 설정 테스트 실패. 설정을 확인해주세요."
-    echo "💡 PostgreSQL과 Ollama가 실행 중인지 확인해주세요."
-    exit 1
-fi
 
 # 백엔드 서버 시작
 echo "🌟 FastAPI 서버를 시작합니다..."

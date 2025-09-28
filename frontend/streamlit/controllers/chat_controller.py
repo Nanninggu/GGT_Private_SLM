@@ -40,6 +40,8 @@ class ChatController:
             st.session_state.messages = []
         if "backend_connected" not in st.session_state:
             st.session_state.backend_connected = False
+        if "last_loaded_session" not in st.session_state:
+            st.session_state.last_loaded_session = None
 
     def check_backend_connection(self) -> bool:
         """Check if backend is connected"""
@@ -165,9 +167,17 @@ class ChatController:
 
     def load_session_history(self, session_id: str):
         """Load chat history from backend and file system"""
+        if st.session_state.get("debug_mode", False):
+            st.write(f"🔍 Debug - Loading session history for: {session_id}")
+        
         # Try to load from file system first
         if self._load_session_from_file(session_id):
+            if st.session_state.get("debug_mode", False):
+                st.write(f"🔍 Debug - Loaded from file system: {len(st.session_state.messages)} messages")
             return
+        
+        if st.session_state.get("debug_mode", False):
+            st.write(f"🔍 Debug - File loading failed, trying backend")
         
         # If file loading fails, try backend
         if not self.check_backend_connection():
@@ -189,10 +199,16 @@ class ChatController:
             
             st.session_state.messages = messages
             st.session_state.session_id = session_id
+            
+            if st.session_state.get("debug_mode", False):
+                st.write(f"🔍 Debug - Loaded from backend: {len(messages)} messages")
+            
             # Don't show success message for automatic loading
             if session_id != st.session_state.get("last_loaded_session", ""):
                 st.success(f"채팅 기록을 불러왔습니다. ({len(messages)}개 메시지)")
         else:
+            if st.session_state.get("debug_mode", False):
+                st.write(f"🔍 Debug - Backend loading failed: {response.get('error', '알 수 없는 오류')}")
             st.error(f"채팅 기록을 불러올 수 없습니다: {response.get('error', '알 수 없는 오류')}")
 
     def _load_session_from_file(self, session_id: str) -> bool:
@@ -798,6 +814,9 @@ class ChatController:
             if "does not exist" in error_message or "COLLECTION_NOT_FOUND" in str(response):
                 st.warning(f"컬렉션 '{collection_name}'이 존재하지 않습니다.")
                 return True  # Return True since this is expected behavior, not an error
+            elif "UNAUTHORIZED" in str(response) or "not authorized" in error_message.lower():
+                st.error(f"컬렉션 '{collection_name}'을 삭제할 권한이 없습니다. 컬렉션을 생성한 사용자만 삭제할 수 있습니다.")
+                return False
             else:
                 st.error(f"컬렉션 삭제에 실패했습니다: {error_message}")
                 return False

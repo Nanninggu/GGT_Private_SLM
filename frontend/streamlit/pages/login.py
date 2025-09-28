@@ -149,11 +149,20 @@ def main():
                     result = login_user(username, password)
                 
                 if result.get("success"):
-                    # Store authentication info
+                    # Store authentication info in session_state
                     st.session_state.auth_token = result.get("access_token")
                     st.session_state.user_info = result.get("user")
                     st.session_state.refresh_token = result.get("refresh_token")
                     st.session_state.login_time = datetime.now().isoformat()
+                    
+                    # 영구 저장을 위한 인증 상태 저장
+                    from utils.auth_persistence import AuthPersistence
+                    AuthPersistence.save_auth_state(
+                        result.get("access_token"),
+                        result.get("refresh_token"),
+                        result.get("user"),
+                        datetime.now().isoformat()
+                    )
                     
                     # Clear any session expiry flags
                     if "session_expired" in st.session_state:

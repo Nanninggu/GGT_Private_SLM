@@ -158,24 +158,6 @@ class SessionManager:
         except Exception as e:
             print(f"세션 저장 중 오류: {e}")
 
-class MessageFormatter:
-    """Format messages for display"""
-
-    @staticmethod
-    def format_message_content(content: str, max_length: int = 1000) -> str:
-        """Format message content for display"""
-        if len(content) <= max_length:
-            return content
-        return content[:max_length] + "..."
-
-    @staticmethod
-    def format_timestamp(timestamp: str) -> str:
-        """Format timestamp for Korean display"""
-        try:
-            dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-            return dt.strftime("%Y년 %m월 %d일 %H:%M:%S")
-        except:
-            return timestamp
 
 class UIHelpers:
     """UI helper functions"""

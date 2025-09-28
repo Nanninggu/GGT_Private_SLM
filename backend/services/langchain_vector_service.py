@@ -290,7 +290,7 @@ class LangChainVectorService:
                             cmetadata,
                             user_id
                         FROM langchain_pg_collection 
-                        WHERE user_id = :user_id OR user_id IS NULL
+                        WHERE user_id = :user_id OR (cmetadata->>'is_shared')::boolean = true
                         ORDER BY name
                     """), {"user_id": user_id})
                 else:
@@ -305,13 +305,18 @@ class LangChainVectorService:
                     """))
                 
                 for row in result:
+                    metadata = row.cmetadata or {}
+                    is_shared = metadata.get("is_shared", False)
+                    
                     collection = {
                         "id": str(row.uuid),
                         "name": row.name,
-                        "metadata": row.cmetadata or {},
+                        "metadata": metadata,
                         "created_at": None,
                         "document_count": 0,
-                        "user_id": row.user_id
+                        "user_id": row.user_id,
+                        "is_shared": is_shared,
+                        "created_by": metadata.get("created_by", row.user_id)
                     }
                     
                     # Count documents in this collection
@@ -436,7 +441,7 @@ class LangChainVectorService:
             logger.error(f"Failed to get collection info: {e}")
             raise
     
-    async def create_collection(self, collection_name: str, description: str = "", user_id: str = None) -> Dict[str, Any]:
+    async def create_collection(self, collection_name: str, description: str = "", user_id: str = None, is_shared: bool = False) -> Dict[str, Any]:
         """Create a new collection for a specific user"""
         try:
             if not collection_name or collection_name.strip() == "":
@@ -465,7 +470,11 @@ class LangChainVectorService:
                     {
                         "uuid": collection_uuid,
                         "name": collection_name,
-                        "metadata": json.dumps({"description": description, "created_by": user_id or "system"}),
+                        "metadata": json.dumps({
+                            "description": description, 
+                            "created_by": user_id or "system",
+                            "is_shared": is_shared
+                        }),
                         "user_id": user_id
                     }
                 )
@@ -491,7 +500,7 @@ class LangChainVectorService:
             logger.error(f"Failed to create collection '{collection_name}': {e}")
             raise
     
-    async def delete_collection(self, collection_name: str) -> Dict[str, Any]:
+    async def delete_collection(self, collection_name: str, user_id: str = None) -> Dict[str, Any]:
         """Delete a collection and all its documents"""
         try:
             if collection_name == "langchain_documents":
@@ -502,8 +511,8 @@ class LangChainVectorService:
                 logger.info("Database not initialized, initializing...")
                 await db_service.initialize()
             
-            # Check if collection exists
-            collections = await self.get_collections()
+            # Check if collection exists and verify user ownership
+            collections = await self.get_collections(user_id)
             collection_exists = any(c["name"] == collection_name for c in collections)
             
             if not collection_exists:
@@ -511,9 +520,9 @@ class LangChainVectorService:
                 raise ValueError(f"Collection '{collection_name}' does not exist")
             
             async with db_service.get_session() as session:
-                # Get collection UUID
+                # Get collection UUID and user_id
                 result = await session.execute(
-                    text("SELECT uuid FROM langchain_pg_collection WHERE name = :name"),
+                    text("SELECT uuid, user_id FROM langchain_pg_collection WHERE name = :name"),
                     {"name": collection_name}
                 )
                 row = result.fetchone()
@@ -522,6 +531,17 @@ class LangChainVectorService:
                     raise ValueError(f"Collection '{collection_name}' not found")
                 
                 collection_uuid = row.uuid
+                collection_user_id = row.user_id
+                
+                # Check user authorization - only the creator can delete the collection
+                if user_id and collection_user_id is not None and collection_user_id != user_id:
+                    raise ValueError(f"You are not authorized to delete collection '{collection_name}'. Only the collection owner can delete it.")
+                elif user_id and collection_user_id is None:
+                    # Shared collections (user_id = NULL) - check created_by in metadata
+                    metadata = row.cmetadata or {}
+                    created_by = metadata.get("created_by")
+                    if created_by != user_id:
+                        raise ValueError(f"You are not authorized to delete collection '{collection_name}'. Only the collection owner can delete it.")
                 
                 # Delete all documents in the collection
                 await session.execute(
@@ -548,7 +568,7 @@ class LangChainVectorService:
             logger.error(f"Failed to delete collection '{collection_name}': {e}")
             raise
     
-    async def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
+    async def rename_collection(self, old_name: str, new_name: str, user_id: str = None) -> Dict[str, Any]:
         """Rename a collection"""
         try:
             if old_name == "langchain_documents":
@@ -562,8 +582,8 @@ class LangChainVectorService:
                 logger.info("Database not initialized, initializing...")
                 await db_service.initialize()
             
-            # Check if old collection exists
-            collections = await self.get_collections()
+            # Check if old collection exists and verify user ownership
+            collections = await self.get_collections(user_id)
             old_exists = any(c["name"] == old_name for c in collections)
             if not old_exists:
                 raise ValueError(f"Collection '{old_name}' does not exist")
@@ -574,6 +594,28 @@ class LangChainVectorService:
                 raise ValueError(f"Collection '{new_name}' already exists")
             
             async with db_service.get_session() as session:
+                # Get collection info and verify ownership
+                result = await session.execute(
+                    text("SELECT uuid, user_id FROM langchain_pg_collection WHERE name = :old_name"),
+                    {"old_name": old_name}
+                )
+                row = result.fetchone()
+                
+                if not row:
+                    raise ValueError(f"Collection '{old_name}' not found")
+                
+                collection_user_id = row.user_id
+                
+                # Check user authorization - only the creator can rename the collection
+                if user_id and collection_user_id is not None and collection_user_id != user_id:
+                    raise ValueError(f"You are not authorized to rename collection '{old_name}'. Only the collection owner can rename it.")
+                elif user_id and collection_user_id is None:
+                    # Shared collections (user_id = NULL) - check created_by in metadata
+                    metadata = row.cmetadata or {}
+                    created_by = metadata.get("created_by")
+                    if created_by != user_id:
+                        raise ValueError(f"You are not authorized to rename collection '{old_name}'. Only the collection owner can rename it.")
+                
                 # Update collection name
                 result = await session.execute(
                     text("""
@@ -615,12 +657,44 @@ class LangChainVectorService:
                 await db_service.initialize()
             
             async with db_service.get_session() as session:
-                # Update collection user_id
-                result = await session.execute(text("""
-                    UPDATE langchain_pg_collection 
-                    SET user_id = :new_user_id 
-                    WHERE name = :collection_name
-                """), {"new_user_id": new_user_id, "collection_name": collection_name})
+                # Update collection user_id and metadata
+                # For shared collections: keep original user_id but set is_shared=True
+                # For personal collections: set user_id to current user and is_shared=False
+                is_shared = (new_user_id is None)
+                
+                # For shared collections, keep the original user_id in metadata
+                if is_shared:
+                    # Get current user_id to store in metadata
+                    current_result = await session.execute(text("""
+                        SELECT user_id FROM langchain_pg_collection WHERE name = :collection_name
+                    """), {"collection_name": collection_name})
+                    current_row = current_result.fetchone()
+                    original_user_id = current_row.user_id if current_row else None
+                    
+                    result = await session.execute(text("""
+                        UPDATE langchain_pg_collection 
+                        SET user_id = NULL,
+                            cmetadata = jsonb_set(
+                                jsonb_set(cmetadata, '{is_shared}', :is_shared::jsonb),
+                                '{created_by}', :created_by::jsonb
+                            )
+                        WHERE name = :collection_name
+                    """), {
+                        "collection_name": collection_name,
+                        "is_shared": json.dumps(is_shared),
+                        "created_by": json.dumps(original_user_id or "system")
+                    })
+                else:
+                    result = await session.execute(text("""
+                        UPDATE langchain_pg_collection 
+                        SET user_id = :new_user_id,
+                            cmetadata = jsonb_set(cmetadata, '{is_shared}', :is_shared::jsonb)
+                        WHERE name = :collection_name
+                    """), {
+                        "new_user_id": new_user_id, 
+                        "collection_name": collection_name,
+                        "is_shared": json.dumps(is_shared)
+                    })
                 
                 if result.rowcount == 0:
                     raise ValueError(f"Collection '{collection_name}' not found")

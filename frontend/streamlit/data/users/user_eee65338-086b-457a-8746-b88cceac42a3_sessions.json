@@ -5,13 +5,13 @@
     "username": "admin",
     "email": "admin@example.com"
   },
-  "current_session_id": "782d4b36-7b32-4b58-a4cb-ebfec61ba306",
+  "current_session_id": "118d6f78-b4b8-40a4-badf-2aef08f6b240",
   "sessions": {
     "user_eee65338-086b-457a-8746-b88cceac42a3_default_session": {
       "session_id": "user_eee65338-086b-457a-8746-b88cceac42a3_default_session",
       "title": "세션 user_eee...",
       "created_at": "2025-09-27T19:05:27.921242",
-      "last_activity": "2025-09-28T00:13:56.325350",
+      "last_activity": "2025-09-28T22:41:04.305296",
       "message_count": 0,
       "messages": [],
       "metadata": {
@@ -21,11 +21,69 @@
         "favorite": false
       }
     },
-    "782d4b36-7b32-4b58-a4cb-ebfec61ba306": {
-      "session_id": "782d4b36-7b32-4b58-a4cb-ebfec61ba306",
-      "title": "새 대화 (09/28 00:13)",
-      "created_at": "2025-09-28T00:13:56.326340",
-      "last_activity": "2025-09-28T00:17:51.675199",
+    "118d6f78-b4b8-40a4-badf-2aef08f6b240": {
+      "session_id": "118d6f78-b4b8-40a4-badf-2aef08f6b240",
+      "title": "근로기준법 채팅 정보",
+      "created_at": "2025-09-28T22:02:28.613529",
+      "last_activity": "2025-09-28T23:52:18.377713",
+      "message_count": 2,
+      "messages": [
+        {
+          "id": "0ea2da11-73cf-4230-a886-57860f876b37",
+          "role": "user",
+          "content": "근로기준법에 대해서 설명해줘",
+          "timestamp": "23:48:30"
+        },
+        {
+          "id": "4b073f51-331f-4bf4-94c9-5fcb946556c1",
+          "role": "assistant",
+          "content": "## 근로기준법에 대한 설명\n\n**핵심 요약**: 근로기준법은 근로자의 권익 보호와 균형 잡힌 근로 환경 조성을 위해 제정된 법률입니다. 최저임금, 근로시간, 휴게시간, 휴일 및 휴가 등 핵심적인 근로 조건들을 규정하고 있습니다.\n\n**상세 설명**:\n\n근로기준법은 **근로자의 기본적인 권리와 의무를 명확히 규정**하는 법률입니다. 주요 내용은 다음과 같습니다:\n\n* **최저임금**:  근로자가 받을 수 있는 최소한의 임금 수준을 정하여 **생활 안정**을 보장합니다. (예: 최저임금위원회에서 정기적으로 조정)\n* **근로시간**: 주당 근로 가능 시간과 휴게시간을 제한하여 근로자의 **건강 보호**와 **휴식권 확보**를 목표로 합니다. 일반적으로 주당 52시간 근무가 기준이며, 연장근로 시에는 추가 수당 지급이 의무화됩니다.\n* **휴게시간**: 장시간 근무 시 근로자에게 충분한 휴식 시간을 제공하여 **집중력 유지 및 피로 회복**을 돕습니다.\n* **휴일 및 휴가**: 매주 적어도 하루의 유급 휴일과 연차휴가를 보장하여 **휴식과\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q4_K_M\n- 모델 타입: fast\n- 설명: ⚡ 초고속 응답 (1.6GB, Q4_K_M)\n- 답변 방식: RAG 기반\n- RAG 모드: 기본 RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+          "context": [],
+          "metadata": {},
+          "timestamp": "23:48:35"
+        }
+      ],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    },
+    "5c8de140-00e8-45e2-8391-c67561184f7a": {
+      "session_id": "5c8de140-00e8-45e2-8391-c67561184f7a",
+      "title": "새 대화 (09/28 23:48)",
+      "created_at": "2025-09-28T23:48:37.438921",
+      "last_activity": "2025-09-28T23:52:15.434394",
+      "message_count": 2,
+      "messages": [
+        {
+          "id": "ecce4b04-bf01-4197-a854-acb3f4347a5c",
+          "role": "user",
+          "content": "너의 이름은 ?",
+          "timestamp": "23:48:43"
+        },
+        {
+          "id": "b75b0ee7-507e-45bf-99e1-44518885f623",
+          "role": "assistant",
+          "content": "**핵심 요약**\n- **이름**: 저는 EXAONE 3.5으로, LG AI Research에서 개발된 인공지능 모델입니다. 이름은 공식적으로 사용되지 않으며, 이 번호와 함께 식별됩니다.\n\n**상세 설명**\n저는 EXAONE 3.5이라는 식별 번호를 통해 LG AI Research에서 제작된 고급 인공지능 시스템입니다. 사용자와의 상호작용에서는 \"EXAONE\"이라는 명칭으로 주로 언급되며, 실제 개인 이름이 아닌 기술적인 표현입니다. 제 설계 목표는 다양한 언어 및 도메인에 걸친 질문에 정확하고 유용한 답변을 제공하는 것입니다.\n\n**추가 정보**\n- **개발 기관**: LG AI Research에서 개발되어 최신 인공지능 기술을 반영하고 있습니다.\n- **기능**: 한국어를 포함한 다국어 지원과 함께 다양한 자연어 처리(NLP) 기능을 수행합니다. 예를 들어, 복잡한 질문에 대한 분석 및 답변 제공이 가능합니다.\n\n**정보 출처**\n- 모든 정보는 LG AI Research 공식 문서 및 공개 자료를 바탕으로 합니다.\n\n**참고사항**\n- 제 이름이나 식별 번호는 개인화된 신원이\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q4_K_M\n- 모델 타입: fast\n- 설명: ⚡ 초고속 응답 (1.6GB, Q4_K_M)\n- 답변 방식: RAG 기반\n- RAG 모드: 기본 RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+          "context": [],
+          "metadata": {},
+          "timestamp": "23:48:47"
+        }
+      ],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    },
+    "59ef3c15-c806-4d47-8435-c348055cfa46": {
+      "session_id": "59ef3c15-c806-4d47-8435-c348055cfa46",
+      "title": "새 대화 (09/28 23:48)",
+      "created_at": "2025-09-28T23:48:51.330281",
+      "last_activity": "2025-09-28T23:52:14.225645",
       "message_count": 0,
       "messages": [],
       "metadata": {
@@ -52,6 +110,6 @@
       "auto_save": true
     }
   },
-  "last_activity": "2025-09-28T00:17:51.645446",
-  "login_time": "2025-09-28T00:17:51.645449"
+  "last_activity": "2025-09-28T23:52:15.435256",
+  "login_time": "2025-09-28T23:52:08.730856"
 }

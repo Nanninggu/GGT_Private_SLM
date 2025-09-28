@@ -96,18 +96,18 @@ class LangChainRagService:
             logger.error(f"Failed to get collection info: {e}")
             return {}
     
-    async def create_collection(self, collection_name: str, description: str = "", user_id: str = None) -> Dict[str, Any]:
+    async def create_collection(self, collection_name: str, description: str = "", user_id: str = None, is_shared: bool = False) -> Dict[str, Any]:
         """Create a new collection"""
         try:
-            return await langchain_vector_service.create_collection(collection_name, description, user_id)
+            return await langchain_vector_service.create_collection(collection_name, description, user_id, is_shared)
         except Exception as e:
             logger.error(f"Failed to create collection: {e}")
             raise
     
-    async def delete_collection(self, collection_name: str) -> Dict[str, Any]:
+    async def delete_collection(self, collection_name: str, user_id: str = None) -> Dict[str, Any]:
         """Delete a collection and all its documents"""
         try:
-            result = await langchain_vector_service.delete_collection(collection_name)
+            result = await langchain_vector_service.delete_collection(collection_name, user_id)
             
             # If we're deleting the current collection, switch to default
             if self.current_collection == collection_name:
@@ -123,10 +123,10 @@ class LangChainRagService:
             logger.error(f"Failed to delete collection: {e}")
             raise
     
-    async def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
+    async def rename_collection(self, old_name: str, new_name: str, user_id: str = None) -> Dict[str, Any]:
         """Rename a collection"""
         try:
-            result = await langchain_vector_service.rename_collection(old_name, new_name)
+            result = await langchain_vector_service.rename_collection(old_name, new_name, user_id)
             
             # If we're renaming the current collection, update the current collection
             if self.current_collection == old_name:
@@ -147,6 +147,26 @@ class LangChainRagService:
         except Exception as e:
             logger.error(f"Failed to change collection type: {e}")
             raise
+    
+    async def check_collection_ownership(self, collection_name: str, user_id: str) -> bool:
+        """Check if user owns the collection"""
+        try:
+            collections = await langchain_vector_service.get_collections(user_id)
+            for collection in collections:
+                if collection.get("name") == collection_name:
+                    collection_user_id = collection.get("user_id")
+                    if collection_user_id is not None:
+                        # Personal collection - check user_id
+                        return collection_user_id == user_id
+                    else:
+                        # Shared collection - check created_by in metadata
+                        metadata = collection.get("metadata", {})
+                        created_by = metadata.get("created_by")
+                        return created_by == user_id
+            return False
+        except Exception as e:
+            logger.error(f"Failed to check collection ownership: {e}")
+            return False
     
     async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """Add document to knowledge base"""

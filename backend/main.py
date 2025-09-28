@@ -3,7 +3,6 @@ FastAPI backend server for the chatbot
 Converted from Spring Boot with enhanced RAG capabilities
 """
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sse_starlette.sse import EventSourceResponse
@@ -1417,7 +1416,7 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
 
 # LangChain file upload endpoint with collection support
 @app.post("/api/langchain/upload")
-async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("langchain_documents")):
+async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("langchain_documents"), current_user: User = Depends(auth_controller.get_current_user)):
     """Upload and process file using LangChain"""
     try:
         logger.info(f"Starting LangChain file upload: {file.filename} to collection: {collection_name}")
@@ -1439,8 +1438,15 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
                 detail=f"Failed to extract text from {file.filename}: {extraction_result['metadata'].get('error', 'Unknown error')}"
             )
         
-        # Switch to specified collection if different from current
+        # Check collection ownership for non-default collections
         if collection_name != "langchain_documents":
+            logger.info(f"Checking ownership for collection: {collection_name}")
+            is_owner = await langchain_rag_service.check_collection_ownership(collection_name, current_user.id)
+            if not is_owner:
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"You don't have permission to upload files to collection '{collection_name}'. Only the collection owner can upload files."
+                )
             logger.info(f"Switching to collection: {collection_name}")
             await langchain_rag_service.set_collection(collection_name)
         
@@ -1546,11 +1552,18 @@ async def upload_multiple_files(files: List[UploadFile] = File(...), collection_
 
 # LangChain multiple files upload endpoint with collection support
 @app.post("/api/langchain/upload/multiple")
-async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), collection_name: str = Form("documents")):
+async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), collection_name: str = Form("documents"), current_user: User = Depends(auth_controller.get_current_user)):
     """Upload and process multiple files using LangChain"""
     try:
-        # Switch to specified collection if different from current
+        # Check collection ownership for non-default collections
         if collection_name != "langchain_documents":
+            logger.info(f"Checking ownership for collection: {collection_name}")
+            is_owner = await langchain_rag_service.check_collection_ownership(collection_name, current_user.id)
+            if not is_owner:
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"You don't have permission to upload files to collection '{collection_name}'. Only the collection owner can upload files."
+                )
             await langchain_rag_service.set_collection(collection_name)
         
         results = []
@@ -1743,7 +1756,8 @@ async def create_collection(request: CreateCollectionRequest, current_user: User
         result = await langchain_rag_service.create_collection(
             request.collection_name, 
             request.description,
-            current_user.id
+            current_user.id,
+            is_shared=False  # Mark as personal collection
         )
         
         return {
@@ -1765,11 +1779,12 @@ async def create_shared_collection(request: CreateCollectionRequest, current_use
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        # Create shared collection (user_id = None)
+        # Create shared collection (user_id = current_user.id for ownership tracking)
         result = await langchain_rag_service.create_collection(
             request.collection_name, 
             request.description,
-            None  # None means shared collection
+            current_user.id,  # Store creator's user_id for ownership tracking
+            is_shared=True    # Mark as shared collection
         )
         
         return {
@@ -1806,13 +1821,24 @@ async def change_collection_type(collection_name: str, request: dict, current_us
         if not current_collection:
             raise HTTPException(status_code=404, detail="Collection not found")
         
-        # Check if user owns the collection or if it's a shared collection
+        # Check if user owns the collection
         current_user_id = current_collection.get("user_id")
         if current_user_id is not None and current_user_id != current_user.id:
             raise HTTPException(status_code=403, detail="You don't have permission to modify this collection")
+        elif current_user_id is None:
+            # Shared collections (user_id = NULL) - check created_by in metadata
+            metadata = current_collection.get("metadata", {})
+            created_by = metadata.get("created_by")
+            if created_by != current_user.id:
+                raise HTTPException(status_code=403, detail="You don't have permission to modify this collection")
         
         # Determine new user_id based on type
-        new_user_id = current_user.id if new_type == "personal" else None
+        # For personal collections: set user_id to current user
+        # For shared collections: set user_id to None (but keep original creator info in metadata)
+        if new_type == "personal":
+            new_user_id = current_user.id
+        else:  # shared
+            new_user_id = None  # Shared collections have user_id = None
         
         # Update collection type
         result = await langchain_rag_service.change_collection_type(collection_name, new_user_id)
@@ -1831,13 +1857,13 @@ async def change_collection_type(collection_name: str, request: dict, current_us
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/collections/{collection_name}")
-async def delete_collection(collection_name: str):
+async def delete_collection(collection_name: str, current_user: User = Depends(auth_controller.get_current_user)):
     """Delete a collection and all its documents"""
     try:
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        result = await langchain_rag_service.delete_collection(collection_name)
+        result = await langchain_rag_service.delete_collection(collection_name, current_user.id)
         
         return {
             "success": True,
@@ -1855,6 +1881,13 @@ async def delete_collection(collection_name: str):
                 "message": f"Collection '{collection_name}' does not exist",
                 "error": "COLLECTION_NOT_FOUND"
             }
+        elif "not authorized" in str(e).lower() or "permission" in str(e).lower():
+            logger.info("User not authorized to delete collection")
+            return {
+                "success": False,
+                "message": f"You are not authorized to delete collection '{collection_name}'",
+                "error": "UNAUTHORIZED"
+            }
         logger.info("ValueError does not match 'does not exist' pattern, raising HTTPException")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -1862,7 +1895,7 @@ async def delete_collection(collection_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/collections/rename")
-async def rename_collection(request: RenameCollectionRequest):
+async def rename_collection(request: RenameCollectionRequest, current_user: User = Depends(auth_controller.get_current_user)):
     """Rename a collection"""
     try:
         if not services_initialized:
@@ -1870,7 +1903,8 @@ async def rename_collection(request: RenameCollectionRequest):
         
         result = await langchain_rag_service.rename_collection(
             request.old_name, 
-            request.new_name
+            request.new_name,
+            current_user.id
         )
         
         return {
@@ -1880,6 +1914,8 @@ async def rename_collection(request: RenameCollectionRequest):
         }
         
     except ValueError as e:
+        if "not authorized" in str(e).lower() or "permission" in str(e).lower():
+            raise HTTPException(status_code=403, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to rename collection: {e}")

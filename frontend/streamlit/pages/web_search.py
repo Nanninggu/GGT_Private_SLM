@@ -283,11 +283,19 @@ def main():
             st.subheader("📋 컬렉션 목록")
             
             for i, collection in enumerate(collections, 1):
+                # Check if collection is shared
+                is_shared = collection.get('is_shared', False)
+                collection_icon = "🌐" if is_shared else "👤"
+                collection_type = "공유" if is_shared else "개인"
+                
                 st.markdown(f"""
                 <div class="collection-card">
                     <h4 style="color: #212529; margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem;">
-                        📁 {collection.get('name', 'Unknown')} ({collection.get('document_count', 0)}개 문서)
+                        {collection_icon} {collection.get('name', 'Unknown')} ({collection.get('document_count', 0)}개 문서)
                     </h4>
+                    <p style="color: #6c757d; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">
+                        <strong>타입:</strong> {collection_type} 컬렉션
+                    </p>
                     <div style="margin-bottom: 1rem;">
                         <p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
                             <strong>이름:</strong> {collection.get('name', 'Unknown')}
@@ -334,8 +342,20 @@ def main():
                 if st.button("✅ 삭제 확인", type="primary", use_container_width=True):
                     with st.spinner("컬렉션 삭제 중..."):
                         try:
+                            # Get authentication token
+                            token = st.session_state.get("auth_token")
+                            if not token:
+                                st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+                                st.session_state.collection_to_delete = None
+                                return
+                            
+                            headers = {
+                                "Authorization": f"Bearer {token}"
+                            }
+                            
                             response = requests.delete(
-                                f"{API_BASE_URL}/api/collections/{collection_to_delete}"
+                                f"{API_BASE_URL}/api/collections/{collection_to_delete}",
+                                headers=headers
                             )
                             
                             if response.status_code == 200:
@@ -352,8 +372,13 @@ def main():
                                     st.session_state.collection_to_delete = None
                                     st.rerun()
                                 else:
-                                    # Collection doesn't exist or other business logic error
-                                    st.warning(f"컬렉션 '{collection_to_delete}'이 존재하지 않습니다.")
+                                    error_message = response_data.get('error', '알 수 없는 오류')
+                                    if "COLLECTION_NOT_FOUND" in str(response_data) or "does not exist" in error_message:
+                                        st.warning(f"컬렉션 '{collection_to_delete}'이 존재하지 않습니다.")
+                                    elif "UNAUTHORIZED" in str(response_data) or "not authorized" in error_message.lower():
+                                        st.error(f"컬렉션 '{collection_to_delete}'을 삭제할 권한이 없습니다. 컬렉션을 생성한 사용자만 삭제할 수 있습니다.")
+                                    else:
+                                        st.error(f"컬렉션 삭제 실패: {error_message}")
                                     st.session_state.collection_to_delete = None
                             elif response.status_code == 400:
                                 error_data = response.json()
@@ -582,12 +607,18 @@ def main():
                 collection_name = collection.get('name', 'Unknown')
                 document_count = collection.get('document_count', 0)
                 description = collection.get('metadata', {}).get('description', '설명 없음')
+                is_shared = collection.get('is_shared', False)
+                collection_icon = "🌐" if is_shared else "👤"
+                collection_type = "공유" if is_shared else "개인"
                 
                 st.markdown(f"""
                 <div class="collection-card">
                     <h4 style="color: #212529; margin-bottom: 0.5rem; font-weight: 700; font-size: 1rem;">
-                        📂 {collection_name}
+                        {collection_icon} {collection_name}
                     </h4>
+                    <p style="color: #6c757d; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        <strong>타입:</strong> {collection_type} 컬렉션
+                    </p>
                     <p style="color: #6c757d; margin-bottom: 0.5rem; font-size: 0.9rem;">
                         <strong>문서 수:</strong> {document_count}개
                     </p>

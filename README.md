@@ -21,7 +21,6 @@ backend/
 ├── models/              # 데이터 모델
 ├── utils/               # 유틸리티 함수
 ├── main.py              # FastAPI 애플리케이션 진입점
-├── test_configuration.py # 설정 테스트 스크립트
 └── env.example          # 환경 변수 예제
 ```
 

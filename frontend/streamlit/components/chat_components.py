@@ -583,48 +583,40 @@ class ChatComponents:
                 "timestamp": datetime.now().isoformat()
             })
             
-            # Try to submit to database directly
+            # Try to submit to backend via API
+            api_success = False
             try:
-                import sys
-                import os
+                from services.api_service import APIService
+                api_service = APIService()
                 
-                # Add backend path to sys.path
-                backend_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend')
-                backend_path = os.path.abspath(backend_path)
-                if backend_path not in sys.path:
-                    sys.path.insert(0, backend_path)
+                # Submit feedback via API
+                result = api_service.submit_feedback(feedback_data)
                 
-                from services.feedback_service import feedback_service, FeedbackType
-                
-                # Convert feedback_type string to enum
-                feedback_type_enum = FeedbackType(feedback_data['feedback_type'])
-                
-                # Submit directly to feedback service
-                result = feedback_service.submit_feedback(
-                    user_id=feedback_data['user_id'],
-                    session_id=feedback_data['session_id'],
-                    message_id=feedback_data['message_id'],
-                    feedback_type=feedback_type_enum,
-                    rating=feedback_data.get('rating'),
-                    is_positive=feedback_data.get('is_positive'),
-                    comment=feedback_data.get('comment')
-                )
-                
-                if result.get("success"):
+                if result and result.get("success"):
                     # Database submission successful
                     st.info("피드백이 데이터베이스에 저장되었습니다.")
+                    api_success = True
                 else:
-                    st.warning(f"데이터베이스 저장 실패 (로컬 저장됨): {result.get('error', '알 수 없는 오류')}")
+                    error_msg = result.get('error', '알 수 없는 오류') if result else '응답을 받을 수 없음'
+                    st.warning(f"데이터베이스 저장 실패 (로컬 저장됨): {error_msg}")
                     
+            except ImportError as e:
+                st.warning(f"API 서비스를 불러올 수 없습니다 (로컬 저장됨): {str(e)}")
             except Exception as e:
-                # Database service error, but local storage worked
+                # API service error, but local storage worked
                 st.warning(f"데이터베이스 연결 실패 (로컬 저장됨): {str(e)}")
             
-            # Always show success message
-            if feedback_type == "rating" and rating:
-                st.success(f"피드백이 제출되었습니다. {rating}점 평가를 주셔서 감사합니다!")
+            # Show success message based on submission result
+            if api_success:
+                if feedback_type == "rating" and rating:
+                    st.success(f"피드백이 제출되었습니다. {rating}점 평가를 주셔서 감사합니다!")
+                else:
+                    st.success("피드백이 제출되었습니다. 피드백을 주셔서 감사합니다!")
             else:
-                st.success("피드백이 제출되었습니다. 피드백을 주셔서 감사합니다!")
+                if feedback_type == "rating" and rating:
+                    st.success(f"피드백이 로컬에 저장되었습니다. {rating}점 평가를 주셔서 감사합니다!")
+                else:
+                    st.success("피드백이 로컬에 저장되었습니다. 피드백을 주셔서 감사합니다!")
             
         except Exception as e:
             st.error(f"피드백 제출 중 오류가 발생했습니다: {str(e)}")
@@ -1401,18 +1393,22 @@ class ChatComponents:
                     
                     # Multi-collection selector with aliases
                     def format_collection_name(collection_name):
-                        doc_count = next((col.get('document_count', 0) for col in collections if col['name'] == collection_name), 0)
+                        collection_info = next((col for col in collections if col['name'] == collection_name), {})
+                        doc_count = collection_info.get('document_count', 0)
+                        is_shared = collection_info.get('is_shared', False)
+                        collection_icon = "🌐" if is_shared else "👤"
+                        
                         # Check if there's a custom alias
                         aliases = st.session_state.get("collection_aliases", {})
                         if collection_name in aliases and aliases[collection_name]:
-                            return f"{aliases[collection_name]} ({collection_name}) - {doc_count}개 문서"
+                            return f"{collection_icon} {aliases[collection_name]} ({collection_name}) - {doc_count}개 문서"
                         else:
                             # Use auto-generated alias for long names
                             if len(collection_name) > 20:
                                 display_name = collection_name[:17] + "..."
-                                return f"{display_name} ({collection_name}) - {doc_count}개 문서"
+                                return f"{collection_icon} {display_name} ({collection_name}) - {doc_count}개 문서"
                             else:
-                                return f"{collection_name} - {doc_count}개 문서"
+                                return f"{collection_icon} {collection_name} - {doc_count}개 문서"
                     
                     selected_collections = st.multiselect(
                         "사용할 컬렉션 선택 (여러 개 선택 가능)",
@@ -1787,8 +1783,9 @@ class ChatComponents:
                 # Show success message
                 st.success("로그아웃되었습니다.")
                 
-                # Redirect to login page
-                st.switch_page("pages/login.py")
+                # Redirect to login page using session state
+                st.session_state.current_page = "login"
+                st.rerun()
 
         return action
 

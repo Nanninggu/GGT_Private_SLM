@@ -3,12 +3,7 @@ Configuration Page - 시스템 설정 및 관리
 """
 import streamlit as st
 
-# 페이지 설정
-st.set_page_config(
-    page_title="설정",
-    page_icon="⚙️",
-    layout="wide"
-)
+# 페이지 설정은 main.py에서 처리됨
 import sys
 import os
 import re
@@ -52,6 +47,8 @@ def main():
     # Initialize session state
     if "backend_connected" not in st.session_state:
         st.session_state.backend_connected = False
+    if "debug_mode" not in st.session_state:
+        st.session_state.debug_mode = False
     
     # Initialize controller
     chat_controller = ChatController()
@@ -395,9 +392,32 @@ def main():
     
     with tab2:
         render_session_management(chat_controller)
+        render_debug_settings()
     
     with tab3:
         render_connection_status(chat_controller)
+
+def render_debug_settings():
+    """Render debug settings section"""
+    st.markdown("---")
+    st.subheader("🔧 디버그 설정")
+    
+    # Debug mode toggle
+    debug_mode = st.checkbox(
+        "디버그 모드 활성화", 
+        value=st.session_state.get("debug_mode", False),
+        help="채팅 히스토리 로딩 과정을 디버깅할 수 있습니다."
+    )
+    
+    if debug_mode != st.session_state.get("debug_mode", False):
+        st.session_state.debug_mode = debug_mode
+        if debug_mode:
+            st.success("디버그 모드가 활성화되었습니다. 메인 페이지에서 디버그 정보를 확인할 수 있습니다.")
+        else:
+            st.info("디버그 모드가 비활성화되었습니다.")
+    
+    if debug_mode:
+        st.info("💡 디버그 모드가 활성화되어 있습니다. 메인 페이지에서 채팅 히스토리 로딩 과정을 확인할 수 있습니다.")
 
 def render_vector_db_management(chat_controller):
     """Render Vector DB management section"""
@@ -496,39 +516,51 @@ def render_vector_db_management(chat_controller):
                     
                     with col_actions:
                         if name != "documents" and name != "langchain_documents":  # Don't allow operations on default collections
-                            if st.button("삭제", key=f"delete_{name}_{idx}", type="secondary"):
-                                # Show confirmation dialog
-                                if st.session_state.get(f"confirm_delete_{name}", False):
-                                    try:
-                                        # Show loading indicator
-                                        with st.spinner("컬렉션을 삭제하는 중..."):
-                                            if chat_controller.delete_collection(name):
-                                                st.success(f"✅ 컬렉션 '{name}'이 삭제되었습니다.")
-                                                st.session_state[f"confirm_delete_{name}"] = False
-                                                
-                                                # 즉시 UI에서 해당 컬렉션 제거 (캐시 무효화)
-                                                if hasattr(chat_controller, '_collections_cache'):
-                                                    delattr(chat_controller, '_collections_cache')
-                                                
-                                                # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
-                                                if 'collections_data' in st.session_state:
-                                                    del st.session_state.collections_data
-                                                
-                                                # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                                st.markdown("""
-                                                <script>
-                                                setTimeout(function() {
-                                                    window.location.reload();
-                                                }, 1000);
-                                                </script>
-                                                """, unsafe_allow_html=True)
-                                            else:
-                                                st.error(f"❌ 컬렉션 '{name}' 삭제에 실패했습니다.")
-                                    except Exception as e:
-                                        st.error(f"❌ 컬렉션 삭제 중 오류가 발생했습니다: {str(e)}")
+                            # Check if user can delete this collection
+                            can_delete = True
+                            if is_shared:
+                                # For shared collections, check if current user is the creator
+                                created_by = collection.get("created_by")
+                                current_user_id = st.session_state.get("user_info", {}).get("id")
+                                can_delete = created_by == current_user_id
+                            
+                            if can_delete:
+                                if st.button("삭제", key=f"delete_{name}_{idx}", type="secondary"):
+                                    # Show confirmation dialog
+                                    if st.session_state.get(f"confirm_delete_{name}", False):
+                                        try:
+                                            # Show loading indicator
+                                            with st.spinner("컬렉션을 삭제하는 중..."):
+                                                if chat_controller.delete_collection(name):
+                                                    st.success(f"✅ 컬렉션 '{name}'이 삭제되었습니다.")
+                                                    st.session_state[f"confirm_delete_{name}"] = False
+                                                    
+                                                    # 즉시 UI에서 해당 컬렉션 제거 (캐시 무효화)
+                                                    if hasattr(chat_controller, '_collections_cache'):
+                                                        delattr(chat_controller, '_collections_cache')
+                                                    
+                                                    # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
+                                                    if 'collections_data' in st.session_state:
+                                                        del st.session_state.collections_data
+                                                    
+                                                    # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
+                                                    st.markdown("""
+                                                    <script>
+                                                    setTimeout(function() {
+                                                        window.location.reload();
+                                                    }, 1000);
+                                                    </script>
+                                                    """, unsafe_allow_html=True)
+                                                else:
+                                                    st.error(f"❌ 컬렉션 '{name}' 삭제에 실패했습니다.")
+                                        except Exception as e:
+                                            st.error(f"❌ 컬렉션 삭제 중 오류가 발생했습니다: {str(e)}")
                                 else:
                                     st.session_state[f"confirm_delete_{name}"] = True
                                     st.warning(f"'{name}' 컬렉션을 정말 삭제하시겠습니까? 다시 클릭하면 삭제됩니다.")
+                            else:
+                                # 공유 컬렉션의 경우 삭제 권한이 없을 때 안내 메시지
+                                st.caption("🔒 생성자만 삭제 가능")
                         else:
                             st.markdown("기본 컬렉션")
     

@@ -7,6 +7,8 @@ from backend.services.web_search_service import WebSearchService
 from backend.services.vector_service import VectorService
 from backend.services.langchain_vector_service import LangChainVectorService
 from backend.models.chat import ChatMessage
+from backend.models.user import User
+from backend.controllers.auth_controller import auth_controller
 # from utils.helpers import get_current_user_id  # Not needed for web search
 
 logger = logging.getLogger(__name__)
@@ -74,7 +76,8 @@ async def search_web(request: WebSearchRequest):
 @router.post("/search-and-save", response_model=WebSearchResponse)
 async def search_and_save_to_collection(
     request: WebSearchAndSaveRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(auth_controller.get_current_user)
 ):
     """웹 검색을 수행하고 결과를 컬렉션에 저장합니다."""
     try:
@@ -103,13 +106,33 @@ async def search_and_save_to_collection(
         
         # 컬렉션 존재 확인 및 생성 (LangChain RAG 서비스 사용)
         try:
-            await langchain_vector_service.get_collection_info(request.collection_name)
+            collection_info = await langchain_vector_service.get_collection_info(request.collection_name)
+            # 기존 컬렉션의 소유권 확인
+            collection_user_id = collection_info.get("user_id") if collection_info else None
+            if collection_user_id is not None and collection_user_id != current_user.id:
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"You don't have permission to save to collection '{request.collection_name}'. Only the collection owner can save files."
+                )
+            elif collection_user_id is None:
+                # Shared collections (user_id = NULL) - check created_by in metadata
+                metadata = collection_info.get("metadata", {}) if collection_info else {}
+                created_by = metadata.get("created_by")
+                if created_by != current_user.id:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail=f"You don't have permission to save to collection '{request.collection_name}'. Only the collection owner can save files."
+                    )
+        except HTTPException:
+            raise
         except:
-            # 컬렉션이 없으면 생성
+            # 컬렉션이 없으면 생성 (사용자 ID 포함)
             try:
                 await langchain_vector_service.create_collection(
                     request.collection_name, 
-                    f"웹 검색 결과를 위한 컬렉션: {request.collection_name}"
+                    f"웹 검색 결과를 위한 컬렉션: {request.collection_name}",
+                    current_user.id,
+                    is_shared=False  # Mark as personal collection
                 )
             except ValueError as e:
                 if "already exists" in str(e):

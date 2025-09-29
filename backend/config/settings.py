@@ -44,7 +44,7 @@ class Settings:
     ASYNC_REQUEST_TIMEOUT: int = 60  # seconds (프론트엔드와 통일)
     
     # ===== Ollama 설정 =====
-    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11435")
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_CHAT_TIMEOUT: int = 60  # seconds (성능 최적화)
     OLLAMA_READ_TIMEOUT: int = 60  # seconds (성능 최적화)
     OLLAMA_CONNECTION_TIMEOUT: int = 90  # seconds (성능 최적화)

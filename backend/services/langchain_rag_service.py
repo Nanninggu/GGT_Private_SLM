@@ -294,13 +294,11 @@ class LangChainRagService:
                     await langchain_vector_service.set_collection(collection_name)
                     
                     # Search for relevant documents with similarity scores
-                    # Handle async method properly - collect all results from async generator
-                    source_docs_with_scores = []
-                    async for doc, score in self.documents.asimilarity_search_with_score(
+                    # Handle async method properly - await the coroutine
+                    source_docs_with_scores = await self.documents.asimilarity_search_with_score(
                         query,
                         k=settings.RAG_VECTOR_SEARCH_TOP_K
-                    ):
-                        source_docs_with_scores.append((doc, score))
+                    )
                     
                     # Process documents from this collection
                     collection_docs = []

@@ -42,7 +42,12 @@ class OllamaService:
                     "temperature": model_config["temperature"],
                     "top_p": model_config["top_p"],
                     "top_k": model_config["top_k"],
-                    "repeat_penalty": model_config["repeat_penalty"]
+                    "repeat_penalty": model_config["repeat_penalty"],
+                    # 메모리 사용량 최적화
+                    "num_gpu": 1,  # GPU 사용량 제한
+                    "num_thread": 4,  # CPU 스레드 수 제한
+                    "low_vram": True,  # 낮은 VRAM 모드
+                    "f16_kv": True,  # 16비트 정밀도 사용
                 }
             else:
                 # Fallback to default settings
@@ -53,7 +58,12 @@ class OllamaService:
                     "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
                     "top_p": settings.OLLAMA_CHAT_TOP_P,
                     "top_k": settings.OLLAMA_CHAT_TOP_K,
-                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
+                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY,
+                    # 메모리 사용량 최적화
+                    "num_gpu": 1,  # GPU 사용량 제한
+                    "num_thread": 4,  # CPU 스레드 수 제한
+                    "low_vram": True,  # 낮은 VRAM 모드
+                    "f16_kv": True,  # 16비트 정밀도 사용
                 }
             
             # Check if model is available before making the request
@@ -94,8 +104,20 @@ class OllamaService:
                 "eval_duration": data.get("eval_duration", 0)
             }
             
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 500:
+                logger.error(f"Ollama server crashed (500): {e.response.text}")
+                raise Exception(f"Ollama 서버가 크래시했습니다. 모델 '{model}'이 메모리 부족이나 다른 문제로 인해 종료되었습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요.")
+            else:
+                logger.error(f"Ollama HTTP error {e.response.status_code}: {e.response.text}")
+                raise Exception(f"Ollama 서버 오류 ({e.response.status_code}): {e.response.text}")
+        except httpx.ConnectError as e:
+            logger.error(f"Failed to connect to Ollama server: {e}")
+            raise Exception("Ollama 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.")
         except Exception as e:
             logger.error(f"Failed to generate chat completion: {e}")
+            if "aborted (core dumped)" in str(e):
+                raise Exception(f"Ollama 모델 '{model}'이 메모리 부족으로 크래시했습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요.")
             raise
     
     async def generate(self, prompt: str, model: str = None, model_type: str = "fast") -> str:
@@ -122,7 +144,12 @@ class OllamaService:
                     "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
                     "top_p": settings.OLLAMA_CHAT_TOP_P,
                     "top_k": settings.OLLAMA_CHAT_TOP_K,
-                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
+                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY,
+                    # 메모리 사용량 최적화
+                    "num_gpu": 1,  # GPU 사용량 제한
+                    "num_thread": 4,  # CPU 스레드 수 제한
+                    "low_vram": True,  # 낮은 VRAM 모드
+                    "f16_kv": True,  # 16비트 정밀도 사용
                 }
             
             response = await self.client.post(
@@ -146,8 +173,20 @@ class OllamaService:
             
             return data.get("response", "")
             
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 500:
+                logger.error(f"Ollama server crashed (500): {e.response.text}")
+                raise Exception(f"Ollama 서버가 크래시했습니다. 모델 '{model}'이 메모리 부족이나 다른 문제로 인해 종료되었습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요.")
+            else:
+                logger.error(f"Ollama HTTP error {e.response.status_code}: {e.response.text}")
+                raise Exception(f"Ollama 서버 오류 ({e.response.status_code}): {e.response.text}")
+        except httpx.ConnectError as e:
+            logger.error(f"Failed to connect to Ollama server: {e}")
+            raise Exception("Ollama 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.")
         except Exception as e:
             logger.error(f"Failed to generate text: {e}")
+            if "aborted (core dumped)" in str(e):
+                raise Exception(f"Ollama 모델 '{model}'이 메모리 부족으로 크래시했습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요.")
             raise
     
     async def list_models(self) -> List[Dict[str, Any]]:
@@ -246,7 +285,12 @@ class OllamaService:
                     "temperature": settings.OLLAMA_CHAT_TEMPERATURE,
                     "top_p": settings.OLLAMA_CHAT_TOP_P,
                     "top_k": settings.OLLAMA_CHAT_TOP_K,
-                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
+                    "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY,
+                    # 메모리 사용량 최적화
+                    "num_gpu": 1,  # GPU 사용량 제한
+                    "num_thread": 4,  # CPU 스레드 수 제한
+                    "low_vram": True,  # 낮은 VRAM 모드
+                    "f16_kv": True,  # 16비트 정밀도 사용
                 }
             
             async with self.client.stream(
@@ -272,9 +316,22 @@ class OllamaService:
                         except json.JSONDecodeError:
                             continue
                             
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 500:
+                logger.error(f"Ollama server crashed (500): {e.response.text}")
+                yield f"❌ Ollama 서버가 크래시했습니다. 모델 '{model}'이 메모리 부족이나 다른 문제로 인해 종료되었습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요."
+            else:
+                logger.error(f"Ollama HTTP error {e.response.status_code}: {e.response.text}")
+                yield f"❌ Ollama 서버 오류 ({e.response.status_code}): {e.response.text}"
+        except httpx.ConnectError as e:
+            logger.error(f"Failed to connect to Ollama server: {e}")
+            yield f"❌ Ollama 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요."
         except Exception as e:
             logger.error(f"Failed to generate streaming text: {e}")
-            yield f"❌ 오류가 발생했습니다: {str(e)}"
+            if "aborted (core dumped)" in str(e):
+                yield f"❌ Ollama 모델 '{model}'이 메모리 부족으로 크래시했습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요."
+            else:
+                yield f"❌ 오류가 발생했습니다: {str(e)}"
     
     async def chat_completion_stream(self, messages: List[Dict[str, str]], model: str = None, model_type: str = "fast") -> AsyncGenerator[str, None]:
         """Generate streaming chat completion using Ollama with model selection"""
@@ -292,9 +349,22 @@ class OllamaService:
             async for chunk in self.generate_stream(prompt, model, model_type):
                 yield chunk
                 
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 500:
+                logger.error(f"Ollama server crashed (500): {e.response.text}")
+                yield f"❌ Ollama 서버가 크래시했습니다. 모델 '{model}'이 메모리 부족이나 다른 문제로 인해 종료되었습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요."
+            else:
+                logger.error(f"Ollama HTTP error {e.response.status_code}: {e.response.text}")
+                yield f"❌ Ollama 서버 오류 ({e.response.status_code}): {e.response.text}"
+        except httpx.ConnectError as e:
+            logger.error(f"Failed to connect to Ollama server: {e}")
+            yield f"❌ Ollama 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요."
         except Exception as e:
             logger.error(f"Failed to generate streaming chat completion: {e}")
-            yield f"❌ 오류가 발생했습니다: {str(e)}"
+            if "aborted (core dumped)" in str(e):
+                yield f"❌ Ollama 모델 '{model}'이 메모리 부족으로 크래시했습니다. 더 작은 모델을 사용하거나 시스템 메모리를 확인해주세요."
+            else:
+                yield f"❌ 오류가 발생했습니다: {str(e)}"
     
     async def get_available_models(self) -> List[Dict[str, Any]]:
         """Get available models with their configurations"""

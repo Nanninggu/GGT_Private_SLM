@@ -65,6 +65,9 @@ class DatabaseService:
             async with self.async_engine.begin() as conn:
                 await self._create_users_table(conn)
             
+            # Run migrations
+            await self._run_migrations()
+            
             logger.info("Database service initialized successfully")
             
         except Exception as e:
@@ -299,6 +302,47 @@ class DatabaseService:
         except Exception as e:
             logger.warning(f"Failed to create some performance indexes: {e}")
             # Continue execution even if some indexes fail
+    
+    async def _run_migrations(self):
+        """Run database migrations"""
+        try:
+            import os
+            migration_dir = os.path.join(os.path.dirname(__file__), "..", "migrations")
+            logger.info(f"Starting database migrations from directory: {migration_dir}")
+            
+            # List of migration files in order
+            migration_files = [
+                "add_user_id_to_collections.sql",
+                "migrate_shared_collections.sql",
+                "add_unique_constraints.sql"
+            ]
+            
+            async with self.async_engine.begin() as conn:
+                for migration_file in migration_files:
+                    migration_path = os.path.join(migration_dir, migration_file)
+                    logger.info(f"Processing migration file: {migration_file}")
+                    
+                    if os.path.exists(migration_path):
+                        try:
+                            with open(migration_path, 'r', encoding='utf-8') as f:
+                                migration_sql = f.read()
+                            
+                            logger.info(f"Executing migration: {migration_file}")
+                            # Execute migration
+                            await conn.execute(text(migration_sql))
+                            logger.info(f"✅ Migration {migration_file} executed successfully")
+                            
+                        except Exception as e:
+                            logger.warning(f"⚠️ Migration {migration_file} failed or already applied: {e}")
+                            # Continue with other migrations
+                    else:
+                        logger.warning(f"❌ Migration file {migration_file} not found at {migration_path}")
+            
+            logger.info("Database migrations completed")
+                        
+        except Exception as e:
+            logger.error(f"❌ Failed to run migrations: {e}")
+            # Don't raise exception - migrations are not critical for basic functionality
     
     def get_session(self):
         """Get database session context manager"""

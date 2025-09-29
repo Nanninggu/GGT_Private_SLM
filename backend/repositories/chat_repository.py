@@ -15,7 +15,9 @@ class ChatRepository:
     """File-based repository for chat session and message persistence"""
 
     def __init__(self):
-        self.data_dir = "./data"
+        # Use absolute path to backend/data directory
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.data_dir = os.path.join(backend_dir, "data")
         self._initialized = True  # File system doesn't need initialization
         
         # Ensure data directory exists

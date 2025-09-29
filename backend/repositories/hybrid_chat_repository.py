@@ -19,7 +19,9 @@ class HybridChatRepository:
 
     def __init__(self):
         self.db_service = DatabaseService()
-        self.data_dir = "./data"
+        # Use absolute path to backend/data directory
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.data_dir = os.path.join(backend_dir, "data")
         self._initialized = False
         
         # Ensure data directory exists

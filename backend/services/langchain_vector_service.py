@@ -13,11 +13,70 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores import PGVector
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.embeddings import Embeddings
+import httpx
+import asyncio
+from typing import List
 
 from backend.config.settings import settings
 from backend.services.database_service import db_service
 
 logger = logging.getLogger(__name__)
+
+class CustomOllamaEmbeddings(Embeddings):
+    """Custom Ollama embeddings class that uses the correct API endpoint"""
+    
+    def __init__(self, model: str, base_url: str = "http://localhost:11434"):
+        self.model = model
+        self.base_url = base_url
+        self.client = httpx.AsyncClient(
+            base_url=base_url,
+            timeout=60.0
+        )
+    
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of documents asynchronously"""
+        embeddings = []
+        for text in texts:
+            embedding = await self._get_embedding(text)
+            embeddings.append(embedding)
+        return embeddings
+    
+    async def aembed_query(self, text: str) -> List[float]:
+        """Embed a single query asynchronously"""
+        return await self._get_embedding(text)
+    
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed a list of documents synchronously"""
+        return asyncio.run(self.aembed_documents(texts))
+    
+    def embed_query(self, text: str) -> List[float]:
+        """Embed a single query synchronously"""
+        return asyncio.run(self.aembed_query(text))
+    
+    async def _get_embedding(self, text: str) -> List[float]:
+        """Get embedding for a single text"""
+        try:
+            response = await self.client.post(
+                "/api/embeddings",
+                json={
+                    "model": self.model,
+                    "prompt": text,
+                    "options": {
+                        "num_ctx": settings.OLLAMA_EMBEDDING_NUM_CTX
+                    }
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["embedding"]
+        except Exception as e:
+            logger.error(f"Failed to get embedding: {e}")
+            raise
+    
+    async def close(self):
+        """Close the HTTP client"""
+        await self.client.aclose()
 
 class LangChainVectorService:
     """LangChain-based vector store service using PostgreSQL + pgvector"""
@@ -30,8 +89,8 @@ class LangChainVectorService:
     async def initialize(self):
         """Initialize LangChain vector service"""
         try:
-            # Initialize Ollama embeddings
-            self.embeddings = OllamaEmbeddings(
+            # Initialize custom Ollama embeddings with correct API endpoint
+            self.embeddings = CustomOllamaEmbeddings(
                 model=settings.OLLAMA_EMBEDDING_MODEL,
                 base_url=settings.OLLAMA_BASE_URL
             )
@@ -739,6 +798,8 @@ class LangChainVectorService:
     async def close(self):
         """Close vector service"""
         try:
+            if self.embeddings and hasattr(self.embeddings, 'close'):
+                await self.embeddings.close()
             if self.documents:
                 # PGVector doesn't have a close method
                 pass

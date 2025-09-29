@@ -1,32 +1,32 @@
 {
   "selected_theme": "enterprise",
-  "last_updated": "2025-09-30T00:02:54.714994",
+  "last_updated": "2025-09-29T23:53:45.356604",
   "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
   "font_settings": {
     "global_font": {
-      "family": "Inter",
+      "family": "Pretendard",
       "size": "14px",
       "weight": "400",
       "line_height": "1.5"
     },
     "menu_fonts": {
       "main_menu": {
-        "family": "Inter",
+        "family": "Arial",
         "size": "16px",
-        "weight": "600"
+        "weight": "200"
       },
       "sub_menu": {
-        "family": "Inter",
-        "size": "14px",
-        "weight": "500"
+        "family": "Arial",
+        "size": "10px",
+        "weight": "100"
       },
       "page_title": {
-        "family": "Inter",
+        "family": "Google Sans",
         "size": "1.9rem",
-        "weight": "800"
+        "weight": "100"
       },
       "page_subtitle": {
-        "family": "Inter",
+        "family": "Google Sans",
         "size": "0.95rem",
         "weight": "400"
       }
@@ -43,7 +43,7 @@
         "weight": "600"
       },
       "input_text": {
-        "family": "Inter",
+        "family": "Times New Roman",
         "size": "16px",
         "weight": "400"
       }

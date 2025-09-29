@@ -101,6 +101,29 @@ class ChatComponents:
         </div>
         """, unsafe_allow_html=True)
         
+        # 사용자 설정 정보 표시
+        try:
+            from utils.chat_preferences_mapper import ChatPreferencesMapper
+            user_prefs = ChatPreferencesMapper.get_user_preferences()
+            
+            # 설정 요약 표시
+            st.markdown(f"""
+            <div style="background: #e8f5e8; padding: 1rem; border-radius: 12px; margin-top: 1rem; 
+                        border: 2px solid #d4edda; border-left: 4px solid #28a745;">
+                <p style="margin: 0 0 0.5rem 0; color: #155724; font-size: 0.9rem; font-weight: 600;">
+                    ⚙️ <strong>현재 답변 설정</strong>
+                </p>
+                <p style="margin: 0; color: #155724; font-size: 0.85rem;">
+                    스타일: {user_prefs.get('response_style', '자세하게')} | 
+                    길이: {user_prefs.get('response_length', 3)}/5 | 
+                    정확도: {user_prefs.get('accuracy_priority', 4)}/5 | 
+                    창의성: {user_prefs.get('creativity_level', 3)}/5
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        except ImportError:
+            pass
+        
         # Add info about model switching - Modern Enterprise info box
         st.markdown("""
         <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 16px; margin-top: 1rem; 
@@ -775,11 +798,8 @@ class ChatComponents:
         
         # Chat History Header with improved styling
         st.markdown(f"""
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.5rem 0;">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem; padding: 0.5rem 0;">
             <h3 style="margin: 0; color: #495057; font-size: 1.1rem; font-weight: 600;">💬 채팅 히스토리 ({session_count}개)</h3>
-            <div style="display: flex; gap: 0.5rem;">
-                <button onclick="window.location.reload()" style="background: none; border: none; color: #6c757d; cursor: pointer; font-size: 1.2rem; padding: 0.25rem;" title="새로고침">🔄</button>
-            </div>
         </div>
         """, unsafe_allow_html=True)
         

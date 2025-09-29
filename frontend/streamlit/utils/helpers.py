@@ -10,16 +10,16 @@ from datetime import datetime
 ENTERPRISE_THEME_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
-:root{
-  --bg:#0f1724; /* optional dark base, 바꾸려면 #ffffff */
-  --surface:#ffffff;
-  --muted:#6b7280;
-  --primary:#0ea5a3; /* teal */
-  --accent:#ef4444;
+:root {
+  --bg: #0f1724;
+  --surface: #ffffff;
+  --muted: #6b7280;
+  --primary: #0ea5a3;
+  --accent: #ef4444;
   --card-shadow: 0 6px 18px rgba(15,23,36,0.06);
-  --radius:12px;
-  --gap:1rem;
-  --max-width:1200px;
+  --radius: 12px;
+  --gap: 1rem;
+  --max-width: 1200px;
 }
 
 /* 전체 레이아웃 */
@@ -44,12 +44,14 @@ ENTERPRISE_THEME_CSS = """
   margin-bottom: 1.5rem;
   text-align: left;
 }
+
 .page-title {
   font-size: 1.9rem;
   font-weight: 800;
   color: #0f1724;
   margin-bottom: 0.15rem;
 }
+
 .page-subtitle {
   color: var(--muted);
   font-size: 0.95rem;
@@ -75,9 +77,12 @@ ENTERPRISE_THEME_CSS = """
   border: none;
   box-shadow: 0 6px 12px rgba(14,165,163,0.12);
 }
-.stButton > button:active, .stButton > button:focus {
+
+.stButton > button:active,
+.stButton > button:focus {
   transform: translateY(1px);
 }
+
 .stButton > button[aria-disabled="true"] {
   background: #e6eef0;
   color: #9aa6ad;
@@ -113,8 +118,12 @@ ENTERPRISE_THEME_CSS = """
 
 /* 반응형: 모바일에서 패딩 줄임 */
 @media (max-width: 768px) {
-  .block-container { padding: 1rem; }
-  .page-title { font-size: 1.4rem; }
+  .block-container { 
+    padding: 1rem; 
+  }
+  .page-title { 
+    font-size: 1.4rem; 
+  }
 }
 """
 
@@ -174,7 +183,7 @@ class DesignThemeManager:
     
     def _get_enterprise_theme(self):
         """엔터프라이즈 테마"""
-        return ENTERPRISE_THEME_CSS
+        return f"<style>{ENTERPRISE_THEME_CSS}</style>"
     
     def _get_modern_theme(self):
         """모던 테마"""
@@ -916,6 +925,272 @@ class UIHelpers:
         - **특징**: 한국어 특화 모델
         - **용도**: 일반적인 대화 및 질의응답
         """)
+
+class FontManager:
+    """폰트 설정 관리자"""
+    
+    def __init__(self):
+        self.font_families = {
+            "Inter": "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+            "Roboto": "Roboto, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            "Google Sans": "Google Sans, Roboto, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            "Noto Sans KR": "Noto Sans KR, sans-serif",
+            "Pretendard": "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif",
+            "Arial": "Arial, sans-serif",
+            "Helvetica": "Helvetica, Arial, sans-serif",
+            "Times New Roman": "Times New Roman, serif",
+            "Georgia": "Georgia, serif",
+            "Courier New": "Courier New, monospace"
+        }
+        
+        self.font_weights = {
+            "100": "100",
+            "200": "200", 
+            "300": "300",
+            "400": "400",
+            "500": "500",
+            "600": "600",
+            "700": "700",
+            "800": "800",
+            "900": "900"
+        }
+        
+        self.font_sizes = {
+            "10px": "10px",
+            "12px": "12px",
+            "14px": "14px",
+            "16px": "16px",
+            "18px": "18px",
+            "20px": "20px",
+            "24px": "24px",
+            "28px": "28px",
+            "32px": "32px",
+            "0.8rem": "0.8rem",
+            "0.85rem": "0.85rem",
+            "0.9rem": "0.9rem",
+            "0.95rem": "0.95rem",
+            "1rem": "1rem",
+            "1.1rem": "1.1rem",
+            "1.2rem": "1.2rem",
+            "1.3rem": "1.3rem",
+            "1.4rem": "1.4rem",
+            "1.5rem": "1.5rem",
+            "1.6rem": "1.6rem",
+            "1.7rem": "1.7rem",
+            "1.8rem": "1.8rem",
+            "1.9rem": "1.9rem",
+            "2rem": "2rem",
+            "2.25rem": "2.25rem",
+            "2.5rem": "2.5rem",
+            "3rem": "3rem"
+        }
+    
+    def load_font_settings(self) -> Dict[str, Any]:
+        """폰트 설정 로드"""
+        try:
+            with open("data/theme_settings.json", "r", encoding="utf-8") as f:
+                settings = json.load(f)
+                return settings.get("font_settings", self.get_default_font_settings())
+        except:
+            return self.get_default_font_settings()
+    
+    def save_font_settings(self, font_settings: Dict[str, Any]):
+        """폰트 설정 저장"""
+        try:
+            # 기존 설정 로드
+            with open("data/theme_settings.json", "r", encoding="utf-8") as f:
+                settings = json.load(f)
+            
+            # 폰트 설정 업데이트
+            settings["font_settings"] = font_settings
+            settings["last_updated"] = datetime.now().isoformat()
+            
+            # 저장
+            with open("data/theme_settings.json", "w", encoding="utf-8") as f:
+                json.dump(settings, f, ensure_ascii=False, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"폰트 설정 저장 중 오류: {e}")
+            return False
+    
+    def get_default_font_settings(self) -> Dict[str, Any]:
+        """기본 폰트 설정 반환"""
+        return {
+            "global_font": {
+                "family": "Inter",
+                "size": "14px",
+                "weight": "400",
+                "line_height": "1.5"
+            },
+            "menu_fonts": {
+                "main_menu": {
+                    "family": "Inter",
+                    "size": "16px",
+                    "weight": "600"
+                },
+                "sub_menu": {
+                    "family": "Inter", 
+                    "size": "14px",
+                    "weight": "500"
+                },
+                "page_title": {
+                    "family": "Inter",
+                    "size": "1.9rem",
+                    "weight": "800"
+                },
+                "page_subtitle": {
+                    "family": "Inter",
+                    "size": "0.95rem",
+                    "weight": "400"
+                }
+            },
+            "content_fonts": {
+                "body_text": {
+                    "family": "Inter",
+                    "size": "14px",
+                    "weight": "400"
+                },
+                "button_text": {
+                    "family": "Inter",
+                    "size": "14px",
+                    "weight": "600"
+                },
+                "input_text": {
+                    "family": "Inter",
+                    "size": "16px",
+                    "weight": "400"
+                }
+            }
+        }
+    
+    def generate_font_css(self, font_settings: Dict[str, Any]) -> str:
+        """폰트 설정을 CSS로 변환"""
+        css = ""
+        
+        # Google Fonts import
+        used_fonts = set()
+        for category in font_settings.values():
+            if isinstance(category, dict):
+                for font_config in category.values():
+                    if isinstance(font_config, dict) and "family" in font_config:
+                        font_family = font_config["family"]
+                        if font_family in ["Google Sans", "Roboto", "Noto Sans KR"]:
+                            used_fonts.add(font_family)
+        
+        if used_fonts:
+            font_imports = []
+            if "Google Sans" in used_fonts:
+                font_imports.append("Google+Sans:wght@300;400;500;600;700;800")
+            if "Roboto" in used_fonts:
+                font_imports.append("Roboto:wght@300;400;500;600;700;800")
+            if "Noto Sans KR" in used_fonts:
+                font_imports.append("Noto+Sans+KR:wght@300;400;500;600;700;800")
+            
+            if font_imports:
+                css += f"@import url('https://fonts.googleapis.com/css2?family={';'.join(font_imports)}&display=swap');\n\n"
+        
+        # 전역 폰트 설정
+        global_font = font_settings.get("global_font", {})
+        if global_font:
+            font_family = self.font_families.get(global_font.get("family", "Inter"), global_font.get("family", "Inter"))
+            font_size = global_font.get("size", "14px")
+            font_weight = global_font.get("weight", "400")
+            line_height = global_font.get("line_height", "1.5")
+            
+            css += f"""
+.stApp {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+    line-height: {line_height};
+}}
+"""
+        
+        # 메뉴 폰트 설정
+        menu_fonts = font_settings.get("menu_fonts", {})
+        for menu_type, config in menu_fonts.items():
+            if isinstance(config, dict):
+                font_family = self.font_families.get(config.get("family", "Inter"), config.get("family", "Inter"))
+                font_size = config.get("size", "14px")
+                font_weight = config.get("weight", "400")
+                
+                if menu_type == "main_menu":
+                    css += f"""
+.stSidebar .css-1d391kg .css-1v0mbdj .css-1v0mbdj > div > div > div > div {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+                elif menu_type == "sub_menu":
+                    css += f"""
+.stSidebar .css-1d391kg .css-1v0mbdj .css-1v0mbdj > div > div > div > div > div {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+                elif menu_type == "page_title":
+                    css += f"""
+.page-title {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+                elif menu_type == "page_subtitle":
+                    css += f"""
+.page-subtitle {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+        
+        # 콘텐츠 폰트 설정
+        content_fonts = font_settings.get("content_fonts", {})
+        for content_type, config in content_fonts.items():
+            if isinstance(config, dict):
+                font_family = self.font_families.get(config.get("family", "Inter"), config.get("family", "Inter"))
+                font_size = config.get("size", "14px")
+                font_weight = config.get("weight", "400")
+                
+                if content_type == "body_text":
+                    css += f"""
+.stMarkdown, .stText, .stWrite {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+                elif content_type == "button_text":
+                    css += f"""
+.stButton > button {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+                elif content_type == "input_text":
+                    css += f"""
+.stTextInput > div > div > input,
+.stTextArea > div > textarea,
+.stSelectbox > div > div {{
+    font-family: {font_family};
+    font-size: {font_size};
+    font-weight: {font_weight};
+}}
+"""
+        
+        return css
+    
+    def apply_font_settings(self, font_settings: Dict[str, Any]):
+        """폰트 설정 적용"""
+        css = self.generate_font_css(font_settings)
+        if css:
+            st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
 
 class ConfigManager:
     """Configuration management"""

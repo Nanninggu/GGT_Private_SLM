@@ -271,11 +271,40 @@ class LangChainRagService:
                 system=settings.KOREAN_SYSTEM_PROMPT
             )
     
-    async def rag_query(self, query: str, session_id: str = None, model_type: str = "fast", collection_names: List[str] = None) -> Dict[str, Any]:
+    async def _apply_custom_params(self, custom_params: Dict[str, Any]):
+        """사용자 맞춤 설정을 LLM에 적용"""
+        try:
+            if not self.llm:
+                return
+            
+            # 사용자 설정 파라미터 적용
+            if "temperature" in custom_params:
+                self.llm.temperature = custom_params["temperature"]
+            if "top_p" in custom_params:
+                self.llm.top_p = custom_params["top_p"]
+            if "top_k" in custom_params:
+                self.llm.top_k = custom_params["top_k"]
+            if "repeat_penalty" in custom_params:
+                self.llm.repeat_penalty = custom_params["repeat_penalty"]
+            if "num_predict" in custom_params:
+                self.llm.num_predict = custom_params["num_predict"]
+            if "num_ctx" in custom_params:
+                self.llm.num_ctx = custom_params["num_ctx"]
+            
+            logger.info(f"Applied custom parameters: {custom_params}")
+            
+        except Exception as e:
+            logger.error(f"Failed to apply custom parameters: {e}")
+    
+    async def rag_query(self, query: str, session_id: str = None, model_type: str = "fast", collection_names: List[str] = None, custom_params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Main RAG query method using LangChain with parallel processing and multi-collection support"""
         try:
             # Set up LLM based on model type
             await self._setup_llm_for_model_type(model_type)
+            
+            # 사용자 설정 적용
+            if custom_params:
+                await self._apply_custom_params(custom_params)
             
             # 병렬 처리로 벡터 검색과 임베딩 생성 동시 실행
             import asyncio

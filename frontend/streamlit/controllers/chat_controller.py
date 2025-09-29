@@ -68,10 +68,22 @@ class ChatController:
         if not self.api_service:
             st.error("API 서비스가 사용할 수 없습니다.")
             return None
+        
+        # 사용자 설정 적용
+        try:
+            from utils.chat_preferences_mapper import ChatPreferencesMapper
+            chat_config = ChatPreferencesMapper.apply_preferences_to_chat()
+            model_type = chat_config["model_config"]["model_type"]
+            
+            # 사용자 설정이 있으면 모델 파라미터도 함께 전달
+            custom_params = chat_config["model_config"]
+        except ImportError:
+            # 설정 매퍼가 없으면 기본 설정 사용
+            custom_params = None
             
         rag_mode = st.session_state.get("rag_mode", "LangChain RAG")
         collection_names = st.session_state.get("selected_collections", None)
-        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode, model_type=model_type, collection_names=collection_names)
+        response = self.api_service.send_message(message, st.session_state.session_id, use_rag=True, rag_mode=rag_mode, model_type=model_type, collection_names=collection_names, custom_params=custom_params)
 
         if response["success"]:
             return {

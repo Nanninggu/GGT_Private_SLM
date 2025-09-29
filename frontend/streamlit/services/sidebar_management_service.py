@@ -229,8 +229,6 @@ class SidebarManagementService:
         visible_menus = self.get_visible_menus()
         
         with st.sidebar:
-            st.markdown("### 🧭 네비게이션")
-            
             for menu in visible_menus:
                 menu_name = menu.get("name", "")
                 menu_page = menu.get("page", "")

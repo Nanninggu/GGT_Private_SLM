@@ -8,7 +8,7 @@
       "order": 1,
       "icon": "🏠",
       "description": "메인 페이지",
-      "updated_at": "2025-09-29T23:58:57.217353"
+      "updated_at": "2025-09-29T23:42:42.274287"
     },
     {
       "id": "configuration",
@@ -18,7 +18,7 @@
       "order": 2,
       "icon": "⚙️",
       "description": "시스템 설정",
-      "updated_at": "2025-09-29T23:59:00.697137"
+      "updated_at": "2025-09-29T23:42:42.758497"
     },
     {
       "id": "session_management",
@@ -28,7 +28,7 @@
       "order": 3,
       "icon": "💬",
       "description": "세션 관리",
-      "updated_at": "2025-09-29T23:59:01.252093"
+      "updated_at": "2025-09-29T23:42:43.931635"
     },
     {
       "id": "user_management",
@@ -39,7 +39,7 @@
       "icon": "👥",
       "description": "사용자 계정 관리",
       "admin_only": true,
-      "updated_at": "2025-09-29T23:59:02.618155"
+      "updated_at": "2025-09-29T23:42:44.299768"
     },
     {
       "id": "menu_management",
@@ -50,7 +50,7 @@
       "icon": "📋",
       "description": "메뉴 설정 관리",
       "admin_only": true,
-      "updated_at": "2025-09-29T23:59:03.178145"
+      "updated_at": "2025-09-29T23:42:45.704248"
     },
     {
       "id": "login",
@@ -60,9 +60,9 @@
       "order": 6,
       "icon": "🔐",
       "description": "로그인 페이지",
-      "updated_at": "2025-09-29T23:59:03.719952"
+      "updated_at": "2025-09-29T23:42:46.320037"
     }
   ],
-  "last_updated": "2025-09-29T23:59:03.719960",
+  "last_updated": "2025-09-29T23:42:46.320046",
   "version": "2.0.0"
 }

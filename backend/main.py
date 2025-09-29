@@ -144,6 +144,7 @@ class MessageRequest(BaseModel):
     use_search: bool = False
     rag_mode: Optional[str] = "LangChain RAG"  # RAG mode selection
     model_type: Optional[str] = "fast"  # Model type selection
+    custom_params: Optional[Dict[str, Any]] = None  # 사용자 맞춤 설정
 
 class SessionRequest(BaseModel):
     session_id: str
@@ -587,10 +588,10 @@ async def send_message(request: MessageRequest):
         
         if rag_mode == "기본 RAG":
             # Use basic RAG service
-            result = await rag_service.rag_query(request.message, session_id)
+            result = await rag_service.rag_query(request.message, session_id, custom_params=request.custom_params)
         else:
             # Use LangChain RAG service (default)
-            result = await langchain_rag_service.rag_query(request.message, session_id, request.model_type)
+            result = await langchain_rag_service.rag_query(request.message, session_id, request.model_type, custom_params=request.custom_params)
         
         if not result["success"]:
             # If RAG fails, return error message instead of fallback

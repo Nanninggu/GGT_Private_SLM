@@ -62,8 +62,9 @@ def main():
     UIHelpers.hide_streamlit_header()
     
     # Apply Material Design 3 Theme
-    from utils.helpers import DesignThemeManager
+    from utils.helpers import DesignThemeManager, FontManager
     theme_manager = DesignThemeManager()
+    font_manager = FontManager()
     
     # Load theme from file if not already loaded
     if "theme_loaded" not in st.session_state:
@@ -80,6 +81,10 @@ def main():
     # Get theme from session state or default to gemini
     selected_theme = st.session_state.get("selected_theme", "gemini")
     theme_manager.apply_theme(selected_theme)
+    
+    # Apply font settings
+    font_settings = font_manager.load_font_settings()
+    font_manager.apply_font_settings(font_settings)
 
     # Navigation section removed - clean top layout
 
@@ -99,19 +104,25 @@ def main():
         return
     
     # Create tabs for different configuration sections
-    tab1, tab2, tab3, tab4 = st.tabs(["🎨 테마 설정", "🗂️ Vector DB 관리", "📋 세션 관리", "🔗 연결 상태"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🎨 테마 설정", "🔤 폰트 설정", "🤖 채팅 설정", "🗂️ Vector DB 관리", "📋 세션 관리", "🔗 연결 상태"])
     
     with tab1:
         render_theme_settings()
     
     with tab2:
-        render_vector_db_management(chat_controller)
+        render_font_settings()
     
     with tab3:
+        render_chat_settings()
+    
+    with tab4:
+        render_vector_db_management(chat_controller)
+    
+    with tab5:
         render_session_management(chat_controller)
         render_debug_settings()
     
-    with tab4:
+    with tab6:
         render_connection_status(chat_controller)
 
 def render_theme_settings():
@@ -271,6 +282,583 @@ def render_theme_settings():
         st.markdown("**주요 특징:**")
         for feature in current_theme_info['features']:
             st.write(f"• {feature}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_chat_settings():
+    """Render chat settings section"""
+    st.markdown('<div class="config-section">', unsafe_allow_html=True)
+    
+    st.subheader("🤖 채팅 답변 설정")
+    st.write("AI의 답변 스타일과 품질을 맞춤 설정할 수 있습니다.")
+    
+    # 사용자 설정 초기화
+    if "chat_preferences" not in st.session_state:
+        st.session_state.chat_preferences = {
+            "response_style": "자세하게",
+            "response_length": 3,
+            "accuracy_priority": 4,
+            "creativity_level": 3,
+            "expertise_level": "일반인",
+            "use_advanced_settings": False
+        }
+    
+    # 기본 설정 섹션
+    st.markdown("#### 🎯 기본 설정")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # 답변 스타일
+        response_style = st.selectbox(
+            "답변 스타일",
+            ["간결하게", "자세하게", "전문적으로", "친근하게"],
+            index=["간결하게", "자세하게", "전문적으로", "친근하게"].index(
+                st.session_state.chat_preferences.get("response_style", "자세하게")
+            ),
+            help="AI의 답변 톤을 선택하세요"
+        )
+        
+        # 답변 길이
+        response_length = st.slider(
+            "답변 길이",
+            min_value=1, max_value=5,
+            value=st.session_state.chat_preferences.get("response_length", 3),
+            help="1: 매우 짧게, 5: 매우 자세하게"
+        )
+    
+    with col2:
+        # 정확도 우선순위
+        accuracy_priority = st.slider(
+            "정확도 우선순위",
+            min_value=1, max_value=5,
+            value=st.session_state.chat_preferences.get("accuracy_priority", 4),
+            help="1: 속도 우선, 5: 정확도 우선"
+        )
+        
+        # 창의성 수준
+        creativity_level = st.slider(
+            "창의성 수준",
+            min_value=1, max_value=5,
+            value=st.session_state.chat_preferences.get("creativity_level", 3),
+            help="1: 보수적, 5: 창의적"
+        )
+    
+    # 전문성 수준
+    expertise_level = st.selectbox(
+        "전문성 수준",
+        ["일반인", "중급자", "전문가"],
+        index=["일반인", "중급자", "전문가"].index(
+            st.session_state.chat_preferences.get("expertise_level", "일반인")
+        ),
+        help="답변의 전문성 수준을 선택하세요"
+    )
+    
+    # 고급 설정 토글
+    st.markdown("---")
+    use_advanced = st.checkbox(
+        "🔧 고급 설정 보기",
+        value=st.session_state.chat_preferences.get("use_advanced_settings", False),
+        help="더 세밀한 설정을 원하는 경우 체크하세요"
+    )
+    
+    if use_advanced:
+        st.markdown("#### ⚙️ 고급 설정")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Temperature 설정
+            temperature = st.slider(
+                "창의성 (Temperature)",
+                min_value=0.1, max_value=1.0,
+                value=0.7,
+                step=0.1,
+                help="0.1: 매우 보수적, 1.0: 매우 창의적"
+            )
+            
+            # Top-p 설정
+            top_p = st.slider(
+                "다양성 (Top-p)",
+                min_value=0.1, max_value=1.0,
+                value=0.9,
+                step=0.1,
+                help="0.1: 집중적, 1.0: 다양함"
+            )
+        
+        with col2:
+            # Top-k 설정
+            top_k = st.slider(
+                "선택 범위 (Top-k)",
+                min_value=10, max_value=100,
+                value=40,
+                step=10,
+                help="10: 제한적, 100: 넓은 범위"
+            )
+            
+            # Repeat penalty 설정
+            repeat_penalty = st.slider(
+                "반복 방지 (Repeat Penalty)",
+                min_value=1.0, max_value=2.0,
+                value=1.1,
+                step=0.05,
+                help="1.0: 반복 허용, 2.0: 강한 반복 방지"
+            )
+    
+    # 설정 저장
+    st.markdown("---")
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button("💾 설정 저장", type="primary", key="chat_settings_save"):
+            # 설정을 세션 상태에 저장
+            st.session_state.chat_preferences.update({
+                "response_style": response_style,
+                "response_length": response_length,
+                "accuracy_priority": accuracy_priority,
+                "creativity_level": creativity_level,
+                "expertise_level": expertise_level,
+                "use_advanced_settings": use_advanced
+            })
+            
+            # 고급 설정이 활성화된 경우 추가 저장
+            if use_advanced:
+                st.session_state.chat_preferences.update({
+                    "temperature": temperature,
+                    "top_p": top_p,
+                    "top_k": top_k,
+                    "repeat_penalty": repeat_penalty
+                })
+            
+            st.success("✅ 채팅 설정이 저장되었습니다!")
+    
+    with col2:
+        if st.button("🔄 기본값으로 초기화", key="chat_settings_reset"):
+            st.session_state.chat_preferences = {
+                "response_style": "자세하게",
+                "response_length": 3,
+                "accuracy_priority": 4,
+                "creativity_level": 3,
+                "expertise_level": "일반인",
+                "use_advanced_settings": False
+            }
+            st.success("✅ 설정이 기본값으로 초기화되었습니다!")
+            st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def get_safe_index(keys_list, target_value, default_index=0):
+    """안전한 인덱스 반환"""
+    try:
+        return keys_list.index(target_value) if target_value in keys_list else default_index
+    except (ValueError, TypeError):
+        return default_index
+
+def render_font_settings():
+    """Render font settings section"""
+    st.markdown('<div class="config-section">', unsafe_allow_html=True)
+    
+    st.subheader("🔤 폰트 설정")
+    st.write("앱의 폰트를 세부적으로 커스터마이징할 수 있습니다.")
+    
+    # FontManager 초기화
+    from utils.helpers import FontManager
+    font_manager = FontManager()
+    
+    # 현재 폰트 설정 로드
+    current_font_settings = font_manager.load_font_settings()
+    
+    # 폰트 설정 섹션들
+    st.markdown("#### 🌐 전역 폰트 설정")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # 전역 폰트 설정
+        global_font = current_font_settings.get("global_font", {})
+        
+        global_font_family = st.selectbox(
+            "전역 폰트 패밀리",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()), global_font.get("family", "Inter")),
+            key="global_font_family"
+        )
+        
+        global_font_size = st.selectbox(
+            "전역 폰트 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()), global_font.get("size", "14px")),
+            key="global_font_size"
+        )
+    
+    with col2:
+        global_font_weight = st.selectbox(
+            "전역 폰트 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()), global_font.get("weight", "400")),
+            key="global_font_weight"
+        )
+        
+        global_line_height = st.slider(
+            "줄 간격",
+            min_value=1.0,
+            max_value=2.5,
+            value=float(global_font.get("line_height", "1.5")),
+            step=0.1,
+            key="global_line_height"
+        )
+    
+    st.markdown("---")
+    st.markdown("#### 📋 메뉴 폰트 설정")
+    
+    # 메뉴 폰트 설정
+    menu_fonts = current_font_settings.get("menu_fonts", {})
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**메인 메뉴**")
+        main_menu_family = st.selectbox(
+            "메인 메뉴 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()), menu_fonts.get("main_menu", {}).get("family", "Inter")),
+            key="main_menu_family"
+        )
+        
+        main_menu_size = st.selectbox(
+            "메인 메뉴 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()), menu_fonts.get("main_menu", {}).get("size", "16px")),
+            key="main_menu_size"
+        )
+        
+        main_menu_weight = st.selectbox(
+            "메인 메뉴 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()), menu_fonts.get("main_menu", {}).get("weight", "600")),
+            key="main_menu_weight"
+        )
+        
+        st.markdown("**페이지 제목**")
+        page_title_family = st.selectbox(
+            "페이지 제목 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()),menu_fonts.get("page_title", {}).get("family", "Inter")),
+            key="page_title_family"
+        )
+        
+        page_title_size = st.selectbox(
+            "페이지 제목 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()),menu_fonts.get("page_title", {}).get("size", "1.9rem")),
+            key="page_title_size"
+        )
+        
+        page_title_weight = st.selectbox(
+            "페이지 제목 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()),menu_fonts.get("page_title", {}).get("weight", "800")),
+            key="page_title_weight"
+        )
+    
+    with col2:
+        st.markdown("**서브 메뉴**")
+        sub_menu_family = st.selectbox(
+            "서브 메뉴 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()),menu_fonts.get("sub_menu", {}).get("family", "Inter")),
+            key="sub_menu_family"
+        )
+        
+        sub_menu_size = st.selectbox(
+            "서브 메뉴 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()),menu_fonts.get("sub_menu", {}).get("size", "14px")),
+            key="sub_menu_size"
+        )
+        
+        sub_menu_weight = st.selectbox(
+            "서브 메뉴 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()),menu_fonts.get("sub_menu", {}).get("weight", "500")),
+            key="sub_menu_weight"
+        )
+        
+        st.markdown("**페이지 부제목**")
+        page_subtitle_family = st.selectbox(
+            "페이지 부제목 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()),menu_fonts.get("page_subtitle", {}).get("family", "Inter")),
+            key="page_subtitle_family"
+        )
+        
+        page_subtitle_size = st.selectbox(
+            "페이지 부제목 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()),menu_fonts.get("page_subtitle", {}).get("size", "0.95rem")),
+            key="page_subtitle_size"
+        )
+        
+        page_subtitle_weight = st.selectbox(
+            "페이지 부제목 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()),menu_fonts.get("page_subtitle", {}).get("weight", "400")),
+            key="page_subtitle_weight"
+        )
+    
+    st.markdown("---")
+    st.markdown("#### 📝 콘텐츠 폰트 설정")
+    
+    # 콘텐츠 폰트 설정
+    content_fonts = current_font_settings.get("content_fonts", {})
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**본문 텍스트**")
+        body_text_family = st.selectbox(
+            "본문 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()),content_fonts.get("body_text", {}).get("family", "Inter")),
+            key="body_text_family"
+        )
+        
+        body_text_size = st.selectbox(
+            "본문 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()),content_fonts.get("body_text", {}).get("size", "14px")),
+            key="body_text_size"
+        )
+        
+        body_text_weight = st.selectbox(
+            "본문 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()),content_fonts.get("body_text", {}).get("weight", "400")),
+            key="body_text_weight"
+        )
+        
+        st.markdown("**입력 필드**")
+        input_text_family = st.selectbox(
+            "입력 필드 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()),content_fonts.get("input_text", {}).get("family", "Inter")),
+            key="input_text_family"
+        )
+        
+        input_text_size = st.selectbox(
+            "입력 필드 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()),content_fonts.get("input_text", {}).get("size", "16px")),
+            key="input_text_size"
+        )
+        
+        input_text_weight = st.selectbox(
+            "입력 필드 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()),content_fonts.get("input_text", {}).get("weight", "400")),
+            key="input_text_weight"
+        )
+    
+    with col2:
+        st.markdown("**버튼 텍스트**")
+        button_text_family = st.selectbox(
+            "버튼 폰트",
+            list(font_manager.font_families.keys()),
+            index=get_safe_index(list(font_manager.font_families.keys()),content_fonts.get("button_text", {}).get("family", "Inter")),
+            key="button_text_family"
+        )
+        
+        button_text_size = st.selectbox(
+            "버튼 크기",
+            list(font_manager.font_sizes.keys()),
+            index=get_safe_index(list(font_manager.font_sizes.keys()),content_fonts.get("button_text", {}).get("size", "14px")),
+            key="button_text_size"
+        )
+        
+        button_text_weight = st.selectbox(
+            "버튼 굵기",
+            list(font_manager.font_weights.keys()),
+            index=get_safe_index(list(font_manager.font_weights.keys()),content_fonts.get("button_text", {}).get("weight", "600")),
+            key="button_text_weight"
+        )
+    
+    # 폰트 미리보기
+    st.markdown("---")
+    st.markdown("#### 👀 폰트 미리보기")
+    
+    # 현재 설정으로 미리보기 생성
+    preview_settings = {
+        "global_font": {
+            "family": global_font_family,
+            "size": global_font_size,
+            "weight": global_font_weight,
+            "line_height": str(global_line_height)
+        },
+        "menu_fonts": {
+            "main_menu": {
+                "family": main_menu_family,
+                "size": main_menu_size,
+                "weight": main_menu_weight
+            },
+            "sub_menu": {
+                "family": sub_menu_family,
+                "size": sub_menu_size,
+                "weight": sub_menu_weight
+            },
+            "page_title": {
+                "family": page_title_family,
+                "size": page_title_size,
+                "weight": page_title_weight
+            },
+            "page_subtitle": {
+                "family": page_subtitle_family,
+                "size": page_subtitle_size,
+                "weight": page_subtitle_weight
+            }
+        },
+        "content_fonts": {
+            "body_text": {
+                "family": body_text_family,
+                "size": body_text_size,
+                "weight": body_text_weight
+            },
+            "button_text": {
+                "family": button_text_family,
+                "size": button_text_size,
+                "weight": button_text_weight
+            },
+            "input_text": {
+                "family": input_text_family,
+                "size": input_text_size,
+                "weight": input_text_weight
+            }
+        }
+    }
+    
+    # 저장된 설정이 있으면 그것을 사용, 없으면 미리보기 설정 사용
+    if st.session_state.get("font_settings_saved", False) or st.session_state.get("font_settings_reset", False):
+        # 저장된 설정을 로드하여 적용
+        saved_settings = font_manager.load_font_settings()
+        font_manager.apply_font_settings(saved_settings)
+        # 플래그는 유지하여 미리보기에서도 사용
+    else:
+        # 미리보기 설정 적용
+        font_manager.apply_font_settings(preview_settings)
+    
+    # 미리보기 섹션 - 저장된 설정이 있으면 그것을 사용
+    if st.session_state.get("font_settings_saved", False) or st.session_state.get("font_settings_reset", False):
+        # 저장된 설정을 사용하여 미리보기 생성
+        saved_settings = font_manager.load_font_settings()
+        preview_fonts = {
+            "page_title": saved_settings.get("menu_fonts", {}).get("page_title", {}),
+            "page_subtitle": saved_settings.get("menu_fonts", {}).get("page_subtitle", {}),
+            "body_text": saved_settings.get("content_fonts", {}).get("body_text", {}),
+            "button_text": saved_settings.get("content_fonts", {}).get("button_text", {})
+        }
+    else:
+        # 현재 입력된 설정을 사용
+        preview_fonts = {
+            "page_title": {"family": page_title_family, "size": page_title_size, "weight": page_title_weight},
+            "page_subtitle": {"family": page_subtitle_family, "size": page_subtitle_size, "weight": page_subtitle_weight},
+            "body_text": {"family": body_text_family, "size": body_text_size, "weight": body_text_weight},
+            "button_text": {"family": button_text_family, "size": button_text_size, "weight": button_text_weight}
+        }
+    
+    st.markdown("""
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6; margin: 1rem 0;">
+        <div style="font-family: {page_title_family}; font-size: {page_title_size}; font-weight: {page_title_weight}; margin-bottom: 0.5rem;">
+            페이지 제목 미리보기
+        </div>
+        <div style="font-family: {page_subtitle_family}; font-size: {page_subtitle_size}; font-weight: {page_subtitle_weight}; color: #6c757d; margin-bottom: 1rem;">
+            페이지 부제목 미리보기
+        </div>
+        <div style="font-family: {body_text_family}; font-size: {body_text_size}; font-weight: {body_text_weight}; margin-bottom: 1rem;">
+            이것은 본문 텍스트의 미리보기입니다. 선택한 폰트 설정이 어떻게 보이는지 확인할 수 있습니다.
+        </div>
+        <button style="font-family: {button_text_family}; font-size: {button_text_size}; font-weight: {button_text_weight}; background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
+            버튼 텍스트 미리보기
+        </button>
+    </div>
+    """.format(
+        page_title_family=font_manager.font_families[preview_fonts["page_title"]["family"]],
+        page_title_size=preview_fonts["page_title"]["size"],
+        page_title_weight=preview_fonts["page_title"]["weight"],
+        page_subtitle_family=font_manager.font_families[preview_fonts["page_subtitle"]["family"]],
+        page_subtitle_size=preview_fonts["page_subtitle"]["size"],
+        page_subtitle_weight=preview_fonts["page_subtitle"]["weight"],
+        body_text_family=font_manager.font_families[preview_fonts["body_text"]["family"]],
+        body_text_size=preview_fonts["body_text"]["size"],
+        body_text_weight=preview_fonts["body_text"]["weight"],
+        button_text_family=font_manager.font_families[preview_fonts["button_text"]["family"]],
+        button_text_size=preview_fonts["button_text"]["size"],
+        button_text_weight=preview_fonts["button_text"]["weight"]
+    ), unsafe_allow_html=True)
+    
+    # 저장 버튼
+    col1, col2, col3 = st.columns([1, 1, 2])
+    
+    with col1:
+        if st.button("💾 폰트 설정 저장", type="primary", key="font_settings_save"):
+            if font_manager.save_font_settings(preview_settings):
+                # 즉시 현재 페이지에 폰트 설정 적용
+                font_manager.apply_font_settings(preview_settings)
+                st.success("✅ 폰트 설정이 저장되고 모든 페이지에 적용되었습니다!")
+                # 설정 저장 플래그 설정
+                st.session_state.font_settings_saved = True
+                # 부드러운 전환을 위한 JavaScript 실행
+                st.markdown("""
+                <script>
+                // 폰트 변경을 부드럽게 적용
+                document.body.style.transition = 'font-family 0.3s ease, font-size 0.3s ease';
+                setTimeout(() => {
+                    document.body.style.transition = '';
+                }, 300);
+                </script>
+                """, unsafe_allow_html=True)
+            else:
+                st.error("❌ 폰트 설정 저장에 실패했습니다.")
+    
+    with col2:
+        if st.button("🔄 기본값으로 초기화", key="font_settings_reset"):
+            default_settings = font_manager.get_default_font_settings()
+            if font_manager.save_font_settings(default_settings):
+                # 즉시 기본 폰트 설정 적용
+                font_manager.apply_font_settings(default_settings)
+                st.success("✅ 폰트 설정이 기본값으로 초기화되었습니다!")
+                # 설정 초기화 플래그 설정
+                st.session_state.font_settings_reset = True
+                # 부드러운 전환을 위한 JavaScript 실행
+                st.markdown("""
+                <script>
+                // 폰트 변경을 부드럽게 적용
+                document.body.style.transition = 'font-family 0.3s ease, font-size 0.3s ease';
+                setTimeout(() => {
+                    document.body.style.transition = '';
+                }, 300);
+                </script>
+                """, unsafe_allow_html=True)
+            else:
+                st.error("❌ 폰트 설정 초기화에 실패했습니다.")
+    
+    # 폰트 정보
+    st.markdown("---")
+    st.markdown("#### ℹ️ 폰트 정보")
+    
+    st.markdown("""
+    **지원되는 폰트 패밀리:**
+    - **Inter**: 현대적이고 가독성이 좋은 sans-serif 폰트
+    - **Roboto**: Google의 Material Design 폰트
+    - **Google Sans**: Google의 브랜드 폰트
+    - **Noto Sans KR**: 한글 최적화 폰트
+    - **Pretendard**: 한국어 웹폰트
+    - **Arial, Helvetica**: 클래식 sans-serif 폰트
+    - **Times New Roman, Georgia**: serif 폰트
+    - **Courier New**: monospace 폰트
+    
+    **폰트 크기 단위:**
+    - **px**: 픽셀 단위 (고정 크기)
+    - **rem**: 루트 요소 기준 상대 크기 (반응형)
+    """)
     
     st.markdown('</div>', unsafe_allow_html=True)
 

@@ -27,7 +27,7 @@ class APIService:
         except requests.exceptions.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def send_message(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None, model_type: str = "fast", collection_names: Optional[List[str]] = None) -> Dict[str, Any]:
+    def send_message(self, message: str, session_id: Optional[str] = None, use_rag: bool = True, rag_mode: Optional[str] = None, model_type: str = "fast", collection_names: Optional[List[str]] = None, custom_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Send a message to the chatbot"""
         try:
             payload = {
@@ -41,6 +41,8 @@ class APIService:
                 payload["rag_mode"] = rag_mode
             if collection_names:
                 payload["collection_names"] = collection_names
+            if custom_params:
+                payload["custom_params"] = custom_params
 
             response = requests.post(
                 f"{self.base_url}/api/chat/message",

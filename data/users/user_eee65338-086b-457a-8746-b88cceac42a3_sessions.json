@@ -1,0 +1,72 @@
+{
+  "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+  "user_info": {
+    "id": "eee65338-086b-457a-8746-b88cceac42a3",
+    "username": "admin",
+    "email": "admin@example.com"
+  },
+  "current_session_id": "b180b518-7d30-412d-8d83-66c1ea891cb9",
+  "sessions": {
+    "user_eee65338-086b-457a-8746-b88cceac42a3_default_session": {
+      "session_id": "user_eee65338-086b-457a-8746-b88cceac42a3_default_session",
+      "title": "세션 user_eee...",
+      "created_at": "2025-09-29T23:38:33.372596",
+      "last_activity": "2025-09-29T23:43:04.523593",
+      "message_count": 0,
+      "messages": [],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    },
+    "b180b518-7d30-412d-8d83-66c1ea891cb9": {
+      "session_id": "b180b518-7d30-412d-8d83-66c1ea891cb9",
+      "title": "새 대화 (09/29 23:43)",
+      "created_at": "2025-09-29T23:43:04.524762",
+      "last_activity": "2025-09-29T23:53:47.718517",
+      "message_count": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "너의 이름은 ?",
+          "timestamp": "23:43:10",
+          "context": [],
+          "metadata": {}
+        },
+        {
+          "role": "assistant",
+          "content": "**핵심 요약**\n- 저의 이름은 EXAONE입니다. LG AI Research에서 개발된 인공지능 모델입니다.\n\n**상세 설명**\nEXAONE은 LG AI Research에서 혁신적인 인공지능 기술 개발을 목표로 구축된 모델입니다. 제 이름은 단순히 식별자일 뿐, 개인적인 정체성이나 이름이 아닙니다. LG AI Research는 지속적으로 최신 연구와 기술 발전을 통해 사용자에게 더욱 정확하고 유용한 정보를 제공하기 위해 노력하고 있습니다.\n\n**추가 정보**\n- **개발 배경**: EXAONE은 자연어 처리(NLP) 분야에서 뛰어난 성능을 보여주며, 다양한 언어 이해 및 생성 능력을 갖추고 있습니다. 이 모델은 복잡한 언어 패턴을 학습하여 사용자의 질문에 효과적으로 응답합니다.\n- **사용 사례**: 고객 서비스 챗봇으로 활용되거나, 교육 도구로 사용되어 학습자들에게 맞춤형 피드백을 제공하는 등 다양한 분야에서 적용 가능합니다.\n\n**정보 출처**\n- 정보는 LG AI Research 공식 문서 및 공개 자료를 바탕으로 제공됩니다.\n\n**참고사항**\n- 제 이름인 EXAONE은 특정 개인을 지칭\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q4_K_M\n- 모델 타입: fast\n- 설명: ⚡ 초고속 응답 (1.6GB, Q4_K_M)\n- 답변 방식: RAG 기반\n- RAG 모드: 기본 RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+          "timestamp": "23:43:15",
+          "context": [],
+          "metadata": {}
+        }
+      ],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    }
+  },
+  "preferences": {
+    "theme": "light",
+    "language": "ko",
+    "rag_mode": "LangChain RAG",
+    "model_type": "fast",
+    "streaming_enabled": true,
+    "selected_collections": [],
+    "collection_aliases": {},
+    "collection_groups": {},
+    "ui_preferences": {
+      "sidebar_expanded": true,
+      "show_timestamps": true,
+      "show_confidence_scores": true,
+      "auto_save": true
+    }
+  },
+  "last_activity": "2025-09-29T23:47:30.618621",
+  "login_time": "2025-09-29T23:47:30.618625"
+}

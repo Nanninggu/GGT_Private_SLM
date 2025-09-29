@@ -23,8 +23,9 @@ def main():
     UIHelpers.hide_streamlit_header()
     
     # Apply Material Design 3 Theme
-    from utils.helpers import DesignThemeManager
+    from utils.helpers import DesignThemeManager, FontManager
     theme_manager = DesignThemeManager()
+    font_manager = FontManager()
     
     # Load theme from file if not already loaded
     if "theme_loaded" not in st.session_state:
@@ -41,6 +42,10 @@ def main():
     # Get theme from session state or default to gemini
     selected_theme = st.session_state.get("selected_theme", "gemini")
     theme_manager.apply_theme(selected_theme)
+    
+    # Apply font settings
+    font_settings = font_manager.load_font_settings()
+    font_manager.apply_font_settings(font_settings)
     
     # Check authentication
     if not st.session_state.get("auth_token"):

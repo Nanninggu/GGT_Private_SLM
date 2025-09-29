@@ -161,10 +161,13 @@ class LangChainVectorService:
             similarity_threshold = similarity_threshold or settings.VECTOR_DB_SIMILARITY_THRESHOLD
             
             # Search similar documents
-            docs_with_scores = await self.documents.asimilarity_search_with_score(
+            # Handle async generator properly
+            docs_with_scores = []
+            async for doc, score in self.documents.asimilarity_search_with_score(
                 query=query,
                 k=top_k
-            )
+            ):
+                docs_with_scores.append((doc, score))
             
             # Filter by similarity threshold and format results
             documents = []
@@ -202,10 +205,13 @@ class LangChainVectorService:
             similarity_threshold = similarity_threshold or settings.VECTOR_DB_SIMILARITY_THRESHOLD
             
             # Search similar documents
-            docs_with_scores = await self.documents.asimilarity_search_with_score(
+            # Handle async generator properly
+            docs_with_scores = []
+            async for doc, score in self.documents.asimilarity_search_with_score(
                 query=query,
                 k=top_k
-            )
+            ):
+                docs_with_scores.append((doc, score))
             
             # Filter by similarity threshold and format results
             documents = []

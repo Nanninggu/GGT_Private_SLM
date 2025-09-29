@@ -56,6 +56,11 @@ class OllamaService:
                     "repeat_penalty": settings.OLLAMA_CHAT_REPEAT_PENALTY
                 }
             
+            # Check if model is available before making the request
+            if not await self.check_model_availability(model):
+                logger.error(f"Model {model} is not available")
+                raise Exception(f"Model {model} is not available. Please check if the model is installed in Ollama.")
+            
             # Convert messages to prompt
             prompt = self._messages_to_prompt(messages)
             
@@ -67,6 +72,13 @@ class OllamaService:
                     "options": options
                 }
             )
+            
+            # Better error handling for HTTP 500
+            if response.status_code == 500:
+                error_text = response.text
+                logger.error(f"Ollama HTTP 500 error for model {model}: {error_text}")
+                raise Exception(f"Ollama server error (500): {error_text}")
+            
             response.raise_for_status()
             data = response.json()
             
@@ -122,6 +134,13 @@ class OllamaService:
                     "options": options
                 }
             )
+            
+            # Better error handling for HTTP 500
+            if response.status_code == 500:
+                error_text = response.text
+                logger.error(f"Ollama HTTP 500 error for model {model}: {error_text}")
+                raise Exception(f"Ollama server error (500): {error_text}")
+            
             response.raise_for_status()
             data = response.json()
             
@@ -167,6 +186,16 @@ class OllamaService:
             return response.status_code == 200
         except Exception as e:
             logger.error(f"Ollama health check failed: {e}")
+            return False
+    
+    async def check_model_availability(self, model: str) -> bool:
+        """Check if a specific model is available"""
+        try:
+            models = await self.list_models()
+            model_names = [m.get("name", "") for m in models]
+            return model in model_names
+        except Exception as e:
+            logger.error(f"Failed to check model availability: {e}")
             return False
     
     def _messages_to_prompt(self, messages: List[Dict[str, str]]) -> str:

@@ -111,7 +111,8 @@ class LangChainVectorService:
                 connection_string=connection_string,
                 embedding_function=self.embeddings,
                 collection_name="langchain_documents",
-                distance_strategy="cosine"
+                distance_strategy="cosine",
+                use_jsonb=True  # Use JSONB for metadata to avoid deprecation warning
             )
             
             logger.info("LangChain vector service initialized successfully")
@@ -791,7 +792,8 @@ class LangChainVectorService:
                 connection_string=connection_string,
                 embedding_function=self.embeddings,
                 collection_name=collection_name,
-                distance_strategy="cosine"
+                distance_strategy="cosine",
+                use_jsonb=True  # Use JSONB for metadata to avoid deprecation warning
             )
             
             logger.info(f"Switched to collection: {collection_name}")

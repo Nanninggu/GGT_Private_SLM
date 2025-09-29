@@ -502,7 +502,9 @@ async def save_message(request: dict):
         # Save session directly to file system
         import json
         import os
-        data_dir = "./data"
+        # Use absolute path to backend/data directory
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(backend_dir, "data")
         os.makedirs(data_dir, exist_ok=True)
         
         file_path = os.path.join(data_dir, f"session_{session_id}.json")

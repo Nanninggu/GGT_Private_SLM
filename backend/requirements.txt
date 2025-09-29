@@ -1,78 +1,82 @@
 # Backend dependencies
-fastapi>=0.104.1
-uvicorn>=0.24.0
-pydantic>=2.4.2
-requests>=2.31.0
-python-multipart>=0.0.6
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+requests>=2.32.0
+python-multipart>=0.0.12
 
 # Database dependencies (PostgreSQL + pgvector)
 psycopg2-binary>=2.9.9
-asyncpg>=0.29.0
-greenlet>=3.0.3
-sqlalchemy>=2.0.23
-alembic>=1.13.1
+asyncpg>=0.30.0
+greenlet>=3.1.0
+sqlalchemy>=2.0.36
+alembic>=1.14.0
 
 # Vector database and embeddings
-pgvector>=0.2.4
-sentence-transformers>=2.2.2
-numpy>=1.26.4
+pgvector>=0.3.0
+sentence-transformers>=3.0.0
+numpy>=1.19.3,<2.0.0
 
-# LangChain dependencies
-langchain>=0.2.0
-langchain-community>=0.2.0
-langchain-core>=0.2.20
-langchain-ollama>=0.1.0
-langchain-text-splitters>=0.3.9
+# LangChain dependencies (updated to latest stable versions)
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-core>=0.3.0
+langchain-ollama>=0.3.0
+langchain-text-splitters>=0.3.0
+langsmith>=0.1.0
 
 # Ollama integration
-ollama>=0.3.0
-httpx>=0.27
+ollama>=0.6.0
+httpx>=0.28.0
+httpx-sse>=0.4.0
 
 # Async processing
 asyncio-throttle>=1.0.2
-aiofiles>=23.2.1
-aiohttp>=3.8.6,<4.0.0
+aiofiles>=24.1.0
+aiohttp>=3.10.0,<4.0.0
 
 # Logging and monitoring
-structlog>=23.2.0
-prometheus-client>=0.19.0
+structlog>=24.4.0
+prometheus-client>=0.21.0
 
 # Google Search API
-google-api-python-client>=2.108.0
+google-api-python-client>=2.150.0
 google-search-results>=2.4.2
 
 # Web scraping and content extraction
-beautifulsoup4>=4.12.2
-lxml>=4.9.3
+beautifulsoup4>=4.12.3
+lxml>=5.3.0
 
 # Configuration and environment
-python-dotenv>=1.0.0
-pydantic-settings>=2.1.0
+python-dotenv>=1.0.1
+pydantic-settings>=2.7.0
 
 # File processing
 PyPDF2>=3.0.1
-python-docx>=1.1.0
-pandas>=2.1.4
+python-docx>=1.1.2
+pandas>=1.5.0,<2.0.0
 
 # Streaming and real-time communication
-sse-starlette>=1.6.5
-websockets>=12.0
+sse-starlette>=2.1.0
+websockets>=13.1
 
 # JWT authentication
-PyJWT>=2.8.0
+PyJWT>=2.9.0
 
 # Additional dependencies
-numpy>=1.26.4
 google-auth>=2.40.0
 google-auth-httplib2>=0.2.0
 google-api-core>=2.25.0
 
-# For Exaone model integration (add specific packages as needed)
+# Additional utilities
+zstandard>=0.23.0
+
+# For Exaone model integration (uncomment if needed)
 # torch>=2.0.0
 # transformers>=4.30.0
 # accelerate>=0.20.0
 
-# Development
-pytest==7.4.3
-black==23.9.1
-flake8==6.0.0
+# Development tools
+pytest>=8.3.0
+black>=24.10.0
+flake8>=7.1.0

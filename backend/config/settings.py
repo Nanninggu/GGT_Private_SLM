@@ -169,7 +169,7 @@ class Settings:
     MODEL_FAST: str = "exaone3.5:2.4b-instruct-q4_K_M"
     MODEL_QUALITY: str = "exaone3.5:2.4b-instruct-q8_0"
     MODEL_COMPLEX: str = "exaone3.5:7.8b"
-    MODEL_NAME: str = "exaone3.5:2.4b"  # Default model
+    MODEL_NAME: str = "exaone3.5:2.4b-instruct-q4_K_M"  # Default model
     
     # Model configurations dictionary (제거 - 중복 정의)
     MODEL_PATH: str = os.getenv("MODEL_PATH", "./models/exaone3.5-2.4")

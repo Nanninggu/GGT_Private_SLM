@@ -210,10 +210,13 @@ class PromptService:
             # Build enhanced system prompt
             system_prompt = self.build_system_prompt(context)
             
-            # Replace placeholders in system prompt
-            system_prompt = system_prompt.replace("{source_files}", ", ".join(set(source_files)))
-            system_prompt = system_prompt.replace("{confidence_score}", str(confidence_percent))
-            system_prompt = system_prompt.replace("{data_sources}", ", ".join(set(data_sources)))
+            # Replace placeholders in system prompt if they exist
+            if "{source_files}" in system_prompt:
+                system_prompt = system_prompt.replace("{source_files}", ", ".join(set(source_files)))
+            if "{confidence_score}" in system_prompt:
+                system_prompt = system_prompt.replace("{confidence_score}", str(confidence_percent))
+            if "{data_sources}" in system_prompt:
+                system_prompt = system_prompt.replace("{data_sources}", ", ".join(set(data_sources)))
             
             # Build complete prompt with enhanced instructions
             full_prompt = f"""{system_prompt}

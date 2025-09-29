@@ -97,7 +97,22 @@ class RagService:
                 enhanced_prompt = prompt_service.build_rag_prompt(query, context)
             
             # Generate response using the enhanced prompt with optimized settings
-            llm_response = await self.ollama_service.generate(enhanced_prompt, model_type=model_type)
+            try:
+                llm_response = await self.ollama_service.generate(enhanced_prompt, model_type=model_type)
+            except Exception as e:
+                logger.error(f"Failed to generate RAG response: {e}")
+                # Return error response instead of raising exception
+                return {
+                    "success": False,
+                    "error": f"LLM 생성 실패: {str(e)}",
+                    "response": None,
+                    "context": context,
+                    "metadata": {
+                        "context_count": len(context) if context else 0,
+                        "error_mode": True,
+                        "rag_mode": "RAG"
+                    }
+                }
             
             # Get model info from settings
             model_config = settings.MODEL_CONFIGS.get(model_type, {})

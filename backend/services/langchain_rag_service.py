@@ -362,12 +362,27 @@ class LangChainRagService:
 답변:"""
             
             # Get response from LLM with optimized parameters
-            messages = [
-                SystemMessage(content=settings.KOREAN_SYSTEM_PROMPT),
-                HumanMessage(content=prompt)
-            ]
-            response = await self.llm.ainvoke(messages)
-            response_text = response.content
+            try:
+                messages = [
+                    SystemMessage(content=settings.KOREAN_SYSTEM_PROMPT),
+                    HumanMessage(content=prompt)
+                ]
+                response = await self.llm.ainvoke(messages)
+                response_text = response.content
+            except Exception as e:
+                logger.error(f"Failed to generate LangChain RAG response: {e}")
+                return {
+                    "success": False,
+                    "error": f"LLM 생성 실패: {str(e)}",
+                    "response": None,
+                    "context": [],
+                    "metadata": {
+                        "context_count": 0,
+                        "error_mode": True,
+                        "langchain_mode": True,
+                        "rag_mode": "LangChain RAG"
+                    }
+                }
             
             # Force Korean response if the response is in English
             if self._is_english_response(response_text):

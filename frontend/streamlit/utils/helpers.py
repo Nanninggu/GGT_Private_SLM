@@ -924,7 +924,7 @@ class ConfigManager:
     def get_api_config() -> Dict[str, Any]:
         """Get API configuration"""
         return {
-            "base_url": "http://localhost:8002",
+            "base_url": "http://localhost:9502",
             "timeout": 30,
             "max_retries": 3
         }

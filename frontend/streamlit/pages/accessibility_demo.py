@@ -35,7 +35,7 @@ def check_auth_status():
     # Verify token with backend
     try:
         from services.api_service import APIService
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         result = api_service.verify_token(st.session_state.auth_token)
         return result.get("valid", False)
     except:
@@ -507,7 +507,7 @@ def main():
                 if query.strip():
                     with st.spinner("정확도를 측정하는 중..."):
                         try:
-                            api_service = APIService()
+                            api_service = APIService(base_url="http://localhost:9502")
                             result = api_service.measure_query_accuracy(query, expected_answer)
                             
                             if result.get("success"):
@@ -637,7 +637,7 @@ def main():
         if st.button("샘플 테스트 실행", use_container_width=True, key="basic_test_suite"):
             with st.spinner("샘플 테스트를 실행하는 중..."):
                 try:
-                    api_service = APIService()
+                    api_service = APIService(base_url="http://localhost:9502")
                     result = api_service.run_accuracy_test_suite()
                     
                     if result.get("success"):
@@ -761,7 +761,7 @@ def main():
         if st.button("시스템 상태 확인", use_container_width=True, key="basic_system_status"):
             with st.spinner("시스템 상태를 확인하는 중..."):
                 try:
-                    api_service = APIService()
+                    api_service = APIService(base_url="http://localhost:9502")
                     result = api_service.get_system_health()
                     
                     if result.get("success"):
@@ -929,7 +929,7 @@ def main():
                     if query.strip():
                         with st.spinner("정확도를 측정하는 중..."):
                             try:
-                                api_service = APIService()
+                                api_service = APIService(base_url="http://localhost:9502")
                                 result = api_service.measure_query_accuracy(query, expected_answer)
                                 
                                 if result.get("success"):
@@ -1134,7 +1134,7 @@ def main():
                                     st.error(f"❌ 컬렉션 전환 실패: {switch_response.get('error', '알 수 없는 오류')}")
                                     return
                             
-                            api_service = APIService()
+                            api_service = APIService(base_url="http://localhost:9502")
                             result = api_service.run_accuracy_test_suite()
                             
                             if result.get("success"):
@@ -1246,7 +1246,7 @@ def main():
                 if st.button("시스템 상태 확인", use_container_width=True, type="secondary", key="advanced_system_status"):
                     with st.spinner("시스템 상태를 확인하는 중..."):
                         try:
-                            api_service = APIService()
+                            api_service = APIService(base_url="http://localhost:9502")
                             result = api_service.get_system_health()
                             
                             if result.get("success"):

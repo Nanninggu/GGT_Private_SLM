@@ -20,7 +20,7 @@ from utils.helpers import UIHelpers, SessionManager
 def login_user(username: str, password: str) -> dict:
     """Login user via API"""
     try:
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         response = api_service.login(username, password)
         return response
     except Exception as e:
@@ -32,7 +32,7 @@ def login_user(username: str, password: str) -> dict:
 def register_user(username: str, email: str, password: str, confirm_password: str) -> dict:
     """Register user via API"""
     try:
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         response = api_service.register(username, email, password, confirm_password)
         return response
     except Exception as e:

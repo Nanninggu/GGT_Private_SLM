@@ -20,7 +20,7 @@ class WebSocketChatController:
     
     def __init__(self):
         self.ws_service = None
-        self.api_service = APIService()
+        self.api_service = APIService(base_url="http://localhost:9502")
         self.is_connected = False
     
     def initialize_connection(self, session_id: str) -> bool:

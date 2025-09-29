@@ -172,7 +172,7 @@ class ChatComponents:
                             # Generate and download Markdown directly
                             if APIService:
                                 try:
-                                    api_service = APIService()
+                                    api_service = APIService(base_url="http://localhost:9502")
                                     
                                     # Export single message to markdown
                                     result = api_service.export_single_message_markdown(message, True)
@@ -291,7 +291,7 @@ class ChatComponents:
                             # Generate and download Markdown directly
                             if APIService:
                                 try:
-                                    api_service = APIService()
+                                    api_service = APIService(base_url="http://localhost:9502")
                                     
                                     # Export single message to markdown
                                     result = api_service.export_single_message_markdown(message, True)

@@ -16,9 +16,9 @@ class AuthController:
     def __init__(self):
         self.auth_service = auth_service
     
-    def register(self, request: RegisterRequest) -> AuthResponse:
+    async def register(self, request: RegisterRequest) -> AuthResponse:
         """Register a new user"""
-        return self.auth_service.register_user(request)
+        return await self.auth_service.register_user(request)
     
     async def login(self, request: LoginRequest) -> AuthResponse:
         """Login user"""

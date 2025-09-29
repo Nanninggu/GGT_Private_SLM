@@ -21,7 +21,7 @@ class ChatController:
 
     def __init__(self):
         try:
-            self.api_service = APIService()
+            self.api_service = APIService(base_url="http://localhost:9502")
         except:
             self.api_service = None
         self._initialize_session_state()

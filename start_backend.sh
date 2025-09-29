@@ -35,10 +35,10 @@ cd backend
 
 # 백엔드 서버 시작
 echo "🌟 FastAPI 서버를 시작합니다..."
-echo "📍 서버 주소: http://localhost:8080"
-echo "📖 API 문서: http://localhost:8080/docs"
-echo "🔍 헬스체크: http://localhost:8080/health"
-echo "ℹ️  앱 정보: http://localhost:8080/info"
+echo "📍 서버 주소: http://localhost:9502"
+echo "📖 API 문서: http://localhost:9502/docs"
+echo "🔍 헬스체크: http://localhost:9502/health"
+echo "ℹ️  앱 정보: http://localhost:9502/info"
 echo ""
 echo "서버를 중지하려면 Ctrl+C를 누르세요"
 echo "=" * 50

@@ -26,7 +26,7 @@ def check_auth_status():
     # Verify token with backend
     try:
         from services.api_service import APIService
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         result = api_service.verify_token(st.session_state.auth_token)
         return result.get("valid", False)
     except:
@@ -753,7 +753,7 @@ def render_session_management(chat_controller):
     
     # Import here to avoid circular imports
     from services.api_service import APIService
-    api_service = APIService()
+    api_service = APIService(base_url="http://localhost:9502")
     
     # Get all sessions
     sessions_response = api_service.get_sessions()

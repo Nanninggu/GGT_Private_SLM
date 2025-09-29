@@ -80,7 +80,7 @@ class AuthService:
         except jwt.InvalidTokenError:
             return None
     
-    def register_user(self, request: RegisterRequest) -> AuthResponse:
+    async def register_user(self, request: RegisterRequest) -> AuthResponse:
         """Register a new user"""
         try:
             # Validate input
@@ -109,13 +109,13 @@ class AuthService:
                 )
             
             # Check if user already exists
-            if self.user_repository.get_user_by_username(request.username):
+            if await self.user_repository.get_user_by_username(request.username):
                 return AuthResponse(
                     success=False,
                     message="이미 존재하는 사용자명입니다."
                 )
             
-            if self.user_repository.get_user_by_email(request.email):
+            if await self.user_repository.get_user_by_email(request.email):
                 return AuthResponse(
                     success=False,
                     message="이미 존재하는 이메일입니다."
@@ -133,7 +133,7 @@ class AuthService:
             )
             
             # Save user
-            if self.user_repository.create_user(user):
+            if await self.user_repository.create_user(user):
                 # Create tokens
                 access_token = self.create_access_token(user)
                 refresh_token = self.create_refresh_token(user)

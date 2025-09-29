@@ -30,7 +30,7 @@ def render_user_list():
     st.subheader("👥 사용자 목록")
     
     try:
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         response = api_service.get_all_users()
         
         # Check if API call was successful
@@ -201,7 +201,7 @@ def render_user_edit_form(user: Dict[str, Any]):
             }
             
             try:
-                api_service = APIService()
+                api_service = APIService(base_url="http://localhost:9502")
                 result = api_service.update_user(user.get('id'), update_data)
                 
                 if result.get("success"):
@@ -245,7 +245,7 @@ def render_user_delete_confirmation(user: Dict[str, Any]):
     with col1:
         if st.button("✅ 삭제 확인", key="confirm_delete", type="primary"):
             try:
-                api_service = APIService()
+                api_service = APIService(base_url="http://localhost:9502")
                 user_id = user.get('id')
                 
                 # Debug information
@@ -385,7 +385,7 @@ def render_user_creation_form():
             }
             
             try:
-                api_service = APIService()
+                api_service = APIService(base_url="http://localhost:9502")
                 result = api_service.create_user(user_data)
                 
                 if isinstance(result, dict) and result.get("success"):

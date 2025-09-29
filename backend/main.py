@@ -2086,7 +2086,7 @@ async def download_markdown_file(filename: str):
 async def register(request: RegisterRequest):
     """Register a new user"""
     try:
-        result = auth_controller.register(request)
+        result = await auth_controller.register(request)
         if not result.success:
             raise HTTPException(status_code=400, detail=result.message)
         return result

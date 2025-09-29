@@ -43,7 +43,7 @@ def check_auth_status():
                 if refresh_token:
                     try:
                         from services.api_service import APIService
-                        api_service = APIService()
+                        api_service = APIService(base_url="http://localhost:9502")
                         result = api_service.refresh_token(refresh_token)
                         if result.get("success"):
                             # 새로운 토큰으로 인증 상태 업데이트
@@ -78,7 +78,7 @@ def check_auth_status():
                 if refresh_token:
                     try:
                         from services.api_service import APIService
-                        api_service = APIService()
+                        api_service = APIService(base_url="http://localhost:9502")
                         result = api_service.refresh_token(refresh_token)
                         if result.get("success"):
                             st.session_state.auth_token = result.get("access_token")
@@ -102,7 +102,7 @@ def check_auth_status():
     # Verify token with backend
     try:
         from services.api_service import APIService
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         result = api_service.verify_token(st.session_state.auth_token)
         return result.get("valid", False)
     except:
@@ -129,7 +129,7 @@ def main():
                 if refresh_token:
                     try:
                         from services.api_service import APIService
-                        api_service = APIService()
+                        api_service = APIService(base_url="http://localhost:9502")
                         result = api_service.refresh_token(refresh_token)
                         if result.get("success"):
                             # 새로운 토큰으로 인증 상태 업데이트

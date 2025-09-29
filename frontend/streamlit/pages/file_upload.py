@@ -24,7 +24,7 @@ def check_auth_status():
     # Verify token with backend
     try:
         from services.api_service import APIService
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         result = api_service.verify_token(st.session_state.auth_token)
         return result.get("valid", False)
     except:
@@ -77,7 +77,7 @@ def main():
     
     
     # Initialize API service
-    api_service = APIService()
+    api_service = APIService(base_url="http://localhost:9502")
     
     # Check backend connection
     if not api_service.health_check():

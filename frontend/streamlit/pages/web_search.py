@@ -14,7 +14,7 @@ sys.path.append(parent_dir)
 from utils.helpers import UIHelpers
 
 # API 기본 URL
-API_BASE_URL = "http://localhost:8002"
+API_BASE_URL = "http://localhost:9502"
 
 def check_auth_status():
     """Check if user is authenticated"""
@@ -24,7 +24,7 @@ def check_auth_status():
     # Verify token with backend
     try:
         from services.api_service import APIService
-        api_service = APIService()
+        api_service = APIService(base_url="http://localhost:9502")
         result = api_service.verify_token(st.session_state.auth_token)
         return result.get("valid", False)
     except Exception as e:

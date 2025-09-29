@@ -10,7 +10,7 @@ import json
 class APIService:
     """Service for backend API communication"""
 
-    def __init__(self, base_url: str = "http://localhost:8002"):
+    def __init__(self, base_url: str = "http://localhost:9502"):
         self.base_url = base_url
         self.timeout = 60  # 기본 타임아웃을 60초로 증가
         self.upload_timeout = 600  # 파일 업로드 전용 타임아웃을 10분으로 증가

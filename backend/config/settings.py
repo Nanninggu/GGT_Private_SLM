@@ -12,7 +12,7 @@ class Settings:
     
     # ===== 애플리케이션 기본 설정 =====
     APP_NAME: str = "sllm-pattern"
-    SERVER_PORT: int = int(os.getenv("SERVER_PORT", "8002"))
+    SERVER_PORT: int = int(os.getenv("SERVER_PORT", "9502"))
     API_HOST: str = os.getenv("API_HOST", "localhost")
     
     # ===== 액추에이터/헬스체크 설정 =====

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class WebSocketService:
     """Service for WebSocket communication with backend"""
     
-    def __init__(self, base_url: str = "ws://localhost:8002"):
+    def __init__(self, base_url: str = "ws://localhost:9502"):
         self.base_url = base_url
         self.websocket = None
         self.session_id = None

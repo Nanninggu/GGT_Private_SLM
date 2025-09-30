@@ -146,7 +146,8 @@ def render_theme_settings():
         "enterprise": "🏢 Enterprise (기업용)",
         "modern": "✨ Modern (모던)",
         "minimal": "🔲 Minimal (미니멀)",
-        "dark": "🌙 Dark (다크)"
+        "dark": "🌙 Dark (다크)",
+        "shadcn": "🎯 Shadcn UI (현대적 컴포넌트)"
     }
     
     # Theme preview
@@ -205,8 +206,15 @@ def render_theme_settings():
             <div style="background: #2d2d2d; padding: 1rem; border-radius: 8px; border: 1px solid #666666; margin: 0.5rem 0;">
                 <div style="color: white; font-weight: 500;">Dark</div>
                 <div style="color: #cccccc; font-size: 0.9rem;">다크 모드 디자인</div>
-    </div>
-    """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
+        elif selected_theme == "shadcn":
+            st.markdown("""
+            <div style="background: hsl(0 0% 100%); padding: 1rem; border-radius: 8px; border: 1px solid hsl(214.3 31.8% 91.4%); margin: 0.5rem 0;">
+                <div style="color: hsl(222.2 84% 4.9%); font-weight: 600;">Shadcn UI</div>
+                <div style="color: hsl(215.4 16.3% 46.9%); font-size: 0.9rem;">현대적 컴포넌트 디자인</div>
+            </div>
+            """, unsafe_allow_html=True)
     
     # Apply theme button
     if st.button("🎨 테마 적용", type="primary"):
@@ -270,6 +278,11 @@ def render_theme_settings():
             "name": "Dark",
             "description": "어두운 배경과 밝은 텍스트를 사용한 다크 모드 디자인으로, 눈의 피로를 줄이고 집중도를 높입니다.",
             "features": ["어두운 배경", "밝은 텍스트", "눈의 피로 감소", "집중도 향상"]
+        },
+        "shadcn": {
+            "name": "Shadcn UI",
+            "description": "현대적이고 세련된 컴포넌트 기반 디자인으로, 개발자 친화적인 UI/UX를 제공합니다. Tailwind CSS와 Radix UI를 기반으로 한 고품질 컴포넌트 시스템입니다.",
+            "features": ["현대적 컴포넌트", "개발자 친화적", "접근성 최적화", "일관된 디자인 시스템"]
         }
     }
     

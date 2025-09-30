@@ -16,6 +16,7 @@ weasyprint>=60.2
 streamlit-option-menu>=0.3.6
 streamlit-ace>=0.1.1
 streamlit-extras>=0.3.0
+streamlit-shadcn-ui>=0.1.0
 
 # WebSocket support
 websocket-client>=1.6.0

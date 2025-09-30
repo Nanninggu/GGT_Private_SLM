@@ -10,6 +10,8 @@
 - [마이그레이션 스크립트](#마이그레이션-스크립트)
 - [데이터베이스 초기화](#데이터베이스-초기화)
 - [환경 변수 설정](#환경-변수-설정)
+- [데이터베이스 스키마 검증](#데이터베이스-스키마-검증)
+- [문제 해결](#문제-해결)
 
 ## 🗄️ 데이터베이스 개요
 
@@ -85,7 +87,11 @@ CREATE TABLE chat_sessions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     message_count INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    -- 제약조건
+    CONSTRAINT unique_session_id UNIQUE (session_id),
+    CONSTRAINT unique_user_session UNIQUE (user_id, session_id)
 );
 ```
 
@@ -118,7 +124,35 @@ CREATE TABLE documents (
 );
 ```
 
-### 4. LangChain 컬렉션 테이블 (`langchain_pg_collection`)
+### 4. 사용자 테이블 (`users`)
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'user',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
+```
+
+### 5. 채팅 메시지 테이블 (`chat_messages`)
+```sql
+CREATE TABLE chat_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id)
+);
+```
+
+### 6. LangChain 컬렉션 테이블 (`langchain_pg_collection`)
 ```sql
 -- LangChain에서 자동 생성되는 테이블
 CREATE TABLE langchain_pg_collection (
@@ -129,7 +163,7 @@ CREATE TABLE langchain_pg_collection (
 );
 ```
 
-### 5. LangChain 임베딩 테이블 (`langchain_pg_embedding`)
+### 7. LangChain 임베딩 테이블 (`langchain_pg_embedding`)
 ```sql
 -- LangChain에서 자동 생성되는 테이블
 CREATE TABLE langchain_pg_embedding (
@@ -157,7 +191,21 @@ CREATE INDEX idx_chat_sessions_is_active ON chat_sessions(is_active);
 CREATE INDEX idx_chat_sessions_user_created ON chat_sessions(user_id, created_at DESC);
 ```
 
-### 2. 피드백 인덱스
+### 2. 사용자 테이블 인덱스
+```sql
+CREATE INDEX users_username_idx ON users (username);
+CREATE INDEX users_email_idx ON users (email);
+CREATE INDEX users_role_idx ON users (role);
+```
+
+### 3. 채팅 메시지 인덱스
+```sql
+CREATE INDEX idx_chat_messages_session_id ON chat_messages(session_id);
+CREATE INDEX idx_chat_messages_role ON chat_messages(role);
+CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at);
+```
+
+### 4. 피드백 인덱스
 ```sql
 CREATE INDEX idx_feedback_user_id ON feedback(user_id);
 CREATE INDEX idx_feedback_session_id ON feedback(session_id);
@@ -166,7 +214,7 @@ CREATE INDEX idx_feedback_type ON feedback(feedback_type);
 CREATE INDEX idx_feedback_created_at ON feedback(created_at);
 ```
 
-### 3. 벡터 검색 인덱스 (HNSW)
+### 5. 벡터 검색 인덱스 (HNSW)
 ```sql
 -- 문서 임베딩 HNSW 인덱스 (최적화된 설정)
 CREATE INDEX documents_embedding_idx 
@@ -180,9 +228,34 @@ CREATE INDEX documents_collection_name_idx ON documents (collection_name);
 CREATE INDEX langchain_pg_embedding_embedding_idx 
 ON langchain_pg_embedding USING hnsw (embedding vector_cosine_ops)
 WITH (m = 12, ef_construction = 100);
+
+-- LangChain 컬렉션 인덱스
+CREATE INDEX idx_langchain_pg_collection_user_id ON langchain_pg_collection (user_id);
 ```
 
-### 4. 성능 최적화 설정
+### 6. 성능 최적화 인덱스
+```sql
+-- JSONB 메타데이터 GIN 인덱스 (빠른 필터링)
+CREATE INDEX documents_metadata_gin_idx ON documents USING gin (metadata);
+
+-- 컬렉션 + 임베딩 복합 인덱스
+CREATE INDEX documents_collection_embedding_idx 
+ON documents USING hnsw (embedding vector_cosine_ops)
+WITH (m = 12, ef_construction = 100);
+
+-- 시간 기반 쿼리 인덱스
+CREATE INDEX documents_created_at_idx ON documents (created_at DESC);
+
+-- 문서 크기 필터링 인덱스
+CREATE INDEX documents_content_length_idx ON documents (length(content));
+
+-- 활성 문서 부분 인덱스
+CREATE INDEX documents_active_collection_idx 
+ON documents (collection_name, created_at DESC) 
+WHERE collection_name IS NOT NULL;
+```
+
+### 7. 성능 최적화 설정
 ```sql
 -- PostgreSQL 벡터 검색 최적화
 SET random_page_cost = 1.1;  -- SSD 최적화
@@ -214,13 +287,32 @@ psql -h 127.0.0.1 -p 5433 -U postgres -d postgres -f backend/migrations/add_user
 psql -h 127.0.0.1 -p 5433 -U postgres -d postgres -f backend/migrations/migrate_shared_collections.sql
 ```
 
+### 자동 마이그레이션 (권장)
+애플리케이션 시작 시 자동으로 마이그레이션이 실행됩니다:
+```bash
+# Backend 시작 (자동 마이그레이션 포함)
+cd backend
+python main.py
+```
+
+### 수동 마이그레이션 실행
+```bash
+# 데이터베이스 서비스 초기화 스크립트 실행
+cd backend
+python -c "
+import asyncio
+from services.database_service import db_service
+asyncio.run(db_service.initialize())
+"
+```
+
 ## 🔧 데이터베이스 초기화
 
 ### 1. 자동 초기화 (권장)
-애플리케이션 시작 시 자동으로 테이블이 생성됩니다:
+애플리케이션 시작 시 자동으로 테이블이 생성되고 마이그레이션이 실행됩니다:
 
 ```bash
-# Backend 시작
+# Backend 시작 (자동 초기화 + 마이그레이션)
 cd backend
 python main.py
 ```
@@ -234,6 +326,18 @@ import asyncio
 from services.database_service import db_service
 asyncio.run(db_service.initialize())
 "
+```
+
+### 3. 완전한 데이터베이스 재구축
+```bash
+# 기존 데이터베이스 삭제 후 재생성
+psql -h 127.0.0.1 -p 5433 -U postgres -c "DROP DATABASE IF EXISTS postgres;"
+psql -h 127.0.0.1 -p 5433 -U postgres -c "CREATE DATABASE postgres;"
+psql -h 127.0.0.1 -p 5433 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+# 애플리케이션 재시작으로 테이블 자동 생성
+cd backend
+python main.py
 ```
 
 ## ⚙️ 환경 변수 설정
@@ -361,6 +465,84 @@ pg_dump -h 127.0.0.1 -p 5433 -U postgres postgres > backup_$(date +%Y%m%d_%H%M%S
 psql -h 127.0.0.1 -p 5433 -U postgres postgres < backup_20241201_120000.sql
 ```
 
+## 🔍 데이터베이스 스키마 검증
+
+### 테이블 존재 확인
+```sql
+-- 모든 테이블 목록 확인
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
+
+-- 특정 테이블 스키마 확인
+\d chat_sessions
+\d feedback
+\d users
+\d chat_messages
+\d documents
+\d langchain_pg_collection
+\d langchain_pg_embedding
+```
+
+### 인덱스 확인
+```sql
+-- 모든 인덱스 목록 확인
+SELECT 
+    schemaname,
+    tablename,
+    indexname,
+    indexdef
+FROM pg_indexes 
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
+
+-- 벡터 인덱스 확인
+SELECT 
+    indexname,
+    indexdef
+FROM pg_indexes 
+WHERE indexdef LIKE '%hnsw%' 
+   OR indexdef LIKE '%vector%';
+```
+
+### 확장 프로그램 확인
+```sql
+-- pgvector 확장 확인
+SELECT * FROM pg_extension WHERE extname = 'vector';
+
+-- 확장 프로그램 목록
+SELECT * FROM pg_available_extensions WHERE name = 'vector';
+```
+
+### 테이블 크기 및 통계
+```sql
+-- 테이블 크기 확인
+SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+
+-- 테이블 행 수 확인
+SELECT 
+    'chat_sessions' as table_name, COUNT(*) as row_count FROM chat_sessions
+UNION ALL
+SELECT 'feedback', COUNT(*) FROM feedback
+UNION ALL
+SELECT 'users', COUNT(*) FROM users
+UNION ALL
+SELECT 'chat_messages', COUNT(*) FROM chat_messages
+UNION ALL
+SELECT 'documents', COUNT(*) FROM documents
+UNION ALL
+SELECT 'langchain_pg_collection', COUNT(*) FROM langchain_pg_collection
+UNION ALL
+SELECT 'langchain_pg_embedding', COUNT(*) FROM langchain_pg_embedding;
+```
+
 ## 📞 문제 해결
 
 ### 일반적인 문제들
@@ -368,6 +550,8 @@ psql -h 127.0.0.1 -p 5433 -U postgres postgres < backup_20241201_120000.sql
 2. **연결 오류**: 방화벽 설정 및 포트 확인
 3. **성능 문제**: 인덱스 생성 및 PostgreSQL 설정 확인
 4. **메모리 부족**: `shared_buffers` 및 `work_mem` 설정 조정
+5. **테이블 누락**: 마이그레이션 스크립트 실행 확인
+6. **인덱스 누락**: 성능 최적화 인덱스 생성 확인
 
 ### 로그 확인
 ```bash
@@ -376,6 +560,15 @@ tail -f /var/log/postgresql/postgresql-15-main.log
 
 # 애플리케이션 로그 확인
 tail -f backend/logs/app.log
+```
+
+### 데이터베이스 연결 테스트
+```bash
+# PostgreSQL 연결 테스트
+psql -h 127.0.0.1 -p 5433 -U postgres -d postgres -c "SELECT version();"
+
+# pgvector 확장 테스트
+psql -h 127.0.0.1 -p 5433 -U postgres -d postgres -c "SELECT vector_dims('[1,2,3]'::vector);"
 ```
 
 ---

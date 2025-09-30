@@ -178,7 +178,8 @@ class DesignThemeManager:
             "minimal": self._get_minimal_theme(),
             "dark": self._get_dark_theme(),
             "material3": self._get_material3_theme(),
-            "gemini": self._get_gemini_theme()
+            "gemini": self._get_gemini_theme(),
+            "shadcn": self._get_shadcn_theme()
         }
     
     def _get_enterprise_theme(self):
@@ -808,6 +809,335 @@ class DesignThemeManager:
             
             .stButton > button {
                 padding: 12px 20px;
+                font-size: 16px;
+            }
+        }
+        </style>
+        """
+    
+    def _get_shadcn_theme(self):
+        """Shadcn UI 테마"""
+        return """
+        <style>
+        /* Shadcn UI Theme */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        .stApp {
+            background-color: hsl(0 0% 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            color: hsl(222.2 84% 4.9%);
+        }
+        
+        /* Hide Streamlit default UI elements */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stDeployButton {display:none;}
+        .stDecoration {display:none;}
+        .stApp > header {display:none;}
+        .stApp > div[data-testid="stToolbar"] {display:none;}
+        .stApp > div[data-testid="stDecoration"] {display:none;}
+        .stApp > div[data-testid="stStatusWidget"] {display:none;}
+        .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+        .stApp > div[data-testid="stHeader"] {display:none;}
+        
+        /* Main content area */
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+            background-color: hsl(0 0% 100%);
+            max-width: 1200px;
+        }
+        
+        /* Shadcn Color System */
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 221.2 83.2% 53.3%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96%;
+            --secondary-foreground: 222.2 84% 4.9%;
+            --muted: 210 40% 96%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96%;
+            --accent-foreground: 222.2 84% 4.9%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 221.2 83.2% 53.3%;
+            --radius: 0.5rem;
+        }
+        
+        /* Shadcn Typography */
+        .stApp {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            font-weight: 600;
+            color: hsl(var(--foreground));
+        }
+        
+        h1 { font-size: 2.25rem; font-weight: 700; }
+        h2 { font-size: 1.5rem; font-weight: 600; }
+        h3 { font-size: 1.25rem; font-weight: 600; }
+        h4 { font-size: 1rem; font-weight: 600; }
+        
+        /* Shadcn Buttons */
+        .stButton > button {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            border: none;
+            border-radius: calc(var(--radius) - 2px);
+            padding: 0.5rem 1rem;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: 0.025em;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 40px;
+            cursor: pointer;
+        }
+        
+        .stButton > button:hover {
+            background-color: hsl(var(--primary) / 0.9);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        .stButton > button:active {
+            transform: translateY(1px);
+        }
+        
+        .stButton > button:focus-visible {
+            outline: 2px solid hsl(var(--ring));
+            outline-offset: 2px;
+        }
+        
+        /* Shadcn Text Input */
+        .stTextInput > div > div > input {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) - 2px);
+            padding: 0.5rem 0.75rem;
+            font-size: 14px;
+            font-weight: 400;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stTextInput > div > div > input:focus {
+            border-color: hsl(var(--ring));
+            outline: none;
+            box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+        }
+        
+        .stTextInput > div > div > input::placeholder {
+            color: hsl(var(--muted-foreground));
+        }
+        
+        /* Shadcn Selectbox */
+        .stSelectbox > div > div {
+            background-color: hsl(var(--background));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) - 2px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stSelectbox > div > div:focus-within {
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+        }
+        
+        /* Shadcn Chat Messages */
+        .stChatMessage {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) + 2px);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        /* Shadcn Chat Input */
+        .stChatInput > div {
+            background-color: hsl(var(--background));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) + 4px);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        .stChatInput > div:focus-within {
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+        }
+        
+        /* Shadcn Cards */
+        .modern-card {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) + 2px);
+            padding: 1.5rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            margin-bottom: 1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .modern-card:hover {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Shadcn Sidebar */
+        .css-1d391kg {
+            background-color: hsl(var(--background));
+        }
+        
+        .css-1d391kg .css-1v0mbdj {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) + 2px);
+            margin: 1rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        /* Shadcn Tabs */
+        .stTabs > div > div > div > div {
+            background-color: hsl(var(--background));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) - 2px);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            background-color: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+            border-radius: calc(var(--radius) - 2px);
+        }
+        
+        /* Shadcn Expander */
+        .streamlit-expander {
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) - 2px);
+            background-color: hsl(var(--card));
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        /* Shadcn Radio Buttons */
+        .stRadio > div > label {
+            background-color: hsl(var(--card));
+            padding: 0.75rem;
+            border-radius: calc(var(--radius) - 2px);
+            border: 1px solid hsl(var(--border));
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        .stRadio > div > label:hover {
+            background-color: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+        }
+        
+        .stRadio > div > label[data-testid="stRadio"] {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+        
+        /* Shadcn Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .status-online {
+            background-color: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+            border-color: hsl(var(--primary) / 0.2);
+        }
+        
+        .status-offline {
+            background-color: hsl(var(--destructive) / 0.1);
+            color: hsl(var(--destructive));
+            border-color: hsl(var(--destructive) / 0.2);
+        }
+        
+        /* Shadcn Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .badge-default {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+        
+        .badge-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+        
+        .badge-destructive {
+            background-color: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
+        }
+        
+        .badge-outline {
+            border: 1px solid hsl(var(--border));
+            color: hsl(var(--foreground));
+        }
+        
+        /* Shadcn Alert */
+        .alert {
+            position: relative;
+            width: 100%;
+            border-radius: calc(var(--radius) - 2px);
+            border: 1px solid;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-default {
+            background-color: hsl(var(--background));
+            border-color: hsl(var(--border));
+            color: hsl(var(--foreground));
+        }
+        
+        .alert-destructive {
+            background-color: hsl(var(--destructive) / 0.1);
+            border-color: hsl(var(--destructive) / 0.2);
+            color: hsl(var(--destructive));
+        }
+        
+        /* Shadcn Responsive Design */
+        @media (max-width: 768px) {
+            .main .block-container {
+                padding: 1rem;
+                margin: 0.5rem;
+            }
+            
+            .stButton > button {
+                padding: 0.75rem 1rem;
                 font-size: 16px;
             }
         }

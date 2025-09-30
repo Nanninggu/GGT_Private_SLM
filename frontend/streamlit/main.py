@@ -364,8 +364,10 @@ def main():
     
     # Apply Material Design 3 Theme
     from utils.helpers import DesignThemeManager, FontManager
+    from utils.shadcn_components import ShadcnComponents
     theme_manager = DesignThemeManager()
     font_manager = FontManager()
+    shadcn = ShadcnComponents()
     
     # Load theme from file if not already loaded
     if "theme_loaded" not in st.session_state:
@@ -392,17 +394,50 @@ def main():
     # Service cards - removed HAI-Chat content
     
     # Welcome message with modern styling
-    st.markdown("""
-    <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
-                border-radius: 20px; margin: 2rem 0; border: 2px solid #e9ecef; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
-        <h3 style="color: #495057; margin-bottom: 1rem; font-weight: 600;">AI 챗봇에 오신 것을 환영합니다!</h3>
-        <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
-            AI와 대화하고 문서를 분석해보세요.<br>
-            아래에 메시지를 입력하여 시작하세요.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    if selected_theme == "shadcn":
+        # Use shadcn-ui components for welcome message
+        try:
+            with shadcn.card(
+                title="🤖 AI 챗봇에 오신 것을 환영합니다!",
+                description="AI와 대화하고 문서를 분석해보세요. 아래에 메시지를 입력하여 시작하세요.",
+                variant="default",
+                key="welcome_card"
+            ):
+                st.markdown("""
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
+                    <p style="color: hsl(215.4 16.3% 46.9%); font-size: 1.1rem; line-height: 1.6;">
+                        AI와 대화하고 문서를 분석해보세요.<br>
+                        아래에 메시지를 입력하여 시작하세요.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+        except Exception as e:
+            # Fallback to original styling if shadcn-ui fails
+            st.markdown("""
+            <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+                        border-radius: 20px; margin: 2rem 0; border: 2px solid #e9ecef; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
+                <h3 style="color: #495057; margin-bottom: 1rem; font-weight: 600;">AI 챗봇에 오신 것을 환영합니다!</h3>
+                <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                    AI와 대화하고 문서를 분석해보세요.<br>
+                    아래에 메시지를 입력하여 시작하세요.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        # Use original styling for other themes
+        st.markdown("""
+        <div style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+                    border-radius: 20px; margin: 2rem 0; border: 2px solid #e9ecef; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🤖</div>
+            <h3 style="color: #495057; margin-bottom: 1rem; font-weight: 600;">AI 챗봇에 오신 것을 환영합니다!</h3>
+            <p style="color: #6c757d; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                AI와 대화하고 문서를 분석해보세요.<br>
+                아래에 메시지를 입력하여 시작하세요.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Chat interface section
     st.markdown("---")
@@ -418,37 +453,124 @@ def main():
         # Show feature cards for new chat
         st.markdown("#### 🚀 사용 가능한 기능")
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("""
-            <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
-                <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">일반 대화</div>
-                <div style="font-size: 0.9rem; color: #6c757d;">AI와 자유롭게 대화하세요</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("""
-            <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
-                <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">문서 분석</div>
-                <div style="font-size: 0.9rem; color: #6c757d;">업로드한 문서를 분석해보세요</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown("""
-            <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
-                <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">웹 검색</div>
-                <div style="font-size: 0.9rem; color: #6c757d;">실시간 정보를 검색해보세요</div>
-            </div>
-            """, unsafe_allow_html=True)
+        if selected_theme == "shadcn":
+            # Use shadcn-ui components for feature cards
+            try:
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    with shadcn.card(
+                        title="💬 일반 대화",
+                        description="AI와 자유롭게 대화하세요",
+                        variant="default",
+                        key="chat_card"
+                    ):
+                        st.markdown("""
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
+                            <p style="color: hsl(215.4 16.3% 46.9%); font-size: 0.9rem;">
+                                AI와 자유롭게 대화하세요
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                with col2:
+                    with shadcn.card(
+                        title="📚 문서 분석",
+                        description="업로드한 문서를 분석해보세요",
+                        variant="default",
+                        key="document_card"
+                    ):
+                        st.markdown("""
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+                            <p style="color: hsl(215.4 16.3% 46.9%); font-size: 0.9rem;">
+                                업로드한 문서를 분석해보세요
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                with col3:
+                    with shadcn.card(
+                        title="🔍 웹 검색",
+                        description="실시간 정보를 검색해보세요",
+                        variant="default",
+                        key="search_card"
+                    ):
+                        st.markdown("""
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+                            <p style="color: hsl(215.4 16.3% 46.9%); font-size: 0.9rem;">
+                                실시간 정보를 검색해보세요
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            except Exception as e:
+                # Fallback to original styling if shadcn-ui fails
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.markdown("""
+                    <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
+                        <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">일반 대화</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">AI와 자유롭게 대화하세요</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown("""
+                    <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+                        <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">문서 분석</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">업로드한 문서를 분석해보세요</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown("""
+                    <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+                        <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">웹 검색</div>
+                        <div style="font-size: 0.9rem; color: #6c757d;">실시간 정보를 검색해보세요</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            # Use original styling for other themes
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("""
+                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💬</div>
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">일반 대화</div>
+                    <div style="font-size: 0.9rem; color: #6c757d;">AI와 자유롭게 대화하세요</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("""
+                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">문서 분석</div>
+                    <div style="font-size: 0.9rem; color: #6c757d;">업로드한 문서를 분석해보세요</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown("""
+                <div style="text-align: center; padding: 1.5rem; background: white; border-radius: 12px; 
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e9ecef;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+                    <div style="font-weight: 600; color: #495057; margin-bottom: 0.25rem;">웹 검색</div>
+                    <div style="font-size: 0.9rem; color: #6c757d;">실시간 정보를 검색해보세요</div>
+                </div>
+                """, unsafe_allow_html=True)
     
 
     # Model selection section

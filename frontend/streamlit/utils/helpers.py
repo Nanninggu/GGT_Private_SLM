@@ -179,7 +179,8 @@ class DesignThemeManager:
             "dark": self._get_dark_theme(),
             "material3": self._get_material3_theme(),
             "gemini": self._get_gemini_theme(),
-            "shadcn": self._get_shadcn_theme()
+            "shadcn": self._get_shadcn_theme(),
+            "antd": self._get_antd_theme()
         }
     
     def _get_enterprise_theme(self):
@@ -1139,6 +1140,415 @@ class DesignThemeManager:
             .stButton > button {
                 padding: 0.75rem 1rem;
                 font-size: 16px;
+            }
+        }
+        </style>
+        """
+    
+    def _get_antd_theme(self):
+        """Ant Design 테마"""
+        return """
+        <style>
+        /* Ant Design Theme Styles */
+        .stApp {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #262626;
+        }
+        
+        /* Global text color */
+        .stApp, .stApp * {
+            color: #262626;
+        }
+        
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            color: #262626 !important;
+        }
+        
+        /* Paragraphs and text */
+        p, div, span {
+            color: #262626;
+        }
+        
+        /* Streamlit specific text elements */
+        .stMarkdown, .stMarkdown * {
+            color: #262626 !important;
+        }
+        
+        .stText, .stText * {
+            color: #262626 !important;
+        }
+        
+        .stWrite, .stWrite * {
+            color: #262626 !important;
+        }
+        
+        .stInfo, .stInfo * {
+            color: #262626 !important;
+        }
+        
+        .stSuccess, .stSuccess * {
+            color: #262626 !important;
+        }
+        
+        .stWarning, .stWarning * {
+            color: #262626 !important;
+        }
+        
+        .stError, .stError * {
+            color: #262626 !important;
+        }
+        
+        /* Override any inherited colors */
+        .stApp [class*="st"] {
+            color: #262626 !important;
+        }
+        
+        /* Hide Streamlit default UI elements */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stDeployButton {display:none;}
+        .stDecoration {display:none;}
+        .stApp > header {display:none;}
+        .stApp > div[data-testid="stToolbar"] {display:none;}
+        .stApp > div[data-testid="stDecoration"] {display:none;}
+        .stApp > div[data-testid="stStatusWidget"] {display:none;}
+        .stApp > div[data-testid="stSidebar"] > div[data-testid="stSidebarUserContent"] > div[data-testid="stSidebarNav"] > div[data-testid="stSidebarNavItems"] > div[data-testid="stSidebarNavLink"]:first-child {display:none;}
+        .stApp > div[data-testid="stHeader"] {display:none;}
+        
+        /* Main content area */
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+            background-color: #ffffff;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #d9d9d9;
+            color: #262626;
+        }
+        
+        /* Ensure text is visible in main content */
+        .main .block-container * {
+            color: #262626;
+        }
+        
+        /* Page header */
+        .page-header {
+            background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 6px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        /* Buttons - Ant Design style */
+        .stButton > button {
+            background-color: #1890ff;
+            color: white;
+            border: 1px solid #1890ff;
+            border-radius: 6px;
+            padding: 4px 15px;
+            font-size: 14px;
+            font-weight: 400;
+            height: 32px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.045);
+        }
+        
+        .stButton > button:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+        }
+        
+        .stButton > button:active {
+            background-color: #096dd9;
+            border-color: #096dd9;
+            transform: translateY(0);
+        }
+        
+        /* Primary button */
+        .stButton > button[kind="primary"] {
+            background-color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .stButton > button[kind="primary"]:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        /* Secondary button */
+        .stButton > button[kind="secondary"] {
+            background-color: #ffffff;
+            color: #1890ff;
+            border-color: #d9d9d9;
+        }
+        
+        .stButton > button[kind="secondary"]:hover {
+            background-color: #f0f8ff;
+            border-color: #40a9ff;
+            color: #40a9ff;
+        }
+        
+        /* Text inputs */
+        .stTextInput > div > div > input,
+        .stTextArea > div > textarea {
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            padding: 4px 11px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background-color: #ffffff;
+        }
+        
+        .stTextInput > div > div > input:focus,
+        .stTextArea > div > textarea:focus {
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            outline: none;
+        }
+        
+        /* Select boxes */
+        .stSelectbox > div > div {
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            background-color: #ffffff;
+        }
+        
+        .stSelectbox > div > div:focus-within {
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        /* Radio buttons */
+        .stRadio > div {
+            gap: 8px;
+        }
+        
+        .stRadio > div > label {
+            font-size: 14px;
+            color: #262626 !important;
+        }
+        
+        .stRadio > div > label > div {
+            color: #262626 !important;
+        }
+        
+        /* Checkboxes */
+        .stCheckbox > label {
+            color: #262626 !important;
+        }
+        
+        .stCheckbox > label > div {
+            color: #262626 !important;
+        }
+        
+        /* Tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0;
+            background-color: #fafafa;
+            border-radius: 6px;
+            padding: 4px;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            background-color: transparent;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #8c8c8c !important;
+            transition: all 0.3s;
+        }
+        
+        .stTabs [aria-selected="true"] {
+            background-color: #ffffff;
+            color: #1890ff !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stTabs [data-baseweb="tab"]:hover {
+            color: #1890ff !important;
+        }
+        
+        /* Sidebar */
+        .stSidebar {
+            background-color: #ffffff;
+            border-right: 1px solid #f0f0f0;
+            color: #262626;
+        }
+        
+        .stSidebar * {
+            color: #262626;
+        }
+        
+        .stSidebar .stSelectbox > div > div {
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            background-color: #ffffff;
+            color: #262626;
+        }
+        
+        .stSidebar .stSelectbox > div > div:focus-within {
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        /* Cards and containers */
+        .config-section {
+            background-color: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 24px;
+            margin-bottom: 16px;
+            color: #262626;
+        }
+        
+        .config-section * {
+            color: #262626;
+        }
+        
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background-color: #52c41a;
+        }
+        
+        .status-offline {
+            background-color: #ff4d4f;
+        }
+        
+        /* Alerts and messages */
+        .stAlert {
+            border-radius: 6px;
+            border: 1px solid;
+        }
+        
+        .stAlert[data-testid="alert-success"] {
+            background-color: #f6ffed;
+            border-color: #b7eb8f;
+            color: #389e0d;
+        }
+        
+        .stAlert[data-testid="alert-error"] {
+            background-color: #fff2f0;
+            border-color: #ffccc7;
+            color: #cf1322;
+        }
+        
+        .stAlert[data-testid="alert-warning"] {
+            background-color: #fffbe6;
+            border-color: #ffe58f;
+            color: #d48806;
+        }
+        
+        .stAlert[data-testid="alert-info"] {
+            background-color: #e6f7ff;
+            border-color: #91d5ff;
+            color: #0958d9;
+        }
+        
+        /* Tables */
+        .stDataFrame {
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+        }
+        
+        /* Progress bars */
+        .stProgress > div > div > div {
+            background-color: #1890ff;
+        }
+        
+        /* File uploader */
+        .stFileUploader > div {
+            border: 1px dashed #d9d9d9;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+        
+        .stFileUploader > div:hover {
+            border-color: #40a9ff;
+        }
+        
+        /* Expander */
+        .streamlit-expanderHeader {
+            background-color: #fafafa;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .streamlit-expanderContent {
+            border: 1px solid #f0f0f0;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+        }
+        
+        /* Chat messages */
+        .chat-message {
+            background-color: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            color: #262626;
+        }
+        
+        .chat-message.user {
+            background-color: #e6f7ff;
+            border-color: #91d5ff;
+            color: #262626;
+        }
+        
+        .chat-message.assistant {
+            background-color: #f6ffed;
+            border-color: #b7eb8f;
+            color: #262626;
+        }
+        
+        .chat-message * {
+            color: #262626;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main .block-container {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            
+            .page-header {
+                padding: 1.5rem;
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
             }
         }
         </style>

@@ -90,7 +90,8 @@ async def lifespan(app: FastAPI):
         await ollama_service.initialize()
         await rag_service.initialize()
         await search_service.initialize()
-        await langchain_rag_service.initialize()
+        # Temporarily disable LangChain RAG service due to pgvector issues
+        # await langchain_rag_service.initialize()
         await accuracy_service.initialize()
         await chat_service.initialize()
         services_initialized = True
@@ -634,13 +635,46 @@ async def send_message(request: MessageRequest):
             model_use_case = settings.MODEL_CONFIGS.get(model_type, {}).get("use_case", "일반적인 사용")
             logger.info(f"Using default model: {model_name} (type: {model_type})")
         
-        rag_status = "RAG 기반" if result.get("metadata", {}).get("context_count", 0) > 0 else "기본 모델"
+        # Get context information
+        context_count = result.get("metadata", {}).get("context_count", 0)
+        context_files = result.get("metadata", {}).get("context_files", [])
+        similarity_scores = result.get("metadata", {}).get("similarity_scores", [])
+        context_sources = result.get("context", [])
+        
+        rag_status = "RAG 기반" if context_count > 0 else "기본 모델"
         fallback_used = result.get("metadata", {}).get("fallback_mode", False)
         
         if fallback_used:
             rag_status = "기본 모델 (RAG 컨텍스트 없음)"
         
-        ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+        # Build source information section
+        source_info = ""
+        if context_count > 0 and context_sources:
+            source_info = "\n\n**📚 참고 문서 정보**\n"
+            for i, source in enumerate(context_sources):
+                filename = source.get("filename", f"문서 {i+1}")
+                similarity = source.get("similarity", 0)
+                similarity_percent = similarity * 100
+                collection = source.get("collection", "Unknown")
+                
+                # Add source details
+                source_info += f"- **{filename}** (정확도: {similarity_percent:.1f}%)\n"
+                if collection != "Unknown":
+                    source_info += f"  - 컬렉션: {collection}\n"
+                if source.get("page_number"):
+                    source_info += f"  - 페이지: {source.get('page_number')}\n"
+                if source.get("upload_date"):
+                    source_info += f"  - 업로드: {source.get('upload_date')}\n"
+                source_info += "\n"
+            
+            # Add average accuracy
+            if similarity_scores:
+                avg_accuracy = sum(similarity_scores) / len(similarity_scores) * 100
+                source_info += f"**평균 정확도: {avg_accuracy:.1f}%**\n"
+        else:
+            source_info = "\n\n**📚 참고 문서 정보**\n- 참고한 문서가 없습니다. (기본 모델 응답)\n"
+        
+        ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}{source_info}\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
         final_response = result["response"] + ending_message
         
         # Format response for frontend
@@ -738,19 +772,21 @@ async def stream_chat(request: ChatRequest):
                             "event": "message",
                             "data": json.dumps({
                                 "content": chunk,
-                                "finished": False
+                                "finished": False,
+                                "type": "chunk"
                             })
                         }
                         # Dynamic delay based on chunk size for optimal performance
                         delay = 0.005 if len(chunk) > 5 else 0.01
                         await asyncio.sleep(delay)
                     
-                    # Send completion signal
+                    # Send completion signal with proper formatting
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
-                            "finished": True
+                            "finished": True,
+                            "type": "completion"
                         })
                     }
                 else:
@@ -765,17 +801,19 @@ async def stream_chat(request: ChatRequest):
                             "event": "message",
                             "data": json.dumps({
                                 "content": chunk,
-                                "finished": False
+                                "finished": False,
+                                "type": "chunk"
                             })
                         }
                         await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)
                     
-                    # Send completion signal
+                    # Send completion signal with proper formatting
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
-                            "finished": True
+                            "finished": True,
+                            "type": "completion"
                         })
                     }
                     
@@ -862,19 +900,21 @@ async def stream_chat_langchain(request: ChatRequest):
                             "event": "message",
                             "data": json.dumps({
                                 "content": chunk,
-                                "finished": False
+                                "finished": False,
+                                "type": "chunk"
                             })
                         }
                         # Dynamic delay based on chunk size for optimal performance
                         delay = 0.005 if len(chunk) > 5 else 0.01
                         await asyncio.sleep(delay)
                     
-                    # Send completion signal
+                    # Send completion signal with proper formatting
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
-                            "finished": True
+                            "finished": True,
+                            "type": "completion"
                         })
                     }
                 else:
@@ -889,17 +929,19 @@ async def stream_chat_langchain(request: ChatRequest):
                             "event": "message",
                             "data": json.dumps({
                                 "content": chunk,
-                                "finished": False
+                                "finished": False,
+                                "type": "chunk"
                             })
                         }
                         await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)
                     
-                    # Send completion signal
+                    # Send completion signal with proper formatting
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
-                            "finished": True
+                            "finished": True,
+                            "type": "completion"
                         })
                     }
                     
@@ -2232,6 +2274,8 @@ async def measure_query_accuracy(request: AccuracyQueryRequest):
         return result
     except Exception as e:
         logger.error(f"Accuracy measurement failed: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/accuracy/test-suite")

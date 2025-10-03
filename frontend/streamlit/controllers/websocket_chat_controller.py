@@ -184,7 +184,7 @@ class WebSocketChatController:
                         status_container.empty()
                     
                     elif data["type"] == "chunk":
-                        if not data.get("finished", False):
+                        if not data.get("finished", False) and data.get("type") == "chunk":
                             full_response += data["content"]
                             
                             # Real-time text update
@@ -199,7 +199,7 @@ class WebSocketChatController:
                                     <div style="line-height: 1.6; color: #212529; white-space: pre-wrap;">{full_response}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
-                        else:
+                        elif data.get("finished", False) or data.get("type") == "completion":
                             # Completion signal received
                             status_container.empty()
                             
@@ -216,7 +216,66 @@ class WebSocketChatController:
                             else:
                                 st.caption("⚡ 기본 RAG 모드")
                             
+                            # Save the complete response to session state and backend
+                            if full_response and full_response.strip():
+                                try:
+                                    # Create assistant message for session state
+                                    assistant_message = {
+                                        "id": str(uuid.uuid4()),
+                                        "role": "assistant",
+                                        "content": full_response,
+                                        "context": context_sources,
+                                        "metadata": {
+                                            "model_type": local_model_type,
+                                            "rag_mode": rag_mode,
+                                            "timestamp": datetime.now().strftime("%H:%M:%S"),
+                                            "streaming_completed": True
+                                        }
+                                    }
+                                    
+                                    # Add to session state messages
+                                    if "messages" not in st.session_state:
+                                        st.session_state.messages = []
+                                    st.session_state.messages.append(assistant_message)
+                                    
+                                    # Save to backend if connected
+                                    if st.session_state.get("backend_connected", False) and self.api_service:
+                                        try:
+                                            save_result = self.api_service.save_message(assistant_message, st.session_state.session_id)
+                                            if not save_result.get("success", False):
+                                                st.warning(f"⚠️ 메시지 저장 실패: {save_result.get('error', '알 수 없는 오류')}")
+                                        except Exception as save_error:
+                                            st.warning(f"⚠️ 메시지 저장 중 오류: {str(save_error)}")
+                                    
+                                except Exception as e:
+                                    st.warning(f"⚠️ 응답 처리 중 오류: {str(e)}")
+                            
                             return full_response
+                
+                # If we reach here without completion, save what we have
+                if full_response and full_response.strip():
+                    try:
+                        # Create assistant message for session state
+                        assistant_message = {
+                            "id": str(uuid.uuid4()),
+                            "role": "assistant",
+                            "content": full_response,
+                            "context": context_sources,
+                            "metadata": {
+                                "model_type": local_model_type,
+                                "rag_mode": rag_mode,
+                                "timestamp": datetime.now().strftime("%H:%M:%S"),
+                                "streaming_completed": False  # Mark as incomplete
+                            }
+                        }
+                        
+                        # Add to session state messages
+                        if "messages" not in st.session_state:
+                            st.session_state.messages = []
+                        st.session_state.messages.append(assistant_message)
+                        
+                    except Exception as e:
+                        st.warning(f"⚠️ 응답 처리 중 오류: {str(e)}")
                 
                 return full_response
             

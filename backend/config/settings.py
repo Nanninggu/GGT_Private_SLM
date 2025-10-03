@@ -8,7 +8,9 @@ from typing import Optional
 
 @dataclass
 class Settings:
-    """Application settings converted from Spring Boot properties"""
+    """
+    Configuration settings for the chatbot backend
+    """
     
     # ===== 애플리케이션 기본 설정 =====
     APP_NAME: str = "sllm-pattern"
@@ -48,149 +50,190 @@ class Settings:
     OLLAMA_CHAT_TIMEOUT: int = 60  # seconds (성능 최적화)
     OLLAMA_READ_TIMEOUT: int = 60  # seconds (성능 최적화)
     OLLAMA_CONNECTION_TIMEOUT: int = 90  # seconds (성능 최적화)
+    OLLAMA_EMBEDDING_TIMEOUT: int = 60  # seconds (임베딩 생성 타임아웃)
+    OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"  # 임베딩 모델
+    OLLAMA_EMBEDDING_NUM_CTX: int = 2048  # 임베딩 컨텍스트 길이
     
     # Ollama Chat 옵션 - 성능 최적화 (추가 최적화)
-    OLLAMA_CHAT_NUM_CTX: int = 2048  # 컨텍스트 크기 75% 감소 (속도 향상)
-    OLLAMA_CHAT_NUM_PREDICT: int = 256  # 응답 길이 대폭 최적화 (87% 감소)
-    OLLAMA_CHAT_TEMPERATURE: float = 0.5  # 창의성 감소로 속도 향상
-    OLLAMA_CHAT_TOP_P: float = 0.7  # 다양성 감소로 속도 향상
-    OLLAMA_CHAT_TOP_K: int = 10  # 토큰 선택 대폭 최적화 (75% 감소)
-    OLLAMA_CHAT_REPEAT_PENALTY: float = 1.05  # 반복 방지 최적화
+    OLLAMA_CHAT_NUM_CTX: int = 2048  # 컨텍스트 길이 (기본값)
+    OLLAMA_CHAT_NUM_PREDICT: int = 1024  # 예측 토큰 수 (기본값)
+    OLLAMA_CHAT_TEMPERATURE: float = 0.7  # 창의성 (0.0-1.0)
+    OLLAMA_CHAT_TOP_P: float = 0.9  # 핵심 샘플링 (0.0-1.0)
+    OLLAMA_CHAT_TOP_K: int = 40  # 상위 K개 토큰 선택
+    OLLAMA_CHAT_REPEAT_PENALTY: float = 1.1  # 반복 방지 (1.0-2.0)
     
-    # Ollama Embedding 설정
-    OLLAMA_EMBEDDING_MODEL: str = "mxbai-embed-large:latest"
-    OLLAMA_EMBEDDING_NUM_CTX: int = 512
-    OLLAMA_EMBEDDING_TIMEOUT: int = 60  # seconds (성능 최적화)
-    
-    # ===== Vector DB 설정 (pgvector) =====
-    VECTOR_DB_INITIALIZE_SCHEMA: bool = True
-    VECTOR_DB_INDEX_TYPE: str = "HNSW"
-    VECTOR_DB_DISTANCE_TYPE: str = "COSINE_DISTANCE"
-    VECTOR_DB_DIMENSIONS: int = 1024
-    VECTOR_DB_SIMILARITY_THRESHOLD: float = 0.4  # 유사도 임계값 상향 조정 (정확도 향상)
-    VECTOR_DB_TOP_K: int = 3  # 검색 문서 수 대폭 감소 (80% 감소)
-    
-    # ===== 성능 최적화 추가 설정 =====
-    VECTOR_DB_QUERY_TIMEOUT: int = 10  # 벡터 검색 타임아웃 (초)
-    VECTOR_DB_CONNECTION_POOL_SIZE: int = 5  # 벡터 검색 전용 연결 풀 크기
-    VECTOR_DB_PRELOAD_COMMON_QUERIES: bool = True  # 일반적인 쿼리 사전 로드
-    
-    # HNSW 인덱스 고성능 최적화 파라미터 (추가 최적화)
-    VECTOR_DB_EF_CONSTRUCTION: int = 100  # 인덱스 구축 속도 향상 (50% 감소)
-    VECTOR_DB_EF_SEARCH: int = 16  # 검색 속도 대폭 향상 (75% 감소)
-    VECTOR_DB_M: int = 12  # 메모리 사용량 최적화 (25% 감소)
-    
-    # PostgreSQL 벡터 최적화 설정
-    VECTOR_DB_BATCH_SIZE: int = 100  # 배치 처리 크기
-    VECTOR_DB_CONCURRENT_SEARCHES: int = 4  # 동시 검색 수
-    VECTOR_DB_CACHE_SIZE: int = 1000  # 결과 캐시 크기
-    VECTOR_DB_PRELOAD_INDEX: bool = True  # 인덱스 사전 로드
-    VECTOR_DB_ENABLE_SEQSCAN: bool = False  # 인덱스 사용 강제
-    VECTOR_DB_RANDOM_PAGE_COST: float = 1.1  # SSD 최적화
-    VECTOR_DB_EFFECTIVE_CACHE_SIZE: str = "4GB"  # 캐시 크기
-    
-    # ===== 비동기 작업 설정 =====
-    TASK_EXECUTION_CORE_SIZE: int = 6
-    TASK_EXECUTION_MAX_SIZE: int = 8
-    TASK_EXECUTION_QUEUE_CAPACITY: int = 50
-    TASK_EXECUTION_SHUTDOWN_AWAIT_TERMINATION: bool = True
-    TASK_EXECUTION_SHUTDOWN_AWAIT_TERMINATION_PERIOD: int = 20  # seconds
-    
-    # ===== 로깅 설정 =====
-    LOG_LEVEL_ROOT: str = os.getenv("LOG_LEVEL_ROOT", "WARN")
-    LOG_LEVEL_APP: str = os.getenv("LOG_LEVEL_APP", "INFO")
-    LOG_LEVEL_SERVICE: str = os.getenv("LOG_LEVEL_SERVICE", "INFO")
-    LOG_LEVEL_OLLAMA: str = os.getenv("LOG_LEVEL_OLLAMA", "INFO")
-    LOG_LEVEL_VECTORSTORE: str = os.getenv("LOG_LEVEL_VECTORSTORE", "INFO")
+    # ===== 벡터 데이터베이스 설정 =====
+    VECTOR_DB_TYPE: str = "chroma"  # chroma, pinecone, weaviate
+    CHROMA_PERSIST_DIRECTORY: str = "./chroma_db"
+    CHROMA_COLLECTION_NAME: str = "documents"
+    CHROMA_DISTANCE_METRIC: str = "cosine"
+    CHROMA_EMBEDDING_FUNCTION: str = "sentence-transformers"
+    CHROMA_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    VECTOR_DB_CACHE_SIZE: int = 1000  # 추가된 속성
+    VECTOR_DB_EFFECTIVE_CACHE_SIZE: str = "256MB"  # 추가된 속성
+    VECTOR_DB_ENABLE_SEQSCAN: bool = False  # 추가된 속성
+    VECTOR_DB_RANDOM_PAGE_COST: float = 1.0  # 추가된 속성
+    VECTOR_DB_TOP_K: int = 5  # 벡터 검색 상위 K개
+    VECTOR_DB_SIMILARITY_THRESHOLD: float = 0.7  # 벡터 유사도 임계값
+    VECTOR_DB_EF_SEARCH: int = 200  # HNSW ef_search parameter for better recall
     
     # ===== RAG 설정 =====
-    RAG_METADATA_FILTER_ENABLED: bool = False
-    RAG_METADATA_BOOST_ENABLED: bool = False
-    RAG_RESPONSE_FORMAT: str = "structured"
-    RAG_CONTEXT_MIN_FALLBACK_LENGTH: int = 120
-    RAG_CONTEXT_DEDUPLICATE: bool = True
-    RAG_CONTEXT_APPROX_TOKENS_PER_CHAR: float = 0.30
-    RAG_CONTEXT_ENABLE_FALLBACK: bool = True
+    RAG_MAX_DOCS: int = 5  # 검색할 최대 문서 수
+    RAG_SIMILARITY_THRESHOLD: float = 0.7  # 유사도 임계값
+    RAG_CHUNK_SIZE: int = 1000  # 문서 청크 크기
+    RAG_CHUNK_OVERLAP: int = 200  # 청크 간 겹침
+    RAG_VECTOR_SEARCH_TOP_K: int = 5  # 벡터 검색에서 반환할 상위 K개 문서
+    RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD: float = 0.7  # 벡터 검색 유사도 임계값
+    RAG_CONTEXT_MAX_DOCS: int = 5  # RAG 컨텍스트 최대 문서 수
+    RAG_STRICT_MODE_ENABLED: bool = False  # RAG strict mode (requires context)
+    RAG_FALLBACK_TO_GENERAL_KNOWLEDGE: bool = True  # Fallback to general knowledge when no context
+    RAG_SEARCH_FILTER_DUPLICATES: bool = True  # Filter duplicate documents
+    RAG_VECTOR_SEARCH_MIN_RESULTS: int = 1  # Minimum results required
     
-    # ===== LangChain RAG 설정 =====
-    RAG_MEMORY_WINDOW_SIZE: int = 3  # 메모리 윈도우 대폭 최적화 (40% 추가 감소)
-    RAG_CHUNK_SIZE: int = 600  # 청크 크기 대폭 최적화 (25% 추가 감소)
-    RAG_CHUNK_OVERLAP: int = 100  # 오버랩 대폭 최적화 (33% 추가 감소)
-    RAG_SEARCH_FILTER_DUPLICATES: bool = True
-    RAG_VECTOR_SEARCH_MIN_RESULTS: int = 1  # 최소 결과 수 유지
-    RAG_CONTEXT_MAX_DOCS: int = 3  # 컨텍스트 문서 수 대폭 감소 (62% 추가 감소)
-    RAG_VECTOR_SEARCH_TOP_K: int = 3  # 검색 문서 수 대폭 감소 (62% 추가 감소)
-    RAG_VECTOR_SEARCH_SIMILARITY_THRESHOLD: float = 0.4  # 유사도 임계값 상향 조정 (정확도 향상)
-    RAG_SEARCH_EXPANSION_ENABLED: bool = False
-    RAG_SEARCH_RERANK_ENABLED: bool = False
-    RAG_TECH_SEARCH_ENABLED: bool = False
-    RAG_TECH_KEYWORDS_EXPANSION: bool = False
-    RAG_SEARCH_EXPAND_QUERY: bool = False
-    RAG_STRICT_MODE_ENABLED: bool = False
-    RAG_FALLBACK_TO_GENERAL_KNOWLEDGE: bool = False
-    RAG_REQUIRE_CONTEXT: bool = True
-    RAG_CONTEXT_REQUIRED: bool = True
-    RAG_VECTOR_ONLY_MODE: bool = True
-    RAG_EXTERNAL_KNOWLEDGE_BLOCKED: bool = True
-    RAG_CONTEXT_MAX_LENGTH: int = 100  # 컨텍스트 길이 대폭 최적화 (50% 추가 감소)
+    # ===== 캐시 설정 =====
+    CACHE_ENABLED: bool = True
+    CACHE_TTL: int = 3600  # 캐시 TTL (초)
+    CACHE_MAX_SIZE: int = 1000  # 최대 캐시 항목 수
     
-    # ===== 웹 검색 엔진 설정 =====
-    SEARCH_ENGINE: str = os.getenv("SEARCH_ENGINE", "duckduckgo")  # duckduckgo, google, serpapi
-    SEARCH_ENGINE_TIMEOUT: int = 30  # seconds
+    # ===== 로깅 설정 =====
+    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL_APP: str = "INFO"  # 추가된 속성
+    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    LOG_FILE: str = "chatbot.log"
+    LOG_MAX_SIZE: int = 10 * 1024 * 1024  # 10MB
+    LOG_BACKUP_COUNT: int = 5
     
-    # ===== Google Custom Search API 설정 =====
-    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "AIzaSyD9308788888888888888888888888888")
-    GOOGLE_CSE_ID: str = os.getenv("GOOGLE_CSE_ID", "aaaaa")
-    GOOGLE_SEARCH_API_KEY: str = os.getenv("GOOGLE_SEARCH_API_KEY", "AIzaSyD9308788888888888888888888888888")
-    GOOGLE_SEARCH_ENGINE_ID: str = os.getenv("GOOGLE_SEARCH_ENGINE_ID", "aaaaa")
-    GOOGLE_SEARCH_MAX_RESULTS: int = 10
-    GOOGLE_SEARCH_TIMEOUT: int = 30  # seconds
-    
-    # ===== Deep Search 설정 =====
-    DEEP_SEARCH_ENABLED: bool = True
-    DEEP_SEARCH_MAX_RESULTS: int = 8
-    DEEP_SEARCH_INCLUDE_SNIPPETS: bool = True
-    DEEP_SEARCH_INCLUDE_METADATA: bool = True
-    
-    # ===== 정적 리소스 설정 =====
-    STATIC_PATH_PATTERN: str = "/static/**"
-    
-    # ===== JWT 설정 =====
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production-2024")
+    # ===== 보안 설정 =====
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "your-jwt-secret-here")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-jwt-secret-key-here")  # 추가된 속성
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8시간으로 연장
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30  # 30일로 연장
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # ===== 관리자 설정 =====
-    ADMIN_USER_ID: str = "eee65338-086b-457a-8746-b88cceac42a3"  # admin 사용자 ID (actual login ID)
+    # ===== CORS 설정 =====
+    CORS_ALLOWED_ORIGINS: list = field(default_factory=lambda: ["http://localhost:8501", "http://127.0.0.1:8501"])
+    CORS_ALLOWED_METHODS: list = field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    CORS_ALLOWED_HEADERS: list = field(default_factory=lambda: ["*"])
+    CORS_ALLOW_CREDENTIALS: bool = True
     
-    # ===== 기존 설정 유지 =====
-    # Model configurations for different types
-    MODEL_FAST: str = "exaone3.5:2.4b-instruct-q4_K_M"
-    MODEL_QUALITY: str = "exaone3.5:2.4b-instruct-q8_0"
-    MODEL_COMPLEX: str = "exaone3.5:7.8b"
-    MODEL_NAME: str = "exaone3.5:2.4b-instruct-q4_K_M"  # Default model
+    # ===== 모니터링 설정 =====
+    METRICS_ENABLED: bool = True
+    PROMETHEUS_ENDPOINT: str = "/metrics"
+    HEALTH_CHECK_INTERVAL: int = 30  # seconds
     
-    # Model configurations dictionary (제거 - 중복 정의)
-    MODEL_PATH: str = os.getenv("MODEL_PATH", "./models/exaone3.5-2.4")
-    MAX_TOKENS: int = 2048
-    TEMPERATURE: float = 0.7
-    MAX_HISTORY: int = 10
+    # ===== 파일 처리 설정 =====
+    SUPPORTED_FILE_TYPES: list = field(default_factory=lambda: [".txt", ".pdf", ".docx", ".md", ".json", ".csv"])
+    MAX_FILE_SIZE_MB: int = 100
+    UPLOAD_DIRECTORY: str = "./uploads"
     
-    # ===== 하이브리드 모델 설정 =====
-    # 빠른 응답용 (Q4_K_M 양자화)
-    FAST_MODEL: str = "exaone3.5:2.4b"
-    # 고품질 응답용 (Q8_0 양자화)
+    # ===== 모델 설정 =====
+    MODEL_NAME: str = "exaone3.5:2.4b-instruct-q4_K_M"
+    MODEL_BASE_URL: str = "http://localhost:11434"
+    MODEL_TIMEOUT: int = 60
+    
+    # ===== LangChain 설정 =====
+    LANGCHAIN_TRACING: bool = False
+    LANGCHAIN_API_KEY: str = ""
+    LANGCHAIN_PROJECT: str = "chatbot"
+    
+    # ===== 프롬프트 설정 =====
+    SYSTEM_PROMPT: str = """당신은 도움이 되는 AI 어시스턴트입니다. 사용자의 질문에 정확하고 유용한 답변을 제공하세요."""
+    RAG_PROMPT_TEMPLATE: str = """다음 컨텍스트를 사용하여 질문에 답변하세요:
+
+컨텍스트:
+{context}
+
+질문: {question}
+
+답변:"""
+    
+    # ===== 성능 최적화 설정 =====
+    ENABLE_GPU: bool = True
+    GPU_LAYERS: int = 20
+    BATCH_SIZE: int = 512
+    MAX_CONCURRENT_REQUESTS: int = 10
+    
+    # ===== 메모리 관리 설정 =====
+    MAX_MEMORY_USAGE: float = 0.8  # 80% 메모리 사용 제한
+    MEMORY_CLEANUP_INTERVAL: int = 300  # 5분마다 메모리 정리
+    CACHE_CLEANUP_INTERVAL: int = 600  # 10분마다 캐시 정리
+    
+    # ===== 에러 처리 설정 =====
+    MAX_RETRY_ATTEMPTS: int = 3
+    RETRY_DELAY: int = 1  # seconds
+    CIRCUIT_BREAKER_THRESHOLD: int = 5
+    CIRCUIT_BREAKER_TIMEOUT: int = 60
+    
+    # ===== 사용자 관리 설정 =====
+    USER_SESSION_TIMEOUT: int = 1800  # 30분
+    MAX_SESSIONS_PER_USER: int = 10
+    SESSION_CLEANUP_INTERVAL: int = 3600  # 1시간마다 세션 정리
+    
+    # ===== 백업 설정 =====
+    BACKUP_ENABLED: bool = True
+    BACKUP_INTERVAL: int = 86400  # 24시간마다 백업
+    BACKUP_RETENTION_DAYS: int = 30
+    BACKUP_DIRECTORY: str = "./backups"
+    
+    # ===== 알림 설정 =====
+    NOTIFICATION_ENABLED: bool = False
+    EMAIL_SMTP_HOST: str = ""
+    EMAIL_SMTP_PORT: int = 587
+    EMAIL_SMTP_USER: str = ""
+    EMAIL_SMTP_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+    
+    # ===== API 제한 설정 =====
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
+    RATE_LIMIT_BURST: int = 10
+    
+    # ===== 외부 API 설정 =====
+    GOOGLE_SEARCH_API_KEY: str = os.getenv("GOOGLE_SEARCH_API_KEY", "")  # 추가된 속성
+    GOOGLE_SEARCH_ENGINE_ID: str = os.getenv("GOOGLE_SEARCH_ENGINE_ID", "")  # 추가된 속성
+    GOOGLE_SEARCH_TIMEOUT: int = 30  # seconds (구글 검색 API 타임아웃)
+    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")  # 구글 API 키 (별칭)
+    GOOGLE_CSE_ID: str = os.getenv("GOOGLE_CSE_ID", "")  # 구글 CSE ID (별칭)
+    SEARCH_ENGINE: str = "google"  # 기본 검색 엔진
+    
+    # ===== 웹소켓 설정 =====
+    WEBSOCKET_ENABLED: bool = True
+    WEBSOCKET_PING_INTERVAL: int = 30
+    WEBSOCKET_PING_TIMEOUT: int = 10
+    WEBSOCKET_MAX_CONNECTIONS: int = 100
+    
+    # ===== 스트리밍 설정 =====
+    STREAMING_ENABLED: bool = True
+    STREAMING_CHUNK_SIZE: int = 8
+    STREAMING_DELAY: float = 0.005
+    
+    # ===== 품질 관리 설정 =====
+    QUALITY_CHECK_ENABLED: bool = True
+    MIN_QUALITY_SCORE: float = 0.5
+    QUALITY_FEEDBACK_ENABLED: bool = True
+    
+    # ===== 다국어 지원 설정 =====
+    SUPPORTED_LANGUAGES: list = field(default_factory=lambda: ["ko", "en", "ja", "zh"])
+    DEFAULT_LANGUAGE: str = "ko"
+    AUTO_DETECT_LANGUAGE: bool = True
+    
+    # ===== 모델별 설정 =====
+    # 빠른 응답용 (2.4B 파라미터)
+    FAST_MODEL: str = "exaone3.5:2.4b-instruct-q4_K_M"
+    
+    # 고품질 응답용 (2.4B 파라미터, 고정밀도)
     QUALITY_MODEL: str = "exaone3.5:2.4b-instruct-q8_0"
+    
     # 복잡한 작업용 (7.8B 파라미터)
     COMPLEX_MODEL: str = "exaone3.5:7.8b"
     
-    # 모델별 최적화된 파라미터
+    # 모델별 최적화된 파라미터 (토큰 수 대폭 증가)
     MODEL_CONFIGS: dict = field(default_factory=lambda: {
         "fast": {
             "model": "exaone3.5:2.4b-instruct-q4_K_M",
             "num_ctx": 2048,
-            "num_predict": 256,
+            "num_predict": 2048,  # 512 → 2048로 대폭 증가 (4배)
             "temperature": 0.5,
             "top_p": 0.7,
             "top_k": 10,
@@ -201,7 +244,7 @@ class Settings:
         "quality": {
             "model": "exaone3.5:2.4b-instruct-q8_0",
             "num_ctx": 8192,
-            "num_predict": 1024,
+            "num_predict": 3072,  # 1536 → 3072로 증가 (2배)
             "temperature": 0.7,
             "top_p": 0.9,
             "top_k": 40,
@@ -212,7 +255,7 @@ class Settings:
         "complex": {
             "model": "exaone3.5:7.8b",
             "num_ctx": 16384,
-            "num_predict": 2048,
+            "num_predict": 6144,  # 3072 → 6144로 증가 (2배)
             "temperature": 0.8,
             "top_p": 0.95,
             "top_k": 50,
@@ -234,7 +277,10 @@ class Settings:
     
     def __post_init__(self):
         """Initialize complex fields after dataclass creation"""
-        # No longer needed since we use default_factory
-        pass
+        # Ensure directories exist
+        os.makedirs(self.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+        os.makedirs(self.UPLOAD_DIRECTORY, exist_ok=True)
+        os.makedirs(self.BACKUP_DIRECTORY, exist_ok=True)
 
+# Global settings instance
 settings = Settings()

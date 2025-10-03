@@ -11,13 +11,13 @@ class ChatPreferencesMapper:
     def map_preferences_to_model_config(user_prefs: Dict[str, Any]) -> Dict[str, Any]:
         """사용자 설정을 모델 설정으로 변환"""
         
-        # 답변 길이에 따른 num_predict 조절
+        # 답변 길이에 따른 num_predict 조절 (더 긴 답변을 위해 대폭 증가)
         length_mapping = {
-            1: 128,   # 매우 짧게
-            2: 256,   # 짧게
-            3: 512,   # 보통
-            4: 1024,  # 자세하게
-            5: 2048   # 매우 자세하게
+            1: 512,   # 매우 짧게 (256 → 512)
+            2: 1024,  # 짧게 (512 → 1024)
+            3: 2048,  # 보통 (1024 → 2048)
+            4: 3072,  # 자세하게 (2048 → 3072)
+            5: 4096   # 매우 자세하게 (4096 → 4096)
         }
         
         # 정확도 우선순위에 따른 모델 선택
@@ -41,7 +41,7 @@ class ChatPreferencesMapper:
         # 기본 설정
         config = {
             "model_type": model_type,
-            "num_predict": length_mapping.get(user_prefs.get("response_length", 3), 512),
+            "num_predict": length_mapping.get(user_prefs.get("response_length", 3), 1024),
             "temperature": creativity_mapping.get(user_prefs.get("creativity_level", 3), 0.7),
             "top_p": 0.9 if user_prefs.get("creativity_level", 3) >= 4 else 0.7,
             "top_k": 50 if user_prefs.get("creativity_level", 3) >= 4 else 20,
@@ -61,57 +61,50 @@ class ChatPreferencesMapper:
     
     @staticmethod
     def generate_custom_system_prompt(user_prefs: Dict[str, Any]) -> str:
-        """사용자 설정에 따른 시스템 프롬프트 생성"""
+        """사용자 설정에 따른 커스텀 시스템 프롬프트 생성"""
+        base_prompt = "당신은 도움이 되는 AI 어시스턴트입니다."
         
-        base_prompt = "당신은 지식 풍부한 AI 도우미입니다."
-        
-        # 답변 스타일별 프롬프트
-        style_prompts = {
-            "간결하게": "답변은 핵심만 간결하게 제공하세요.",
-            "자세하게": "답변은 상세하고 구체적으로 제공하세요.",
-            "전문적으로": "전문 용어와 정확한 정보를 사용하여 답변하세요.",
-            "친근하게": "친근하고 이해하기 쉬운 언어로 답변하세요."
+        # 답변 스타일 설정
+        response_style = user_prefs.get("response_style", "자세하게")
+        style_instructions = {
+            "간결하게": "답변을 간결하고 핵심적으로 작성하세요.",
+            "자세하게": "답변을 상세하고 풍부하게 작성하세요.",
+            "전문적으로": "전문 용어와 기술적 설명을 포함하여 답변하세요.",
+            "친근하게": "일상적이고 이해하기 쉬운 언어로 답변하세요."
         }
         
-        # 정확도 우선순위별 프롬프트
-        accuracy_prompts = {
-            1: "빠른 응답을 우선시하세요.",
-            2: "적당한 속도로 답변하세요.",
-            3: "균형 잡힌 답변을 제공하세요.",
-            4: "정확성을 우선시하세요.",
-            5: "최대한 정확하고 신뢰할 수 있는 정보를 제공하세요."
+        # 전문성 수준 설정
+        expertise_level = user_prefs.get("expertise_level", "일반인")
+        expertise_instructions = {
+            "일반인": "일반인도 이해할 수 있도록 쉽게 설명하세요.",
+            "중급자": "중간 수준의 전문 용어를 사용하여 설명하세요.",
+            "전문가": "고급 전문 용어와 기술적 세부사항을 포함하여 설명하세요."
         }
         
-        # 전문성 수준별 프롬프트
-        expertise_prompts = {
-            "일반인": "일반인이 이해하기 쉬운 수준으로 설명하세요.",
-            "중급자": "중급자 수준의 전문 용어와 개념을 포함하여 설명하세요.",
-            "전문가": "전문가 수준의 깊이 있는 분석과 전문 용어를 사용하여 설명하세요."
-        }
-        
-        # 답변 길이별 프롬프트
-        length_prompts = {
-            1: "매우 간결하게 핵심만 답변하세요.",
-            2: "간결하게 답변하세요.",
-            3: "적당한 길이로 답변하세요.",
-            4: "자세하게 답변하세요.",
-            5: "매우 상세하고 포괄적으로 답변하세요."
+        # 창의성 수준 설정
+        creativity_level = user_prefs.get("creativity_level", 3)
+        creativity_instructions = {
+            1: "보수적이고 안전한 답변을 제공하세요.",
+            2: "약간의 창의성을 포함한 답변을 제공하세요.",
+            3: "균형잡힌 창의성을 포함한 답변을 제공하세요.",
+            4: "창의적이고 다양한 관점의 답변을 제공하세요.",
+            5: "매우 창의적이고 독창적인 답변을 제공하세요."
         }
         
         # 프롬프트 조합
-        style_prompt = style_prompts.get(user_prefs.get("response_style", "자세하게"), "")
-        accuracy_prompt = accuracy_prompts.get(user_prefs.get("accuracy_priority", 4), "")
-        expertise_prompt = expertise_prompts.get(user_prefs.get("expertise_level", "일반인"), "")
-        length_prompt = length_prompts.get(user_prefs.get("response_length", 3), "")
+        custom_prompt = f"{base_prompt}\n\n"
+        custom_prompt += f"답변 스타일: {style_instructions.get(response_style, '')}\n"
+        custom_prompt += f"전문성 수준: {expertise_instructions.get(expertise_level, '')}\n"
+        custom_prompt += f"창의성 수준: {creativity_instructions.get(creativity_level, '')}\n"
         
-        # 한국어 강제 프롬프트
-        korean_prompt = "반드시 한국어로만 답변하세요."
+        # 한국어 강제 설정
+        custom_prompt += "\n반드시 한국어로만 답변하세요."
         
-        return f"{base_prompt} {style_prompt} {accuracy_prompt} {expertise_prompt} {length_prompt} {korean_prompt}"
+        return custom_prompt
     
     @staticmethod
     def get_user_preferences() -> Dict[str, Any]:
-        """현재 사용자 설정 가져오기"""
+        """현재 사용자 설정을 가져옴"""
         return st.session_state.get("chat_preferences", {
             "response_style": "자세하게",
             "response_length": 3,

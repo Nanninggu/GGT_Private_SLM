@@ -584,99 +584,113 @@ class ChatController:
                 """, unsafe_allow_html=True)
             
             collection_names = st.session_state.get("selected_collections", None)
-            for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode, model_type, collection_names):
-                if "error" in chunk:
-                    if chunk.get("retrying", False):
-                        # Show retry status
-                        with status_container.container():
-                            st.warning(f"🔄 {chunk['error']}")
-                    else:
-                        # Show final error
-                        with status_container.container():
-                            st.error(f"❌ {chunk['error']}")
-                        return None
-                
-                if chunk.get("type") == "context":
-                    context_sources = chunk.get("sources", [])
-                    similarity_scores = chunk.get("similarity_scores", [])
-                    context_count = chunk.get("context_count", 0)
-                    source_collections = chunk.get("source_collections", [])
-                    collections_used = chunk.get("collections_used", [])
-                    multi_collection = chunk.get("multi_collection", False)
+            streaming_completed = False
+            
+            try:
+                for chunk in self.api_service.send_message_stream(message, st.session_state.session_id, use_langchain, rag_mode, model_type, collection_names):
+                    if "error" in chunk:
+                        if chunk.get("retrying", False):
+                            # Show retry status
+                            with status_container.container():
+                                st.warning(f"🔄 {chunk['error']}")
+                        else:
+                            # Show final error
+                            with status_container.container():
+                                st.error(f"❌ {chunk['error']}")
+                            return None
                     
-                    if context_sources:
-                        with context_container.container():
-                            # Enhanced context display with similarity scores
-                            st.markdown("### 📚 참고 문서")
-                            
-                            # Show collection information
-                            if multi_collection and collections_used:
-                                st.info(f"🔍 검색된 컬렉션: {', '.join(collections_used)}")
-                            elif source_collections:
-                                st.info(f"🔍 검색된 컬렉션: {', '.join(source_collections)}")
-                            
-                            # Create a more detailed context display
-                            for i, (source, similarity) in enumerate(zip(context_sources, similarity_scores), 1):
-                                similarity_percent = similarity * 100 if similarity else 0
-                                st.markdown(f"""
-                                <div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; 
-                                            margin: 0.25rem 0; border-left: 3px solid #2196F3;">
-                                    <strong>{i}. {source}</strong> 
-                                    <span style="color: #666; font-size: 0.9em;">(유사도: {similarity_percent:.1f}%)</span>
-                                </div>
-                                """, unsafe_allow_html=True)
-                            
-                            if context_count > 0:
-                                if multi_collection:
-                                    st.caption(f"총 {context_count}개의 관련 문서를 {len(collections_used)}개 컬렉션에서 참조했습니다.")
-                                else:
-                                    st.caption(f"총 {context_count}개의 관련 문서를 참조했습니다.")
+                    if chunk.get("type") == "context":
+                        context_sources = chunk.get("sources", [])
+                        similarity_scores = chunk.get("similarity_scores", [])
+                        context_count = chunk.get("context_count", 0)
+                        source_collections = chunk.get("source_collections", [])
+                        collections_used = chunk.get("collections_used", [])
+                        multi_collection = chunk.get("multi_collection", False)
                         
-                        # Clear status when context is received
-                        status_container.empty()
-                
-                if chunk.get("content"):
-                    full_response += chunk["content"]
-                    with message_container.container():
-                        # Enhanced typing effect with better styling
-                        st.markdown(f"""
-                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; 
-                                    border-left: 4px solid #8B5CF6; margin: 0.5rem 0; 
-                                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                                    line-height: 1.6;">
-                            {full_response}<span style="animation: blink 1s infinite;">▌</span>
-                        </div>
-                        <style>
-                        @keyframes blink {{
-                            0%, 50% {{ opacity: 1; }}
-                            51%, 100% {{ opacity: 0; }}
-                        }}
-                        </style>
-                        """, unsafe_allow_html=True)
+                        if context_sources:
+                            with context_container.container():
+                                # Enhanced context display with similarity scores
+                                st.markdown("### 📚 참고 문서")
+                                
+                                # Show collection information
+                                if multi_collection and collections_used:
+                                    st.info(f"🔍 검색된 컬렉션: {', '.join(collections_used)}")
+                                elif source_collections:
+                                    st.info(f"🔍 검색된 컬렉션: {', '.join(source_collections)}")
+                                
+                                # Create a more detailed context display
+                                for i, (source, similarity) in enumerate(zip(context_sources, similarity_scores), 1):
+                                    similarity_percent = similarity * 100 if similarity else 0
+                                    st.markdown(f"""
+                                    <div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; 
+                                                margin: 0.25rem 0; border-left: 3px solid #2196F3;">
+                                        <strong>{i}. {source}</strong> 
+                                        <span style="color: #666; font-size: 0.9em;">(유사도: {similarity_percent:.1f}%)</span>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                
+                                if context_count > 0:
+                                    if multi_collection:
+                                        st.caption(f"총 {context_count}개의 관련 문서를 {len(collections_used)}개 컬렉션에서 참조했습니다.")
+                                    else:
+                                        st.caption(f"총 {context_count}개의 관련 문서를 참조했습니다.")
+                            
+                            # Clear status when context is received
+                            status_container.empty()
                     
-                    # Show streaming status
-                    with status_container.container():
-                        st.markdown("""
-                        <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
-                                    color: white; padding: 0.75rem; border-radius: 8px; 
-                                    text-align: center; margin: 0.5rem 0;">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                                <div style="animation: pulse 1s ease-in-out infinite; font-size: 1rem;">✨</div>
-                                <span style="font-size: 0.9rem;">답변을 생성하고 있습니다...</span>
+                    # Handle content chunks
+                    if chunk.get("content") and chunk.get("type") == "chunk":
+                        full_response += chunk["content"]
+                        with message_container.container():
+                            # Enhanced typing effect with better styling
+                            st.markdown(f"""
+                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; 
+                                        border-left: 4px solid #8B5CF6; margin: 0.5rem 0; 
+                                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                        line-height: 1.6;">
+                                {full_response}<span style="animation: blink 1s infinite;">▌</span>
                             </div>
-                        </div>
-                        <style>
-                        @keyframes pulse {
-                            0%, 100% { transform: scale(1); opacity: 1; }
-                            50% { transform: scale(1.1); opacity: 0.7; }
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
+                            <style>
+                            @keyframes blink {{
+                                0%, 50% {{ opacity: 1; }}
+                                51%, 100% {{ opacity: 0; }}
+                            }}
+                            </style>
+                            """, unsafe_allow_html=True)
+                        
+                        # Show streaming status
+                        with status_container.container():
+                            st.markdown("""
+                            <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); 
+                                        color: white; padding: 0.75rem; border-radius: 8px; 
+                                        text-align: center; margin: 0.5rem 0;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <div style="animation: pulse 1s ease-in-out infinite; font-size: 1rem;">✨</div>
+                                    <span style="font-size: 0.9rem;">답변을 생성하고 있습니다...</span>
+                                </div>
+                            </div>
+                            <style>
+                            @keyframes pulse {
+                                0%, 100% { transform: scale(1); opacity: 1; }
+                                50% { transform: scale(1.1); opacity: 0.7; }
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                    
+                    # Handle completion signal
+                    if chunk.get("finished", False) or chunk.get("type") == "completion":
+                        streaming_completed = True
+                        # Clear status and show completion
+                        status_container.empty()
+                        break
                 
-                if chunk.get("finished", False):
-                    # Clear status and show completion
-                    status_container.empty()
-                    break
+                # Ensure streaming completed properly
+                if not streaming_completed:
+                    st.warning("⚠️ 스트리밍이 완전히 완료되지 않았습니다.")
+                    
+            except Exception as stream_error:
+                st.error(f"❌ 스트리밍 중 오류 발생: {str(stream_error)}")
+                return None
             
             # Final response without cursor and with enhanced styling
             with message_container.container():
@@ -698,6 +712,40 @@ class ChatController:
                     ✅ 응답이 완료되었습니다.
                 </div>
                 """, unsafe_allow_html=True)
+            
+            # Save the complete response to session state and backend
+            if full_response and full_response.strip():
+                try:
+                    # Create assistant message for session state
+                    assistant_message = {
+                        "id": str(uuid.uuid4()),
+                        "role": "assistant",
+                        "content": full_response,
+                        "context": context_sources,
+                        "metadata": {
+                            "model_type": model_type,
+                            "rag_mode": rag_mode,
+                            "timestamp": datetime.now().strftime("%H:%M:%S"),
+                            "streaming_completed": True
+                        }
+                    }
+                    
+                    # Add to session state messages
+                    if "messages" not in st.session_state:
+                        st.session_state.messages = []
+                    st.session_state.messages.append(assistant_message)
+                    
+                    # Save to backend if connected
+                    if st.session_state.backend_connected and self.api_service:
+                        try:
+                            save_result = self.api_service.save_message(assistant_message, st.session_state.session_id)
+                            if not save_result.get("success", False):
+                                st.warning(f"⚠️ 메시지 저장 실패: {save_result.get('error', '알 수 없는 오류')}")
+                        except Exception as save_error:
+                            st.warning(f"⚠️ 메시지 저장 중 오류: {str(save_error)}")
+                    
+                except Exception as e:
+                    st.warning(f"⚠️ 응답 처리 중 오류: {str(e)}")
             
             return full_response
             

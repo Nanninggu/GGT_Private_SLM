@@ -733,29 +733,37 @@ class LangChainVectorService:
                     current_row = current_result.fetchone()
                     original_user_id = current_row.user_id if current_row else None
                     
-                    result = await session.execute(text("""
+                    # Use proper parameterized queries to avoid type casting issues
+                    logger.info(f"Executing SQL with is_shared: {is_shared}, created_by: {original_user_id or 'system'}")
+                    
+                    sql = """
                         UPDATE langchain_pg_collection 
                         SET user_id = NULL,
                             cmetadata = jsonb_set(
-                                jsonb_set(cmetadata, '{is_shared}', :is_shared::jsonb),
-                                '{created_by}', :created_by::jsonb
+                                jsonb_set(COALESCE(cmetadata, '{}'::jsonb), '{is_shared}', :is_shared_value::jsonb),
+                                '{created_by}', :created_by_value::jsonb
                             )
                         WHERE name = :collection_name
-                    """), {
+                    """
+                    
+                    result = await session.execute(text(sql), {
                         "collection_name": collection_name,
-                        "is_shared": json.dumps(is_shared),
-                        "created_by": json.dumps(original_user_id or "system")
+                        "is_shared_value": json.dumps(is_shared),
+                        "created_by_value": json.dumps(original_user_id or "system")
                     })
                 else:
-                    result = await session.execute(text("""
+                    # Use proper parameterized queries to avoid type casting issues
+                    sql = """
                         UPDATE langchain_pg_collection 
                         SET user_id = :new_user_id,
-                            cmetadata = jsonb_set(cmetadata, '{is_shared}', :is_shared::jsonb)
+                            cmetadata = jsonb_set(COALESCE(cmetadata, '{}'::jsonb), '{is_shared}', :is_shared_value::jsonb)
                         WHERE name = :collection_name
-                    """), {
+                    """
+                    
+                    result = await session.execute(text(sql), {
                         "new_user_id": new_user_id, 
                         "collection_name": collection_name,
-                        "is_shared": json.dumps(is_shared)
+                        "is_shared_value": json.dumps(is_shared)
                     })
                 
                 if result.rowcount == 0:

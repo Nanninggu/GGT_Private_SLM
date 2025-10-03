@@ -29,6 +29,9 @@ class AccuracyController:
                 "result": result
             }
         except Exception as e:
+            import traceback
+            print(f"Error in measure_single_query: {e}")
+            print(traceback.format_exc())
             return {
                 "success": False,
                 "error": str(e)

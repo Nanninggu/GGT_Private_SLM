@@ -439,8 +439,9 @@ class APIService:
         """Send a message to the chatbot with streaming response"""
         max_retries = 3
         retry_count = 0
+        streaming_completed = False
         
-        while retry_count < max_retries:
+        while retry_count < max_retries and not streaming_completed:
             try:
                 url = f"{self.base_url}/api/chat/stream"
                 if use_rag:
@@ -471,10 +472,18 @@ class APIService:
                             try:
                                 data = json.loads(line_str[6:])  # Remove 'data: ' prefix
                                 yield data
-                            except json.JSONDecodeError:
+                                
+                                # Check if streaming is completed
+                                if data.get("finished", False) or data.get("type") == "completion":
+                                    streaming_completed = True
+                                    break
+                            except json.JSONDecodeError as json_err:
+                                # Log JSON decode error but continue
+                                print(f"JSON decode error: {json_err}, line: {line_str}")
                                 continue
                 
                 # If we get here, streaming completed successfully
+                streaming_completed = True
                 break
                             
             except requests.exceptions.ConnectionError as e:
@@ -485,6 +494,7 @@ class APIService:
                     time.sleep(2)  # Wait 2 seconds before retry
                 else:
                     yield {"error": f"연결 실패: {str(e)}", "finished": True}
+                    break
             except requests.exceptions.Timeout as e:
                 retry_count += 1
                 if retry_count < max_retries:
@@ -493,9 +503,17 @@ class APIService:
                     time.sleep(1)
                 else:
                     yield {"error": f"시간 초과: {str(e)}", "finished": True}
+                    break
             except requests.exceptions.RequestException as e:
                 yield {"error": f"요청 오류: {str(e)}", "finished": True}
                 break
+            except Exception as e:
+                yield {"error": f"예상치 못한 오류: {str(e)}", "finished": True}
+                break
+        
+        # If we exhausted retries without completion, send a warning
+        if not streaming_completed and retry_count >= max_retries:
+            yield {"error": "최대 재시도 횟수를 초과했습니다. 스트리밍이 완전히 완료되지 않았을 수 있습니다.", "finished": True}
     
     def send_message_stream_basic(self, message: str, session_id: Optional[str] = None, rag_mode: Optional[str] = None) -> Generator[Dict[str, Any], None, None]:
         """Send a message to the chatbot with basic streaming response"""
@@ -602,8 +620,17 @@ class APIService:
     def get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         """Get detailed information about a specific collection"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "Authentication token not found. Please login again."}
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             response = requests.get(
                 f"{self.base_url}/api/collections/info/{collection_name}",
+                headers=headers,
                 timeout=self.timeout
             )
             response.raise_for_status()
@@ -698,12 +725,21 @@ class APIService:
     def switch_collection(self, collection_name: str) -> Dict[str, Any]:
         """Switch active collection"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "Authentication token not found. Please login again."}
+            
             payload = {
                 "collection_name": collection_name
+            }
+            headers = {
+                "Authorization": f"Bearer {token}"
             }
             response = requests.post(
                 f"{self.base_url}/api/collections/switch",
                 json=payload,
+                headers=headers,
                 timeout=self.timeout
             )
             
@@ -768,13 +804,22 @@ class APIService:
     def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
         """Rename a collection"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "Authentication token not found. Please login again."}
+            
             payload = {
                 "old_name": old_name,
                 "new_name": new_name
             }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             response = requests.put(
                 f"{self.base_url}/api/collections/rename",
                 json=payload,
+                headers=headers,
                 timeout=self.timeout
             )
             

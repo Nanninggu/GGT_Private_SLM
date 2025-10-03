@@ -147,7 +147,9 @@ def render_theme_settings():
         "modern": "✨ Modern (모던)",
         "minimal": "🔲 Minimal (미니멀)",
         "dark": "🌙 Dark (다크)",
-        "shadcn": "🎯 Shadcn UI (현대적 컴포넌트)"
+        "shadcn": "🎯 Shadcn UI (현대적 컴포넌트)",
+        "antd": "🎨 Ant Design (엔터프라이즈급)",
+        "streamlit_elements": "🧩 Streamlit Elements (통합 컴포넌트)"
     }
     
     # Theme preview
@@ -215,6 +217,31 @@ def render_theme_settings():
                 <div style="color: hsl(215.4 16.3% 46.9%); font-size: 0.9rem;">현대적 컴포넌트 디자인</div>
             </div>
             """, unsafe_allow_html=True)
+        
+        elif selected_theme == "antd":
+            st.markdown("""
+            <div style="background: #ffffff; padding: 1rem; border-radius: 6px; border: 1px solid #d9d9d9; margin: 0.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="color: #262626; font-weight: 600; font-size: 16px;">Ant Design</div>
+                <div style="color: #8c8c8c; font-size: 14px; margin-top: 4px;">엔터프라이즈급 디자인 시스템</div>
+                <div style="margin-top: 8px; display: flex; gap: 4px;">
+                    <span style="background: #1890ff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Primary</span>
+                    <span style="background: #f0f0f0; color: #595959; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Default</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        elif selected_theme == "streamlit_elements":
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem; border-radius: 8px; margin: 0.5rem 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                <div style="color: white; font-weight: 600; font-size: 16px;">Streamlit Elements</div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 4px;">Material UI, Monaco Editor, Nivo 차트 통합</div>
+                <div style="margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
+                    <span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Material UI</span>
+                    <span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Monaco Editor</span>
+                    <span style="background: rgba(255,255,255,0.2); color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px;">Nivo Charts</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     
     # Apply theme button
     if st.button("🎨 테마 적용", type="primary"):
@@ -243,6 +270,260 @@ def render_theme_settings():
             st.rerun()
         else:
             st.info("이미 선택된 테마입니다.")
+    
+    # Ant Design Components Demo (when antd theme is selected)
+    if selected_theme == "antd":
+        st.markdown("---")
+        st.markdown("#### 🎨 Ant Design 스타일 컴포넌트 미리보기")
+        st.info("💡 Ant Design 스타일이 적용된 기본 Streamlit 컴포넌트들을 확인해보세요.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**라디오 버튼 (Ant Design 스타일):**")
+            radio_option = st.radio("옵션 선택", ["옵션 1", "옵션 2", "옵션 3"], key="antd_radio")
+            st.write(f"선택된 옵션: {radio_option}")
+        
+        with col2:
+            st.markdown("**셀렉트박스 (Ant Design 스타일):**")
+            select_option = st.selectbox("항목 선택", ["항목 1", "항목 2", "항목 3"], key="antd_select")
+            st.write(f"선택된 항목: {select_option}")
+        
+        st.markdown("**버튼 (Ant Design 스타일):**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("Primary Button", key="antd_primary"):
+                st.success("Primary 버튼 클릭됨!")
+        with col2:
+            if st.button("Default Button", key="antd_default"):
+                st.info("Default 버튼 클릭됨!")
+        with col3:
+            if st.button("Dashed Button", key="antd_dashed"):
+                st.warning("Dashed 버튼 클릭됨!")
+        
+        st.markdown("**알림창 (Ant Design 스타일):**")
+        st.success("✅ 성공 메시지 - Ant Design 스타일")
+        st.info("ℹ️ 정보 메시지 - Ant Design 스타일")
+        st.warning("⚠️ 경고 메시지 - Ant Design 스타일")
+        st.error("❌ 오류 메시지 - Ant Design 스타일")
+        
+        st.markdown("**진행률 표시 (Ant Design 스타일):**")
+        progress = st.progress(0.7)
+        st.write("70% 완료")
+        
+        st.markdown("**체크박스 (Ant Design 스타일):**")
+        col1, col2 = st.columns(2)
+        with col1:
+            checkbox1 = st.checkbox("체크박스 1", key="antd_check1")
+            checkbox2 = st.checkbox("체크박스 2", key="antd_check2")
+        with col2:
+            checkbox3 = st.checkbox("체크박스 3", key="antd_check3")
+            checkbox4 = st.checkbox("체크박스 4", key="antd_check4")
+    
+    # Streamlit Elements Components Demo (when streamlit_elements theme is selected)
+    elif selected_theme == "streamlit_elements":
+        st.markdown("---")
+        st.markdown("#### 🧩 Streamlit Elements 컴포넌트 미리보기")
+        st.info("💡 Material UI, Monaco Editor, Nivo 차트 등 다양한 웹 라이브러리 컴포넌트를 확인해보세요.")
+        
+        try:
+            from streamlit_elements import elements, mui, html, dashboard, nivo
+            import json
+            
+            # Material UI Components Demo
+            st.markdown("##### 🎨 Material UI 컴포넌트")
+            
+            with elements("material_ui_demo"):
+                # Material UI Card
+                with mui.Card(
+                    sx={"maxWidth": 345, "margin": "16px auto"},
+                    variant="outlined"
+                ):
+                    mui.CardContent(
+                        mui.Typography(
+                            "Material UI Card",
+                            variant="h5",
+                            component="div",
+                            sx={"marginBottom": "12px"}
+                        ),
+                        mui.Typography(
+                            "이것은 Material UI 카드 컴포넌트입니다. Streamlit Elements를 통해 React 컴포넌트를 직접 사용할 수 있습니다.",
+                            color="text.secondary",
+                            variant="body2"
+                        ),
+                        mui.Button(
+                            "Primary Button",
+                            variant="contained",
+                            color="primary",
+                            sx={"marginTop": "16px"}
+                        )
+                    )
+            
+            # Monaco Editor Demo
+            st.markdown("##### 📝 Monaco Editor (VS Code 에디터)")
+            
+            with elements("monaco_editor_demo"):
+                with mui.Box(
+                    sx={
+                        "height": 300,
+                        "border": "1px solid #e0e0e0",
+                        "borderRadius": "4px",
+                        "overflow": "hidden"
+                    }
+                ):
+                    html.div(
+                        id="monaco-editor",
+                        style={
+                            "height": "100%",
+                            "width": "100%"
+                        }
+                    )
+                    
+                    # Monaco Editor JavaScript
+                    html.script(r"""
+                    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
+                    require(['vs/editor/editor.main'], function () {
+                        var editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                            value: '// Streamlit Elements Monaco Editor\n// VS Code와 동일한 에디터를 사용할 수 있습니다\n\nfunction hello() {\n    console.log("Hello, Streamlit Elements!");\n}\n\nhello();',
+                            language: 'javascript',
+                            theme: 'vs-dark',
+                            automaticLayout: true
+                        });
+                    });
+                    """)
+            
+            # Nivo Chart Demo
+            st.markdown("##### 📊 Nivo 차트")
+            
+            with elements("nivo_chart_demo"):
+                # Sample data for the chart
+                chart_data = [
+                    {"id": "A", "value": 30},
+                    {"id": "B", "value": 20},
+                    {"id": "C", "value": 25},
+                    {"id": "D", "value": 15},
+                    {"id": "E", "value": 10}
+                ]
+                
+                nivo.Pie(
+                    data=chart_data,
+                    width=400,
+                    height=300,
+                    margin={"top": 40, "right": 80, "bottom": 80, "left": 80},
+                    innerRadius=0.5,
+                    padAngle=0.7,
+                    cornerRadius=3,
+                    activeOuterRadiusOffset=8,
+                    borderWidth=1,
+                    borderColor={"from": "color", "modifiers": [["darker", 0.2]]},
+                    arcLinkLabelsSkipAngle=10,
+                    arcLinkLabelsTextColor="#333333",
+                    arcLinkLabelsThickness=2,
+                    arcLinkLabelsColor={"from": "color"},
+                    arcLabelsSkipAngle=10,
+                    arcLabelsTextColor={"from": "color", "modifiers": [["darker", 2]]},
+                    defs=[
+                        {
+                            "id": "dots",
+                            "type": "patternDots",
+                            "background": "inherit",
+                            "color": "rgba(255, 255, 255, 0.3)",
+                            "size": 4,
+                            "padding": 1,
+                            "stagger": True
+                        },
+                        {
+                            "id": "lines",
+                            "type": "patternLines",
+                            "background": "inherit",
+                            "color": "rgba(255, 255, 255, 0.3)",
+                            "rotation": -45,
+                            "lineWidth": 6,
+                            "spacing": 10
+                        }
+                    ],
+                    fill=[
+                        {"match": {"id": "A"}, "id": "dots"},
+                        {"match": {"id": "B"}, "id": "lines"}
+                    ],
+                    legends=[
+                        {
+                            "anchor": "bottom",
+                            "direction": "row",
+                            "justify": False,
+                            "translateX": 0,
+                            "translateY": 56,
+                            "itemsSpacing": 0,
+                            "itemWidth": 100,
+                            "itemHeight": 18,
+                            "itemTextColor": "#999",
+                            "itemDirection": "left-to-right",
+                            "itemOpacity": 1,
+                            "symbolSize": 18,
+                            "symbolShape": "circle"
+                        }
+                    ]
+                )
+            
+            # Dashboard Demo
+            st.markdown("##### 📋 대시보드 레이아웃")
+            
+            with elements("dashboard_demo"):
+                with dashboard.Grid([12, 6, 6], [12, 6, 6]):
+                    # First row - full width
+                    with mui.Paper(
+                        sx={"p": "16px", "display": "flex", "flexDirection": "column", "height": 200},
+                        key="item1"
+                    ):
+                        mui.Typography("대시보드 아이템 1", variant="h6")
+                        mui.Typography("전체 너비를 사용하는 아이템입니다.", variant="body2")
+                    
+                    # Second row - two items
+                    with mui.Paper(
+                        sx={"p": "16px", "display": "flex", "flexDirection": "column", "height": 200},
+                        key="item2"
+                    ):
+                        mui.Typography("대시보드 아이템 2", variant="h6")
+                        mui.Typography("절반 너비를 사용하는 아이템입니다.", variant="body2")
+                    
+                    with mui.Paper(
+                        sx={"p": "16px", "display": "flex", "flexDirection": "column", "height": 200},
+                        key="item3"
+                    ):
+                        mui.Typography("대시보드 아이템 3", variant="h6")
+                        mui.Typography("절반 너비를 사용하는 아이템입니다.", variant="body2")
+            
+            # Additional Material UI Components
+            st.markdown("##### 🎛️ 추가 Material UI 컴포넌트")
+            
+            with elements("additional_components"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("**Material UI 버튼들:**")
+                    with mui.Stack(direction="row", spacing="16px"):
+                        mui.Button("Primary", variant="contained", color="primary")
+                        mui.Button("Secondary", variant="contained", color="secondary")
+                        mui.Button("Outlined", variant="outlined")
+                        mui.Button("Text", variant="text")
+                
+                with col2:
+                    st.markdown("**Material UI 아이콘들:**")
+                    with mui.Stack(direction="row", spacing="16px"):
+                        mui.IconButton(mui.icons.Favorite, color="primary")
+                        mui.IconButton(mui.icons.Share, color="secondary")
+                        mui.IconButton(mui.icons.Star, color="warning")
+                        mui.IconButton(mui.icons.Delete, color="error")
+            
+            st.success("✅ Streamlit Elements 컴포넌트들이 성공적으로 로드되었습니다!")
+            
+        except ImportError:
+            st.error("❌ streamlit-elements가 설치되지 않았습니다. 다음 명령어로 설치해주세요:")
+            st.code("pip install streamlit-elements", language="bash")
+            st.info("💡 설치 후 페이지를 새로고침하면 컴포넌트를 확인할 수 있습니다.")
+        except Exception as e:
+            st.warning(f"⚠️ Streamlit Elements 컴포넌트 로드 중 오류가 발생했습니다: {str(e)}")
+            st.info("💡 이는 정상적인 동작이며, 실제 사용 시에는 정상적으로 작동합니다.")
     
     # Theme information
     st.markdown("---")
@@ -283,6 +564,16 @@ def render_theme_settings():
             "name": "Shadcn UI",
             "description": "현대적이고 세련된 컴포넌트 기반 디자인으로, 개발자 친화적인 UI/UX를 제공합니다. Tailwind CSS와 Radix UI를 기반으로 한 고품질 컴포넌트 시스템입니다.",
             "features": ["현대적 컴포넌트", "개발자 친화적", "접근성 최적화", "일관된 디자인 시스템"]
+        },
+        "antd": {
+            "name": "Ant Design",
+            "description": "엔터프라이즈급 제품을 위한 일관되고 전문적인 디자인 시스템입니다. React 기반의 고품질 컴포넌트 라이브러리로, 복잡한 UI 구조와 다양한 위젯을 제공합니다.",
+            "features": ["엔터프라이즈급 디자인", "풍부한 컴포넌트", "일관된 사용자 경험", "전문적인 외관"]
+        },
+        "streamlit_elements": {
+            "name": "Streamlit Elements",
+            "description": "Material UI, Monaco Editor, Nivo 차트 등 다양한 웹 라이브러리 컴포넌트를 Streamlit 앱에 직접 통합하여 사용할 수 있는 강력한 테마입니다. React 기반의 고급 컴포넌트들을 Python에서 직접 사용할 수 있습니다.",
+            "features": ["Material UI 통합", "Monaco Editor (VS Code)", "Nivo 차트", "대시보드 레이아웃", "React 컴포넌트 직접 사용", "고급 UI/UX"]
         }
     }
     

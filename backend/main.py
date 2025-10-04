@@ -1424,9 +1424,25 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
     try:
         logger.info(f"Starting LangChain file upload: {file.filename} to collection: {collection_name}")
         
+        # Validate file
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="파일명이 없습니다.")
+        
         # Read file content
         content = await file.read()
         logger.info(f"File read successfully: {len(content)} bytes")
+        
+        # Check file size (50MB limit)
+        max_file_size = 50 * 1024 * 1024  # 50MB
+        if len(content) > max_file_size:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"파일 크기가 너무 큽니다. 최대 {max_file_size // (1024*1024)}MB까지 업로드 가능합니다. 현재 파일 크기: {len(content) // (1024*1024)}MB"
+            )
+        
+        # Check if file is empty
+        if len(content) == 0:
+            raise HTTPException(status_code=400, detail="빈 파일입니다.")
         
         # Extract text from file using file processing service
         logger.info("Starting text extraction...")

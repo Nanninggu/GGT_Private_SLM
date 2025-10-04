@@ -127,6 +127,10 @@ class LangChainVectorService:
             if not self.documents:
                 raise Exception("Vector store not initialized")
             
+            # Validate content
+            if not content or not content.strip():
+                raise ValueError("문서 내용이 비어있습니다.")
+            
             logger.info(f"Starting document processing: {len(content)} characters")
             
             # Create document
@@ -140,13 +144,22 @@ class LangChainVectorService:
             chunks = self.text_splitter.split_documents([doc])
             logger.info(f"Document split into {len(chunks)} chunks")
             
+            if not chunks:
+                raise ValueError("문서를 청크로 분할할 수 없습니다. 문서 내용을 확인해주세요.")
+            
             # Add chunks to vector store
             logger.info("Adding chunks to vector store...")
             doc_ids = await self.documents.aadd_documents(chunks)
             logger.info(f"Successfully added {len(doc_ids)} document chunks to vector store")
             
+            if not doc_ids:
+                raise ValueError("문서를 벡터 저장소에 추가할 수 없습니다.")
+            
             return doc_ids
             
+        except ValueError as e:
+            logger.error(f"Validation error in add_document: {e}")
+            raise
         except Exception as e:
             logger.error(f"Failed to add document: {e}")
             raise
@@ -658,7 +671,7 @@ class LangChainVectorService:
             async with db_service.get_session() as session:
                 # Get collection info and verify ownership
                 result = await session.execute(
-                    text("SELECT uuid, user_id FROM langchain_pg_collection WHERE name = :old_name"),
+                    text("SELECT uuid, user_id, cmetadata FROM langchain_pg_collection WHERE name = :old_name"),
                     {"old_name": old_name}
                 )
                 row = result.fetchone()

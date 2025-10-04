@@ -201,6 +201,24 @@ def main():
             st.session_state.current_page = "login"
             st.rerun()
         return
+    
+    # Configuration 페이지로 리다이렉트 확인
+    if st.session_state.get("redirect_to_configuration", False):
+        # 리다이렉트 플래그 초기화
+        st.session_state.redirect_to_configuration = False
+        
+        # Configuration 페이지로 이동
+        st.markdown("""
+        <script>
+        // Configuration 페이지로 이동
+        setTimeout(function() {
+            window.location.href = '/configuration';
+        }, 100);
+        </script>
+        """, unsafe_allow_html=True)
+        
+        st.info("⚙️ Configuration 페이지로 이동 중...")
+        st.stop()
 
     # Page header
     st.markdown("""
@@ -248,10 +266,10 @@ def main():
             st.warning("🔍 **SerpAPI**: 유료 서비스, API 키 필요")
         
         # 컬렉션 선택
-        st.subheader("컬렉션 관리")
+        st.subheader("컬렉션 선택")
         
         # 컬렉션 목록 새로고침 버튼
-        col1, col2, col3 = st.columns([1, 1, 1])
+        col1, col2 = st.columns([1, 1])
         with col1:
             if st.button("🔄 새로고침", help="컬렉션 목록을 새로고침합니다."):
                 # 캐시된 컬렉션 목록 삭제하고 새로고침
@@ -261,18 +279,32 @@ def main():
                 get_collections(force_refresh=True)
         
         with col2:
-            if st.button("➕ 새 컬렉션", help="새 컬렉션을 생성합니다."):
-                if st.session_state.get("auth_token"):
-                    st.session_state.show_new_collection_form = True
-                else:
-                    st.error("컬렉션을 생성하려면 로그인이 필요합니다.")
-        
-        with col3:
             if st.button("📋 목록 보기", help="컬렉션 목록을 자세히 봅니다."):
                 st.session_state.show_collection_list = not st.session_state.get("show_collection_list", False)
         
-        # 컬렉션 목록 가져오기
-        collections = get_collections()
+        # 컬렉션 관리 버튼 추가
+        if st.button("⚙️ 컬렉션 관리", help="컬렉션을 생성/삭제하려면 설정 페이지로 이동합니다.", use_container_width=True):
+            try:
+                # Streamlit 1.28.0 이상에서 사용 가능한 st.switch_page 함수 사용
+                st.switch_page("pages/configuration.py")
+            except AttributeError:
+                # st.switch_page가 없는 경우 JavaScript를 사용한 리다이렉트
+                st.markdown("""
+                <script>
+                // Configuration 페이지로 이동
+                setTimeout(function() {
+                    window.location.href = '/configuration';
+                }, 100);
+                </script>
+                """, unsafe_allow_html=True)
+                
+                # 세션 상태에 페이지 이동 플래그 설정
+                st.session_state.redirect_to_configuration = True
+                st.session_state.current_page = "configuration"
+                st.rerun()
+        
+        # 컬렉션 목록 가져오기 (강제 새로고침)
+        collections = get_collections(force_refresh=True)
         
         if collections:
             # 컬렉션 이름 목록 생성
@@ -316,12 +348,13 @@ def main():
         else:
             # 인증 토큰이 있는지 확인
             if st.session_state.get("auth_token"):
-                st.info("📝 사용 가능한 컬렉션이 없습니다. 새 컬렉션을 생성해보세요!")
+                st.info("📝 사용 가능한 컬렉션이 없습니다.")
+                st.info("💡 **새 컬렉션을 생성하려면**: 위의 '컬렉션 관리' 버튼을 클릭하여 설정 페이지로 이동하세요.")
             else:
                 st.warning("🔐 컬렉션을 사용하려면 로그인이 필요합니다.")
             selected_collection = None
         
-        # 컬렉션 목록 상세 보기
+        # 컬렉션 목록 간단 보기
         if st.session_state.get("show_collection_list", False) and collections:
             st.markdown("---")
             st.subheader("📋 컬렉션 목록")
@@ -332,236 +365,21 @@ def main():
                 collection_icon = "🌐" if is_shared else "👤"
                 collection_type = "공유" if is_shared else "개인"
                 
-                st.markdown(f"""
-                <div class="collection-card">
-                    <h4 style="color: #212529; margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem;">
-                        {collection_icon} {collection.get('name', 'Unknown')} ({collection.get('document_count', 0)}개 문서)
-                    </h4>
-                    <p style="color: #6c757d; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">
-                        <strong>타입:</strong> {collection_type} 컬렉션
-                    </p>
-                    <div style="margin-bottom: 1rem;">
-                        <p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
-                            <strong>이름:</strong> {collection.get('name', 'Unknown')}
-                        </p>
-                        {f'<p style="color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;"><strong>설명:</strong> {collection["metadata"]["description"]}</p>' if collection.get('metadata', {}).get('description') else ''}
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 1.5rem; font-weight: 700; color: #6c757d;">{collection.get('document_count', 0)}</div>
-                            <div style="font-size: 0.9rem; color: #6c757d; font-weight: 500;">문서 수</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 0.9rem; color: #6c757d; font-weight: 500;">
-                                생성일: {collection['created_at'][:10] if collection.get('created_at') else '알 수 없음'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                col_info, col_select = st.columns([3, 1])
                 
-                # 컬렉션 선택 및 삭제 버튼
-                col_btn1, col_btn2 = st.columns([1, 1])
+                with col_info:
+                    st.markdown(f"""
+                    <div style="padding: 0.5rem; border-radius: 8px; background-color: #f8f9fa; margin-bottom: 0.5rem;">
+                        <strong>{collection_icon} {collection.get('name', 'Unknown')}</strong> 
+                        ({collection.get('document_count', 0)}개 문서) - {collection_type} 컬렉션
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                with col_btn1:
+                with col_select:
                     if st.button(f"선택", key=f"select_collection_{i}"):
                         st.session_state.selected_collection = collection.get('name', '')
-                
-                with col_btn2:
-                    if st.button(f"삭제", key=f"delete_collection_{i}", type="secondary"):
-                        st.session_state.collection_to_delete = collection.get('name', '')
                         st.rerun()
         
-        # 컬렉션 삭제 확인 다이얼로그
-        if st.session_state.get("collection_to_delete"):
-            collection_to_delete = st.session_state.collection_to_delete
-            st.markdown("---")
-            st.subheader("⚠️ 컬렉션 삭제 확인")
-            st.warning(f"컬렉션 '{collection_to_delete}'을(를) 삭제하시겠습니까?")
-            st.error("⚠️ **주의**: 이 작업은 되돌릴 수 없습니다. 컬렉션과 모든 문서가 영구적으로 삭제됩니다.")
-            
-            col1, col2, col3 = st.columns([1, 1, 1])
-            
-            with col1:
-                if st.button("✅ 삭제 확인", type="primary", use_container_width=True):
-                    with st.spinner("컬렉션 삭제 중..."):
-                        try:
-                            # Get authentication token
-                            token = st.session_state.get("auth_token")
-                            if not token:
-                                st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
-                                st.session_state.collection_to_delete = None
-                                return
-                            
-                            headers = {
-                                "Authorization": f"Bearer {token}"
-                            }
-                            
-                            response = requests.delete(
-                                f"{API_BASE_URL}/api/collections/{collection_to_delete}",
-                                headers=headers
-                            )
-                            
-                            if response.status_code == 200:
-                                response_data = response.json()
-                                if response_data.get("success", False):
-                                    st.success(f"컬렉션 '{collection_to_delete}'이 삭제되었습니다!")
-                                    # 캐시된 컬렉션 목록 삭제하여 새로고침
-                                    if "web_search_collections" in st.session_state:
-                                        del st.session_state.web_search_collections
-                                    # 삭제된 컬렉션이 현재 선택된 컬렉션이면 기본값으로 변경
-                                    if st.session_state.get("selected_collection") == collection_to_delete:
-                                        st.session_state.selected_collection = None
-                                    # 삭제 확인 상태 초기화
-                                    st.session_state.collection_to_delete = None
-                                    st.rerun()
-                                else:
-                                    error_message = response_data.get('error', '알 수 없는 오류')
-                                    if "COLLECTION_NOT_FOUND" in str(response_data) or "does not exist" in error_message:
-                                        st.warning(f"컬렉션 '{collection_to_delete}'이 존재하지 않습니다.")
-                                    elif "UNAUTHORIZED" in str(response_data) or "not authorized" in error_message.lower():
-                                        st.error(f"컬렉션 '{collection_to_delete}'을 삭제할 권한이 없습니다. 컬렉션을 생성한 사용자만 삭제할 수 있습니다.")
-                                    else:
-                                        st.error(f"컬렉션 삭제 실패: {error_message}")
-                                    st.session_state.collection_to_delete = None
-                            elif response.status_code == 400:
-                                error_data = response.json()
-                                st.error(f"컬렉션 삭제 실패: {error_data.get('detail', response.text)}")
-                            else:
-                                error_data = response.json()
-                                st.error(f"컬렉션 삭제 실패: {error_data.get('detail', response.text)}")
-                        except Exception as e:
-                            st.error(f"컬렉션 삭제 중 오류: {str(e)}")
-            
-            with col2:
-                if st.button("❌ 취소", use_container_width=True):
-                    st.session_state.collection_to_delete = None
-            
-            with col3:
-                if st.button("🔄 새로고침", use_container_width=True):
-                    # 캐시된 컬렉션 목록 삭제하고 새로고침
-                    if "web_search_collections" in st.session_state:
-                        del st.session_state.web_search_collections
-                    # 강제 새로고침으로 컬렉션 목록 다시 가져오기
-                    get_collections(force_refresh=True)
-        
-        # 새 컬렉션 생성 폼 (조건부 표시)
-        if st.session_state.get("show_new_collection_form", False) and st.session_state.get("auth_token"):
-            st.markdown("---")
-            st.subheader("➕ 새 컬렉션 생성")
-            
-            # 컬렉션 타입 선택
-            collection_type = st.radio(
-                "컬렉션 타입",
-                ["개인 컬렉션", "공유 컬렉션"],
-                help="개인 컬렉션: 나만 접근 가능\n공유 컬렉션: 모든 사용자가 접근 가능",
-                key="web_search_collection_type"
-            )
-            
-            new_collection_name = st.text_input(
-                "새 컬렉션 이름",
-                placeholder="새 컬렉션 이름을 입력하세요...",
-                help="새로운 컬렉션을 생성합니다.",
-                key="web_search_new_collection_name"
-            )
-            
-            # 컬렉션 타입에 따른 안내 메시지
-            if collection_type == "개인 컬렉션":
-                st.info("👤 **개인 컬렉션**: 나만 접근할 수 있는 개인 전용 컬렉션입니다.")
-            else:
-                st.warning("🌐 **공유 컬렉션**: 모든 사용자가 접근할 수 있는 공유 컬렉션입니다.")
-            
-            col1, col2, col3 = st.columns([1, 1, 1])
-            
-            with col1:
-                if st.button("✅ 생성", type="primary", use_container_width=True):
-                    if not new_collection_name or not new_collection_name.strip():
-                        st.error("컬렉션 이름을 입력해주세요.")
-                    else:
-                        with st.spinner("컬렉션 생성 중..."):
-                            try:
-                                # 컬렉션 타입에 따라 다른 API 엔드포인트 사용
-                                if collection_type == "개인 컬렉션":
-                                    api_endpoint = f"{API_BASE_URL}/api/collections/create"
-                                    collection_type_icon = "👤"
-                                    collection_type_text = "개인"
-                                else:  # 공유 컬렉션
-                                    api_endpoint = f"{API_BASE_URL}/api/collections/create-shared"
-                                    collection_type_icon = "🌐"
-                                    collection_type_text = "공유"
-                                
-                                # Get authentication token from session state
-                                token = st.session_state.get("auth_token")
-                                if not token:
-                                    st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
-                                    st.session_state.show_new_collection_form = False
-                                    return
-                                
-                                headers = {
-                                    "Authorization": f"Bearer {token}"
-                                }
-                                response = requests.post(
-                                    api_endpoint,
-                                    json={
-                                        "collection_name": new_collection_name,
-                                        "description": f"웹 검색 결과를 위한 {collection_type_text} 컬렉션: {new_collection_name}"
-                                    },
-                                    headers=headers,
-                                    timeout=30
-                                )
-                                if response.status_code == 200:
-                                    st.success(f"✅ {collection_type_text} 컬렉션 '{new_collection_name}'이 생성되었습니다! {collection_type_icon}")
-                                    # 캐시된 컬렉션 목록 삭제하여 새로고침
-                                    if "web_search_collections" in st.session_state:
-                                        del st.session_state.web_search_collections
-                                    # 새로 생성된 컬렉션을 선택
-                                    st.session_state.selected_collection = new_collection_name
-                                    # 폼 숨기기
-                                    st.session_state.show_new_collection_form = False
-                                    # 입력 필드 초기화
-                                    if "web_search_new_collection_name" in st.session_state:
-                                        del st.session_state.web_search_new_collection_name
-                                    st.rerun()
-                                elif response.status_code == 401:
-                                    st.error("인증이 필요합니다. 로그인 페이지로 이동해주세요.")
-                                    st.session_state.show_new_collection_form = False
-                                elif response.status_code == 400:
-                                    # 컬렉션이 이미 존재하는 경우
-                                    error_data = response.json()
-                                    if "already exists" in error_data.get("detail", ""):
-                                        st.warning(f"⚠️ {collection_type_text} 컬렉션 '{new_collection_name}'이 이미 존재합니다. 기존 컬렉션을 사용합니다. {collection_type_icon}")
-                                        # 캐시된 컬렉션 목록 삭제하여 새로고침
-                                        if "web_search_collections" in st.session_state:
-                                            del st.session_state.web_search_collections
-                                        # 기존 컬렉션을 선택
-                                        st.session_state.selected_collection = new_collection_name
-                                        # 폼 숨기기
-                                        st.session_state.show_new_collection_form = False
-                                        # 입력 필드 초기화
-                                        if "web_search_new_collection_name" in st.session_state:
-                                            del st.session_state.web_search_new_collection_name
-                                        st.rerun()
-                                    else:
-                                        st.error(f"컬렉션 생성 실패: {error_data.get('detail', response.text)}")
-                                else:
-                                    st.error(f"컬렉션 생성 실패: {response.text}")
-                            except Exception as e:
-                                st.error(f"컬렉션 생성 중 오류: {str(e)}")
-            
-            with col2:
-                if st.button("❌ 취소", use_container_width=True):
-                    st.session_state.show_new_collection_form = False
-                    # 입력 필드 초기화
-                    if "web_search_new_collection_name" in st.session_state:
-                        del st.session_state.web_search_new_collection_name
-            
-            with col3:
-                if st.button("🔄 새로고침", use_container_width=True):
-                    # 캐시된 컬렉션 목록 삭제하고 새로고침
-                    if "web_search_collections" in st.session_state:
-                        del st.session_state.web_search_collections
-                    # 강제 새로고침으로 컬렉션 목록 다시 가져오기
-                    get_collections(force_refresh=True)
     
     # 메인 검색 영역
     if query:
@@ -594,6 +412,9 @@ def main():
                             if "web_search_collections" in st.session_state:
                                 del st.session_state.web_search_collections
                             
+                            # UI 자동 새로고침을 위해 st.rerun() 호출
+                            st.rerun()
+                            
                             # 검색 결과 표시
                             for i, search_result in enumerate(result.get('results', [])):
                                 display_search_result(search_result, i)
@@ -613,12 +434,11 @@ def main():
            - **Google Custom Search**: API 키 필요, 일일 검색 제한 있음
            - **SerpAPI**: 유료 서비스, API 키 필요
         3. **검색 결과 수 설정**: 가져올 검색 결과의 개수를 선택하세요 (1-20개).
-        4. **컬렉션 관리**: 
+        4. **컬렉션 선택**: 
            - **컬렉션 선택**: 검색 결과를 저장할 컬렉션을 선택하세요.
-           - **새 컬렉션 생성**: 새로운 컬렉션을 생성할 수 있습니다.
            - **목록 보기**: 모든 컬렉션의 상세 정보를 확인할 수 있습니다.
-           - **컬렉션 삭제**: 불필요한 컬렉션을 삭제할 수 있습니다 (주의: 되돌릴 수 없음).
            - **새로고침**: 컬렉션 목록을 최신 상태로 업데이트합니다.
+           - **컬렉션 관리**: 컬렉션 생성/삭제는 설정 페이지에서 가능합니다.
         5. **검색 실행**: 
            - **검색만 하기**: 검색 결과만 확인합니다.
            - **검색 후 컬렉션에 저장**: 검색 결과를 선택한 컬렉션에 자동으로 저장합니다.
@@ -627,8 +447,8 @@ def main():
         
         - **다양한 검색 엔진**: DuckDuckGo, Google Custom Search, SerpAPI 지원
         - **무료 검색 옵션**: DuckDuckGo를 사용하면 API 키 없이도 무료로 검색 가능
-        - **실시간 컬렉션 관리**: 컬렉션 생성, 선택, 삭제, 목록 확인이 실시간으로 가능
-        - **자동 새로고침**: 컬렉션 생성 후 자동으로 목록이 업데이트됩니다
+        - **컬렉션 선택**: 기존 컬렉션 중에서 검색 결과를 저장할 컬렉션을 선택
+        - **통합 관리**: 컬렉션 생성/삭제는 설정 페이지에서 통합 관리
         - **웹페이지 내용 추출**: 검색 결과의 실제 웹페이지 내용을 자동으로 추출
         - **컬렉션 저장**: 검색 결과를 벡터 데이터베이스에 저장하여 RAG에서 활용 가능
         - **실시간 처리**: 검색과 저장 과정을 실시간으로 모니터링
@@ -638,16 +458,16 @@ def main():
         - 검색 결과는 최대 20개까지 가져올 수 있습니다.
         - 웹페이지 내용 추출에는 시간이 걸릴 수 있습니다.
         - 저장된 검색 결과는 채팅에서 RAG 기능을 통해 활용할 수 있습니다.
-        - **컬렉션 삭제는 되돌릴 수 없으므로 신중하게 진행하세요.**
-        - 기본 'langchain_documents' 컬렉션은 삭제할 수 없습니다.
+        - **컬렉션 관리**: 컬렉션 생성/삭제는 설정 페이지에서 안전하게 관리할 수 있습니다.
         """)
     
-    # 현재 컬렉션 정보
-    if collections:
+    # 현재 컬렉션 정보 (최신 데이터로 강제 새로고침)
+    latest_collections = get_collections(force_refresh=True)
+    if latest_collections:
         st.subheader("📁 사용 가능한 컬렉션")
         col1, col2, col3 = st.columns(3)
         
-        for i, collection in enumerate(collections):
+        for i, collection in enumerate(latest_collections):
             with [col1, col2, col3][i % 3]:
                 # 컬렉션 정보를 사용자 친화적으로 표시
                 collection_name = collection.get('name', 'Unknown')

@@ -208,6 +208,18 @@ def main():
                             file_content = uploaded_file.getvalue()
                             filename = uploaded_file.name
                             content_type = uploaded_file.type
+                            
+                            # Check file size (50MB limit)
+                            max_file_size = 50 * 1024 * 1024  # 50MB
+                            if len(file_content) > max_file_size:
+                                st.error(f"❌ 파일 크기가 너무 큽니다. 최대 {max_file_size // (1024*1024)}MB까지 업로드 가능합니다. 현재 파일 크기: {len(file_content) // (1024*1024)}MB")
+                                return
+                            
+                            # Check if file is empty
+                            if len(file_content) == 0:
+                                st.error("❌ 빈 파일입니다.")
+                                return
+                            
                             st.info(f"✅ 파일 읽기 완료: {filename} ({len(file_content)} bytes)")
                             
                             # Upload to appropriate RAG system
@@ -261,11 +273,26 @@ def main():
                             # Prepare file list
                             st.info(f"📁 {len(uploaded_files)}개 파일을 읽는 중...")
                             file_list = []
+                            max_file_size = 50 * 1024 * 1024  # 50MB
+                            
                             for i, uploaded_file in enumerate(uploaded_files):
                                 st.info(f"  📄 파일 {i+1}/{len(uploaded_files)}: {uploaded_file.name}")
+                                
+                                file_content = uploaded_file.getvalue()
+                                
+                                # Check file size
+                                if len(file_content) > max_file_size:
+                                    st.error(f"❌ 파일 '{uploaded_file.name}'이 너무 큽니다. 최대 {max_file_size // (1024*1024)}MB까지 업로드 가능합니다. 현재 파일 크기: {len(file_content) // (1024*1024)}MB")
+                                    return
+                                
+                                # Check if file is empty
+                                if len(file_content) == 0:
+                                    st.error(f"❌ 파일 '{uploaded_file.name}'이 비어있습니다.")
+                                    return
+                                
                                 file_list.append({
                                     'filename': uploaded_file.name,
-                                    'content': uploaded_file.getvalue(),
+                                    'content': file_content,
                                     'content_type': uploaded_file.type
                                 })
                             st.info("✅ 모든 파일 읽기 완료")

@@ -168,7 +168,7 @@ class LangChainRagService:
             logger.error(f"Failed to check collection ownership: {e}")
             return False
     
-    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> List[str]:
         """Add document to knowledge base"""
         try:
             logger.info(f"Starting document addition to knowledge base: {len(content)} characters")
@@ -183,7 +183,7 @@ class LangChainRagService:
             doc_ids = await langchain_vector_service.add_document(cleaned_content, metadata)
             
             logger.info(f"Document successfully added to knowledge base: {len(doc_ids)} chunks")
-            return f"Added {len(doc_ids)} document chunks"
+            return doc_ids
             
         except Exception as e:
             logger.error(f"Failed to add document: {e}")
@@ -364,7 +364,14 @@ class LangChainRagService:
             context_parts = []
             for doc, similarity in source_docs:
                 collection_name = doc.metadata.get('collection', 'Unknown')
-                context_parts.append(f"[{collection_name}] {doc.page_content}")
+                # 웹 검색 결과인 경우 더 상세한 정보 표시
+                if doc.metadata.get('source') == 'web_search':
+                    title = doc.metadata.get('title', '웹 검색 결과')
+                    domain = doc.metadata.get('domain', '')
+                    url = doc.metadata.get('url', '')
+                    context_parts.append(f"[{collection_name}] {title} ({domain}): {doc.page_content}")
+                else:
+                    context_parts.append(f"[{collection_name}] {doc.page_content}")
             
             context = "\n\n".join(context_parts)
             
@@ -372,12 +379,27 @@ class LangChainRagService:
             sources = []
             for doc, similarity in source_docs:
                 collection_name = doc.metadata.get('collection', 'Unknown')
-                sources.append({
-                    "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
-                    "similarity": similarity,
-                    "collection": collection_name,
-                    "metadata": doc.metadata
-                })
+                # 웹 검색 결과인 경우 더 상세한 소스 정보 제공
+                if doc.metadata.get('source') == 'web_search':
+                    title = doc.metadata.get('title', '웹 검색 결과')
+                    domain = doc.metadata.get('domain', '')
+                    url = doc.metadata.get('url', '')
+                    source_display = f"{title} ({domain})" if domain else title
+                    sources.append({
+                        "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
+                        "similarity": similarity,
+                        "collection": collection_name,
+                        "source": source_display,
+                        "url": url,
+                        "metadata": doc.metadata
+                    })
+                else:
+                    sources.append({
+                        "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
+                        "similarity": similarity,
+                        "collection": collection_name,
+                        "metadata": doc.metadata
+                    })
             
             # 최적화된 프롬프트 - 더 짧고 명확하게
             prompt = f"""컨텍스트를 바탕으로 질문에 간결하게 답변하세요.

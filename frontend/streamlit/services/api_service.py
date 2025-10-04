@@ -352,6 +352,13 @@ class APIService:
             if not token:
                 return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
             
+            # Validate inputs
+            if not filename:
+                return {"success": False, "error": "파일명이 없습니다."}
+            
+            if not file_content:
+                return {"success": False, "error": "파일 내용이 비어있습니다."}
+            
             files = {
                 'file': (filename, io.BytesIO(file_content), content_type)
             }
@@ -369,10 +376,31 @@ class APIService:
                 headers=headers,
                 timeout=self.upload_timeout
             )
+            
+            # Handle different HTTP status codes
+            if response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    return {"success": False, "error": error_data.get("detail", "잘못된 요청입니다.")}
+                except:
+                    return {"success": False, "error": f"잘못된 요청입니다. (HTTP {response.status_code})"}
+            elif response.status_code == 401:
+                return {"success": False, "error": "인증이 필요합니다. 로그인을 다시 시도해주세요."}
+            elif response.status_code == 403:
+                return {"success": False, "error": "권한이 없습니다. 해당 컬렉션에 업로드할 권한이 없습니다."}
+            elif response.status_code == 413:
+                return {"success": False, "error": "파일이 너무 큽니다. 파일 크기를 줄여주세요."}
+            elif response.status_code >= 500:
+                return {"success": False, "error": f"서버 오류가 발생했습니다. (HTTP {response.status_code})"}
+            
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.Timeout:
+            return {"success": False, "error": "요청 시간이 초과되었습니다. 파일 크기를 줄이거나 네트워크를 확인해주세요."}
+        except requests.exceptions.ConnectionError:
+            return {"success": False, "error": "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요."}
         except requests.exceptions.RequestException as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": f"요청 중 오류가 발생했습니다: {str(e)}"}
     
     def upload_multiple_files(self, file_list: List[Dict[str, Any]], collection_name: str = "documents") -> Dict[str, Any]:
         """Upload multiple files to backend for vectorization"""

@@ -896,6 +896,7 @@ def main():
                                 switch_response = chat_controller.switch_collection(selected_collection)
                                 if switch_response.get("success", False):
                                     st.success(f"✅ 컬렉션이 '{selected_collection}'로 전환되었습니다.")
+                                    # 자동 새로고침
                                     st.rerun()
                                 else:
                                     st.error(f"❌ 컬렉션 전환 실패: {switch_response.get('error', '알 수 없는 오류')}")

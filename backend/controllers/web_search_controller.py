@@ -226,6 +226,7 @@ async def _save_search_results_to_collection(
                         "snippet": result["snippet"],
                         "domain": result["domain"],
                         "source": "web_search",
+                        "collection": collection_name,  # 컬렉션 정보 추가
                         "user_id": "web_search_user",
                         **result["metadata"]
                     }

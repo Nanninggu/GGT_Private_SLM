@@ -19,6 +19,7 @@ from datetime import datetime
 class ChatController:
     """Controller for chat-related functionality"""
 
+
     def __init__(self):
         try:
             self.api_service = APIService(base_url="http://localhost:9502")
@@ -26,6 +27,20 @@ class ChatController:
             self.api_service = None
         self._initialize_session_state()
 
+    """
+    이 함수는 Streamlit의 `st.session_state`에 필요한 기본 키들을 설정합니다.
+    주요 목적:
+    - 사용자별 기본 세션 ID를 생성하여 여러 사용자가 동일 환경에서 독립된 세션을 가지도록 함.
+    - 채팅 메시지 저장소(`messages`)를 빈 리스트로 초기화하여 이후 메시지 추가 시 안전하게 사용.
+    - 백엔드 연결 상태 플래그(`backend_connected`)를 기본적으로 False로 설정.
+    - 마지막으로 불러온 세션(`last_loaded_session`)을 추적하여 자동 로드 시 중복 알림을 방지.
+    동작 방식:
+    1. `user_info`에 `id`가 있으면 `user_{id}_default_session` 형식의 세션 ID를 사용하고,
+        없거나 `default`일 경우에는 `"default"`를 사용함.
+    2. 각 키가 이미 존재하면 덮어쓰지 않고 그대로 둬서 세션 유지 보장.
+    호출 시점:
+    - 컨트롤러 생성자에서 호출되어 앱 시작 시 한 번 초기화됨.
+    """
     def _initialize_session_state(self):
         """Initialize Streamlit session state"""
         if "session_id" not in st.session_state:
@@ -618,13 +633,58 @@ class ChatController:
                             # Create a more detailed context display
                             for i, (source, similarity) in enumerate(zip(context_sources, similarity_scores), 1):
                                 similarity_percent = similarity * 100 if similarity else 0
-                                st.markdown(f"""
-                                <div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; 
-                                            margin: 0.25rem 0; border-left: 3px solid #2196F3;">
-                                    <strong>{i}. {source}</strong> 
-                                    <span style="color: #666; font-size: 0.9em;">(유사도: {similarity_percent:.1f}%)</span>
-                                </div>
-                                """, unsafe_allow_html=True)
+                                
+                                # 웹 검색 결과인 경우 더 상세한 표시
+                                if isinstance(source, dict) and source.get('metadata', {}).get('source') == 'web_search':
+                                    title = source.get('metadata', {}).get('title', '웹 검색 결과')
+                                    domain = source.get('metadata', {}).get('domain', '')
+                                    url = source.get('metadata', {}).get('url', '')
+                                    
+                                    if domain:
+                                        display_title = f"{title} ({domain})"
+                                    else:
+                                        display_title = title
+                                    
+                                    # URL이 있는 경우 클릭 가능한 링크로 표시
+                                    if url:
+                                        st.markdown(f"""
+                                        <div style="background: #e8f5e8; padding: 0.75rem; border-radius: 8px; 
+                                                    margin: 0.25rem 0; border-left: 4px solid #4CAF50;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <div>
+                                                    <strong>{i}. {display_title}</strong>
+                                                    <br>
+                                                    <a href="{url}" target="_blank" style="color: #1976D2; text-decoration: none; font-size: 0.85em;">
+                                                        🔗 {url}
+                                                    </a>
+                                                </div>
+                                                <span style="color: #666; font-size: 0.9em; background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                                    {similarity_percent:.1f}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                    else:
+                                        st.markdown(f"""
+                                        <div style="background: #e8f5e8; padding: 0.75rem; border-radius: 8px; 
+                                                    margin: 0.25rem 0; border-left: 4px solid #4CAF50;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <strong>{i}. {display_title}</strong>
+                                                <span style="color: #666; font-size: 0.9em; background: #f0f0f0; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                                    {similarity_percent:.1f}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                else:
+                                    # 일반 문서인 경우 기존 방식
+                                    st.markdown(f"""
+                                    <div style="background: #e3f2fd; padding: 0.5rem; border-radius: 5px; 
+                                                margin: 0.25rem 0; border-left: 3px solid #2196F3;">
+                                        <strong>{i}. {source}</strong> 
+                                        <span style="color: #666; font-size: 0.9em;">(유사도: {similarity_percent:.1f}%)</span>
+                                    </div>
+                                    """, unsafe_allow_html=True)
                             
                             if context_count > 0:
                                 if multi_collection:

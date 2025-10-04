@@ -1548,12 +1548,21 @@ class ChatComponents:
                                 max_chars=100
                             )
                             
+                            # Add CSS for smaller button text
+                            st.markdown("""
+                            <style>
+                            .stButton > button {
+                                font-size: 0.6rem !important;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                            
                             col1, col2, col3 = st.columns(3)
                             
                             with col1:
                                 if editing_group_id:
                                     # Editing existing group
-                                    if st.button("✅ 그룹 수정", key="update_group"):
+                                    if st.button("그룹 수정", key="update_group"):
                                         if group_name and group_name.strip():
                                             st.session_state.collection_groups[editing_group_id].update({
                                                 "name": group_name.strip(),
@@ -1567,7 +1576,7 @@ class ChatComponents:
                                             st.error("그룹 이름을 입력해주세요.")
                                 else:
                                     # Creating new group
-                                    if st.button("✅ 그룹 생성", key="create_group"):
+                                    if st.button("그룹 생성", key="create_group"):
                                         if group_name and group_name.strip():
                                             group_id = f"group_{len(st.session_state.collection_groups) + 1}"
                                             st.session_state.collection_groups[group_id] = {
@@ -1582,21 +1591,30 @@ class ChatComponents:
                                             st.error("그룹 이름을 입력해주세요.")
                             
                             with col2:
-                                cancel_group_clicked = st.button("❌ 취소", key="cancel_group_creation")
+                                cancel_group_clicked = st.button("취소", key="cancel_group_creation")
                                 if cancel_group_clicked:
                                     st.session_state.show_group_creation = False
                                     if editing_group_id:
                                         st.session_state.editing_group = None
                             
                             with col3:
-                                show_group_list_clicked = st.button("📋 그룹 목록", key="show_group_list")
+                                show_group_list_clicked = st.button("그룹 목록", key="show_group_list")
                                 if show_group_list_clicked:
-                                    st.session_state.show_group_list = True
+                                    st.session_state.show_group_list_state = True
                         
                         # Group list and management UI
-                        if st.session_state.get("show_group_list", False):
+                        if st.session_state.get("show_group_list_state", False):
                             st.markdown("---")
                             st.subheader("📋 컬렉션 그룹 관리")
+                            
+                            # Add CSS for smaller button text in group management
+                            st.markdown("""
+                            <style>
+                            .stButton > button {
+                                font-size: 0.6rem !important;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
                             
                             groups = st.session_state.get("collection_groups", {})
                             
@@ -1615,7 +1633,7 @@ class ChatComponents:
                                         col1, col2, col3 = st.columns(3)
                                         
                                         with col1:
-                                            if st.button(f"🔄 그룹 활성화", key=f"activate_group_{group_id}"):
+                                            if st.button(f"그룹 활성화", key=f"activate_group_{group_id}"):
                                                 # Set all collections in the group as selected
                                                 st.session_state.selected_collections = group_info['collections'].copy()
                                                 # Set the first collection as current collection
@@ -1631,12 +1649,12 @@ class ChatComponents:
                                                 st.success(f"'{group_info['name']}' 그룹의 모든 컬렉션이 선택되었습니다!")
                                         
                                         with col2:
-                                            if st.button(f"✏️ 그룹 수정", key=f"edit_group_{group_id}"):
+                                            if st.button(f"그룹 수정", key=f"edit_group_{group_id}"):
                                                 st.session_state.editing_group = group_id
                                                 st.session_state.show_group_creation = True
                                         
                                         with col3:
-                                            if st.button(f"🗑️ 그룹 삭제", key=f"delete_group_{group_id}"):
+                                            if st.button(f"그룹 삭제", key=f"delete_group_{group_id}"):
                                                 st.session_state.group_to_delete = group_id
                                         
                                         # Group deletion confirmation
@@ -1644,19 +1662,19 @@ class ChatComponents:
                                             st.warning(f"'{group_info['name']}' 그룹을 삭제하시겠습니까?")
                                             col1, col2 = st.columns(2)
                                             with col1:
-                                                if st.button("✅ 삭제 확인", key=f"confirm_delete_group_{group_id}"):
+                                                if st.button("삭제 확인", key=f"confirm_delete_group_{group_id}"):
                                                     del st.session_state.collection_groups[group_id]
                                                     st.success(f"'{group_info['name']}' 그룹이 삭제되었습니다.")
                                                     st.session_state.group_to_delete = None
                                             with col2:
-                                                if st.button("❌ 취소", key=f"cancel_delete_group_{group_id}"):
+                                                if st.button("취소", key=f"cancel_delete_group_{group_id}"):
                                                     st.session_state.group_to_delete = None
                             else:
                                 st.info("생성된 그룹이 없습니다.")
                             
                             close_group_list_clicked = st.button("닫기", key="close_group_list")
                             if close_group_list_clicked:
-                                st.session_state.show_group_list = False
+                                st.session_state.show_group_list_state = False
                         
                         # For backward compatibility, set the first selected collection as current
                         if selected_collections:
@@ -1676,6 +1694,8 @@ class ChatComponents:
                                 # Clear active group when switching to individual collection
                                 st.session_state.active_group = None
                                 st.success(f"'{selected_collection}' 컬렉션으로 전환되었습니다.")
+                                # 자동 새로고침
+                                st.rerun()
                             else:
                                 st.error(f"컬렉션 전환 실패: {result.get('error', '알 수 없는 오류')}")
                     

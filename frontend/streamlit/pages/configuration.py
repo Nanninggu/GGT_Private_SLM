@@ -904,6 +904,14 @@ def render_vector_db_management(chat_controller):
     st.subheader("📚 Vector DB 컬렉션 관리")
     st.write("Vector Database의 컬렉션을 생성, 삭제, 이름 변경할 수 있습니다.")
     
+    # Web Search 연동 안내
+    st.info("""
+    💡 **Web Search 연동**: 
+    - 여기서 생성한 컬렉션은 Web Search 페이지에서 검색 결과를 저장할 때 사용할 수 있습니다.
+    - 개인 컬렉션: 나만 접근 가능한 개인 전용 컬렉션
+    - 공유 컬렉션: 모든 사용자가 접근 가능한 공유 컬렉션
+    """)
+    
     
     # Get collections (use cached data if available)
     if st.session_state.get("collections_data"):
@@ -940,6 +948,7 @@ def render_vector_db_management(chat_controller):
         with col_title:
             st.markdown("#### 📚 내 컬렉션 목록")
             st.caption("💡 각 사용자는 자신만의 개인 컬렉션을 관리할 수 있습니다")
+            st.caption("🔍 Web Search에서 검색 결과를 저장할 컬렉션을 선택할 수 있습니다")
         
         with col_refresh:
             # 새로고침 버튼 클릭 처리
@@ -1021,14 +1030,8 @@ def render_vector_db_management(chat_controller):
                                                     if 'collections_data' in st.session_state:
                                                         del st.session_state.collections_data
                                                     
-                                                    # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                                    st.markdown("""
-                                                    <script>
-                                                    setTimeout(function() {
-                                                        window.location.reload();
-                                                    }, 1000);
-                                                    </script>
-                                                    """, unsafe_allow_html=True)
+                                                    # 자동 새로고침
+                                                    st.rerun()
                                                 else:
                                                     st.error(f"❌ 컬렉션 '{name}' 삭제에 실패했습니다.")
                                         except Exception as e:
@@ -1098,14 +1101,8 @@ def render_vector_db_management(chat_controller):
                                 # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
                                 if 'collections_data' in st.session_state:
                                     del st.session_state.collections_data
-                                # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                st.markdown("""
-                                <script>
-                                setTimeout(function() {
-                                    window.location.reload();
-                                }, 1000);
-                                </script>
-                                """, unsafe_allow_html=True)
+                                # 자동 새로고침
+                                st.rerun()
                             else:
                                 error_msg = response.get('error', '알 수 없는 오류')
                                 if "already exists" in error_msg:
@@ -1116,14 +1113,8 @@ def render_vector_db_management(chat_controller):
                                     # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
                                     if 'collections_data' in st.session_state:
                                         del st.session_state.collections_data
-                                    # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                    st.markdown("""
-                                    <script>
-                                    setTimeout(function() {
-                                        window.location.reload();
-                                    }, 1000);
-                                    </script>
-                                    """, unsafe_allow_html=True)
+                                    # 자동 새로고침
+                                    st.rerun()
                                 else:
                                     st.error(f"{collection_type_text} 컬렉션 생성에 실패했습니다: {error_msg}")
                         except Exception as e:
@@ -1186,14 +1177,8 @@ def render_vector_db_management(chat_controller):
                                     # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
                                     if 'collections_data' in st.session_state:
                                         del st.session_state.collections_data
-                                    # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                    st.markdown("""
-                                    <script>
-                                    setTimeout(function() {
-                                        window.location.reload();
-                                    }, 1000);
-                                    </script>
-                                    """, unsafe_allow_html=True)
+                                    # 자동 새로고침
+                                    st.rerun()
                                 else:
                                     error_msg = response.get('error', '알 수 없는 오류')
                                     st.error(f"컬렉션 타입 변경에 실패했습니다: {error_msg}")
@@ -1236,14 +1221,8 @@ def render_vector_db_management(chat_controller):
                                         # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
                                         if 'collections_data' in st.session_state:
                                             del st.session_state.collections_data
-                                        # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                        st.markdown("""
-                                        <script>
-                                        setTimeout(function() {
-                                            window.location.reload();
-                                        }, 1000);
-                                        </script>
-                                        """, unsafe_allow_html=True)
+                                        # 자동 새로고침
+                                        st.rerun()
                                     else:
                                         error_msg = response.get('error', '알 수 없는 오류')
                                         if "already exists" in error_msg:
@@ -1254,14 +1233,8 @@ def render_vector_db_management(chat_controller):
                                             # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
                                             if 'collections_data' in st.session_state:
                                                 del st.session_state.collections_data
-                                            # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                                            st.markdown("""
-                                            <script>
-                                            setTimeout(function() {
-                                                window.location.reload();
-                                            }, 1000);
-                                            </script>
-                                            """, unsafe_allow_html=True)
+                                            # 자동 새로고침
+                                            st.rerun()
                                         elif "not found" in error_msg:
                                             st.error(f"컬렉션 '{old_name}'을 찾을 수 없습니다.")
                                         else:
@@ -1301,14 +1274,8 @@ def render_vector_db_management(chat_controller):
                             # 세션 상태에서 컬렉션 데이터 제거하여 새로고침 강제
                             if 'collections_data' in st.session_state:
                                 del st.session_state.collections_data
-                            # JavaScript를 사용한 페이지 새로고침 (무한 루프 방지)
-                            st.markdown("""
-                            <script>
-                            setTimeout(function() {
-                                window.location.reload();
-                            }, 1000);
-                            </script>
-                            """, unsafe_allow_html=True)
+                            # 자동 새로고침
+                            st.rerun()
                         else:
                             error_msg = response.get('error', '알 수 없는 오류')
                             if "already selected" in error_msg or "이미 선택된" in error_msg:

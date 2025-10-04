@@ -80,11 +80,19 @@ class WebSearchService:
                 
                 search_results = []
                 for item in result.get("items", []):
+                    title = item.get("title", "")
+                    url = item.get("link", "")
+                    domain = self._extract_domain(url)
+                    
+                    # 제목이 없는 경우 도메인을 제목으로 사용
+                    if not title:
+                        title = domain if domain else "웹 검색 결과"
+                    
                     search_results.append(SearchResult(
-                        title=item.get("title", ""),
-                        url=item.get("link", ""),
+                        title=title,
+                        url=url,
                         snippet=item.get("snippet", ""),
-                        domain=self._extract_domain(item.get("link", ""))
+                        domain=domain
                     ))
                 
                 return search_results
@@ -176,7 +184,12 @@ class WebSearchService:
                                         elif url.startswith('/'):
                                             url = 'https://duckduckgo.com' + url
                                         
-                                        if url and title and not url.startswith('javascript:') and not url.startswith('https://duckduckgo.com/l/'):
+                                        if url and not url.startswith('javascript:') and not url.startswith('https://duckduckgo.com/l/'):
+                                            # 제목이 없는 경우 도메인을 제목으로 사용
+                                            if not title:
+                                                domain = self._extract_domain(url)
+                                                title = domain if domain else "웹 검색 결과"
+                                            
                                             search_results.append(SearchResult(
                                                 title=title,
                                                 url=url,
@@ -213,11 +226,19 @@ class WebSearchService:
                         search_results = []
                         
                         for result in data.get("organic_results", []):
+                            title = result.get("title", "")
+                            url = result.get("link", "")
+                            domain = self._extract_domain(url)
+                            
+                            # 제목이 없는 경우 도메인을 제목으로 사용
+                            if not title:
+                                title = domain if domain else "웹 검색 결과"
+                            
                             search_results.append(SearchResult(
-                                title=result.get("title", ""),
-                                url=result.get("link", ""),
+                                title=title,
+                                url=url,
                                 snippet=result.get("snippet", ""),
-                                domain=self._extract_domain(result.get("link", ""))
+                                domain=domain
                             ))
                         
                         return search_results
@@ -300,8 +321,11 @@ class WebSearchService:
         formatted_results = []
         
         for result in results:
+            # 제목이 없는 경우 도메인을 사용
+            display_title = result.title if result.title else result.domain or "웹 검색 결과"
+            
             formatted_results.append({
-                "title": result.title,
+                "title": display_title,
                 "url": result.url,
                 "snippet": result.snippet,
                 "content": result.content or result.snippet,
@@ -310,7 +334,9 @@ class WebSearchService:
                 "metadata": {
                     "search_type": "web",
                     "url": result.url,
-                    "domain": result.domain
+                    "domain": result.domain,
+                    "title": display_title,
+                    "snippet": result.snippet
                 }
             })
         

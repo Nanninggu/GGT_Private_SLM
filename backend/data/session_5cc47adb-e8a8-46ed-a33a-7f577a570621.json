@@ -1,0 +1,15 @@
+{
+  "id": "5cc47adb-e8a8-46ed-a33a-7f577a570621",
+  "created_at": "2025-10-04T13:06:48.850987",
+  "updated_at": "2025-10-04T13:06:48.856222",
+  "messages": [
+    {
+      "id": "f069b1b9-c5b9-44e0-ad06-109e5ee1bff0",
+      "role": "assistant",
+      "content": "러스트 프로그래밍 언어의 예제 코드는 다음과 같습니다:\n\n```rust\n// 아침 식사 구조체 정의 (Breakfast)\nstruct Breakfast {\n    toast_type: String, // 토스트 종류를 저장하는 필드\n    seasonal_fruit: String, // 계절 과일을 저장하는 필드\n}\n\n// 여름에 적합한 토스트를 포함한 아침 식사 생성 함수 summer\npub fn summer(toast_type: &str) -> Breakfast {\n    Breakfast {\n        toast_type: toast_type.to_string(), // 입력받은 문자열을 String으로 변환하여 저장\n        seasonal_fruit: \"peaches\".to_string() // 계절 과일을 \"peaches\"로 설정\n    }\n}\n\n// 레스토랑에서의 주문 예시 함수 eat_at_restaurant\npub fn eat_at_restaurant() {\n    let breakfast = summer(\"Rye\"); // 여름에 rye 토스트로 아침 주문 생성\n    println!(\"I'd like {} toast please\", breakfast.toast_type); // 선택된 토스트 출력\n\n    // 주의: 계절 과일은 수정할 수 없음 (컴파일 에러\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q4_K_M\n- 모델 타입: fast\n- 설명: ⚡ 초고속 응답 (1.6GB, Q4_K_M)\n- 답변 방식: RAG 기반\n- RAG 모드: LangChain RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+      "timestamp": "2025-10-04T13:06:48.843831",
+      "session_id": "5cc47adb-e8a8-46ed-a33a-7f577a570621",
+      "metadata": {}
+    }
+  ]
+}

@@ -190,7 +190,7 @@ class Settings:
         "fast": {
             "model": "exaone3.5:2.4b-instruct-q4_K_M",
             "num_ctx": 2048,
-            "num_predict": 256,
+            "num_predict": 1024,
             "temperature": 0.5,
             "top_p": 0.7,
             "top_k": 10,
@@ -201,7 +201,7 @@ class Settings:
         "quality": {
             "model": "exaone3.5:2.4b-instruct-q8_0",
             "num_ctx": 8192,
-            "num_predict": 1024,
+            "num_predict": 2048,
             "temperature": 0.7,
             "top_p": 0.9,
             "top_k": 40,
@@ -212,7 +212,7 @@ class Settings:
         "complex": {
             "model": "exaone3.5:7.8b",
             "num_ctx": 16384,
-            "num_predict": 2048,
+            "num_predict": 4096,
             "temperature": 0.8,
             "top_p": 0.95,
             "top_k": 50,

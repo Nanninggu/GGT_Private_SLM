@@ -768,13 +768,22 @@ class APIService:
     def rename_collection(self, old_name: str, new_name: str) -> Dict[str, Any]:
         """Rename a collection"""
         try:
+            # Get authentication token from session state
+            token = st.session_state.get("auth_token")
+            if not token:
+                return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+            
             payload = {
                 "old_name": old_name,
                 "new_name": new_name
             }
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
             response = requests.put(
                 f"{self.base_url}/api/collections/rename",
                 json=payload,
+                headers=headers,
                 timeout=self.timeout
             )
             

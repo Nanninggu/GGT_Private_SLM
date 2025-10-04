@@ -91,14 +91,110 @@ ENTERPRISE_THEME_CSS = """
 
 /* 입력 */
 .stTextInput > div > div > input,
-.stTextArea > div > textarea,
-.stSelectbox > div > div {
+.stTextArea > div > textarea {
   border-radius: 10px;
   border: 1px solid rgba(15,23,36,0.08);
   padding: 0.75rem 1rem;
   background: #fff;
   font-size: 0.95rem;
   color: #0f1724;
+}
+
+/* Selectbox 기본 스타일 - 다른 테마들과 동일하게 */
+.stSelectbox > div > div {
+  background: #fff;
+  color: #0f1724;
+  border: 1px solid rgba(15,23,36,0.08);
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.stSelectbox > div > div:focus-within {
+  border-color: var(--primary);
+  border-width: 2px;
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* Selectbox 내부 모든 요소에 대한 높이 보장 */
+.stSelectbox * {
+  color: #0f1724 !important;
+  background: #fff !important;
+}
+
+.stSelectbox div[data-baseweb="select"] {
+  background: #fff !important;
+  color: #0f1724 !important;
+  min-height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.stSelectbox div[data-baseweb="select"] > div {
+  background: #fff !important;
+  color: #0f1724 !important;
+  min-height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0.75rem 1rem !important;
+}
+
+.stSelectbox div[data-baseweb="select"] span {
+  color: #0f1724 !important;
+  background: transparent !important;
+  line-height: 1.5 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* 드롭다운 메뉴 스타일 */
+.stSelectbox div[data-baseweb="select"] ul {
+  background: #fff !important;
+  border: 1px solid rgba(15,23,36,0.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(15,23,36,0.1) !important;
+  min-width: 100% !important;
+}
+
+.stSelectbox div[data-baseweb="select"] ul li {
+  color: #0f1724 !important;
+  background: #fff !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.95rem !important;
+  min-height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  line-height: 1.5 !important;
+}
+
+.stSelectbox div[data-baseweb="select"] ul li:hover {
+  background: rgba(14,165,163,0.08) !important;
+  color: #0f1724 !important;
+}
+
+.stSelectbox div[data-baseweb="select"] ul li[aria-selected="true"] {
+  background: rgba(14,165,163,0.12) !important;
+  color: #0f1724 !important;
+  font-weight: 600 !important;
+}
+
+/* Selectbox 화살표 아이콘 */
+.stSelectbox div[data-baseweb="select"] svg {
+  color: #0f1724 !important;
+  background: transparent !important;
+}
+
+/* 추가적인 높이 보장을 위한 스타일 */
+.stSelectbox .stSelectbox > div {
+  min-height: 2.5rem !important;
+}
+
+.stSelectbox .stSelectbox > div > div {
+  min-height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 /* 탭 - 선택 시 강조 색상 */

@@ -728,34 +728,47 @@ class LangChainVectorService:
                 if is_shared:
                     # Get current user_id to store in metadata
                     current_result = await session.execute(text("""
-                        SELECT user_id FROM langchain_pg_collection WHERE name = :collection_name
+                        SELECT user_id, cmetadata FROM langchain_pg_collection WHERE name = :collection_name
                     """), {"collection_name": collection_name})
                     current_row = current_result.fetchone()
                     original_user_id = current_row.user_id if current_row else None
+                    current_metadata = current_row.cmetadata if current_row and current_row.cmetadata else {}
+                    
+                    # Update metadata with is_shared and created_by
+                    updated_metadata = current_metadata.copy()
+                    updated_metadata['is_shared'] = is_shared
+                    updated_metadata['created_by'] = original_user_id or "system"
                     
                     result = await session.execute(text("""
                         UPDATE langchain_pg_collection 
                         SET user_id = NULL,
-                            cmetadata = jsonb_set(
-                                jsonb_set(cmetadata, '{is_shared}', :is_shared::jsonb),
-                                '{created_by}', :created_by::jsonb
-                            )
+                            cmetadata = :updated_metadata
                         WHERE name = :collection_name
                     """), {
                         "collection_name": collection_name,
-                        "is_shared": json.dumps(is_shared),
-                        "created_by": json.dumps(original_user_id or "system")
+                        "updated_metadata": json.dumps(updated_metadata)
                     })
                 else:
+                    # Get current metadata to preserve other fields
+                    current_result = await session.execute(text("""
+                        SELECT cmetadata FROM langchain_pg_collection WHERE name = :collection_name
+                    """), {"collection_name": collection_name})
+                    current_row = current_result.fetchone()
+                    current_metadata = current_row.cmetadata if current_row and current_row.cmetadata else {}
+                    
+                    # Update metadata with is_shared
+                    updated_metadata = current_metadata.copy()
+                    updated_metadata['is_shared'] = is_shared
+                    
                     result = await session.execute(text("""
                         UPDATE langchain_pg_collection 
                         SET user_id = :new_user_id,
-                            cmetadata = jsonb_set(cmetadata, '{is_shared}', :is_shared::jsonb)
+                            cmetadata = :updated_metadata
                         WHERE name = :collection_name
                     """), {
                         "new_user_id": new_user_id, 
                         "collection_name": collection_name,
-                        "is_shared": json.dumps(is_shared)
+                        "updated_metadata": json.dumps(updated_metadata)
                     })
                 
                 if result.rowcount == 0:

@@ -34,6 +34,12 @@ def check_auth_status():
 def search_web(query: str, num_results: int = 10, search_engine: str = "duckduckgo") -> Dict[str, Any]:
     """웹 검색을 수행합니다."""
     try:
+        # Get authentication token from session state
+        token = st.session_state.get("auth_token")
+        if not token:
+            st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+            return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+        
         # 검색 엔진 이름을 API 형식으로 변환
         engine_mapping = {
             "DuckDuckGo (무료)": "duckduckgo",
@@ -42,6 +48,10 @@ def search_web(query: str, num_results: int = 10, search_engine: str = "duckduck
         }
         engine = engine_mapping.get(search_engine, "duckduckgo")
         
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+        
         response = requests.post(
             f"{API_BASE_URL}/api/web-search/search",
             json={
@@ -49,6 +59,7 @@ def search_web(query: str, num_results: int = 10, search_engine: str = "duckduck
                 "num_results": num_results,
                 "search_engine": engine
             },
+            headers=headers,
             timeout=30
         )
         response.raise_for_status()
@@ -60,6 +71,12 @@ def search_web(query: str, num_results: int = 10, search_engine: str = "duckduck
 def search_and_save_to_collection(query: str, collection_name: str, num_results: int = 10, search_engine: str = "duckduckgo") -> Dict[str, Any]:
     """웹 검색을 수행하고 결과를 컬렉션에 저장합니다."""
     try:
+        # Get authentication token from session state
+        token = st.session_state.get("auth_token")
+        if not token:
+            st.error("인증 토큰이 없습니다. 로그인이 필요합니다.")
+            return {"success": False, "error": "인증 토큰이 없습니다. 로그인이 필요합니다."}
+        
         # 검색 엔진 이름을 API 형식으로 변환
         engine_mapping = {
             "DuckDuckGo (무료)": "duckduckgo",
@@ -67,6 +84,10 @@ def search_and_save_to_collection(query: str, collection_name: str, num_results:
             "SerpAPI": "serpapi"
         }
         engine = engine_mapping.get(search_engine, "duckduckgo")
+        
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
         
         response = requests.post(
             f"{API_BASE_URL}/api/web-search/search-and-save",
@@ -77,6 +98,7 @@ def search_and_save_to_collection(query: str, collection_name: str, num_results:
                 "auto_save": True,
                 "search_engine": engine
             },
+            headers=headers,
             timeout=60
         )
         response.raise_for_status()
@@ -204,7 +226,7 @@ def main():
         num_results = st.slider(
             "검색 결과 수",
             min_value=1,
-            max_value=20,
+            max_value=10,
             value=10,
             help="가져올 검색 결과의 개수를 선택하세요."
         )
@@ -438,10 +460,9 @@ def main():
             
             new_collection_name = st.text_input(
                 "새 컬렉션 이름",
-                value=st.session_state.get("new_collection_name_input", ""),
                 placeholder="새 컬렉션 이름을 입력하세요...",
                 help="새로운 컬렉션을 생성합니다.",
-                key="new_collection_name_input"
+                key="web_search_new_collection_name"
             )
             
             # 컬렉션 타입에 따른 안내 메시지
@@ -498,7 +519,8 @@ def main():
                                     # 폼 숨기기
                                     st.session_state.show_new_collection_form = False
                                     # 입력 필드 초기화
-                                    st.session_state.new_collection_name_input = ""
+                                    if "web_search_new_collection_name" in st.session_state:
+                                        del st.session_state.web_search_new_collection_name
                                     st.rerun()
                                 elif response.status_code == 401:
                                     st.error("인증이 필요합니다. 로그인 페이지로 이동해주세요.")
@@ -516,7 +538,8 @@ def main():
                                         # 폼 숨기기
                                         st.session_state.show_new_collection_form = False
                                         # 입력 필드 초기화
-                                        st.session_state.new_collection_name_input = ""
+                                        if "web_search_new_collection_name" in st.session_state:
+                                            del st.session_state.web_search_new_collection_name
                                         st.rerun()
                                     else:
                                         st.error(f"컬렉션 생성 실패: {error_data.get('detail', response.text)}")
@@ -529,7 +552,8 @@ def main():
                 if st.button("❌ 취소", use_container_width=True):
                     st.session_state.show_new_collection_form = False
                     # 입력 필드 초기화
-                    st.session_state.new_collection_name_input = ""
+                    if "web_search_new_collection_name" in st.session_state:
+                        del st.session_state.web_search_new_collection_name
             
             with col3:
                 if st.button("🔄 새로고침", use_container_width=True):

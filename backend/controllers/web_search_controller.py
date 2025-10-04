@@ -35,7 +35,10 @@ class WebSearchAndSaveRequest(BaseModel):
     search_engine: Optional[str] = "duckduckgo"
 
 @router.post("/search", response_model=WebSearchResponse)
-async def search_web(request: WebSearchRequest):
+async def search_web(
+    request: WebSearchRequest,
+    current_user: User = Depends(auth_controller.get_current_user)
+):
     """웹 검색을 수행합니다."""
     try:
         web_search_service = WebSearchService()

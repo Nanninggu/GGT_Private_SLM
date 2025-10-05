@@ -99,6 +99,14 @@ def main():
     if "login_mode" not in st.session_state:
         st.session_state.login_mode = "login"
     
+    # Debug: 세션 상태 확인
+    if st.session_state.get("debug_mode", False):
+        st.write("🔍 Debug - 세션 상태:")
+        st.write(f"auth_token: {bool(st.session_state.get('auth_token'))}")
+        st.write(f"user_info: {bool(st.session_state.get('user_info'))}")
+        st.write(f"refresh_token: {bool(st.session_state.get('refresh_token'))}")
+        st.write(f"login_time: {bool(st.session_state.get('login_time'))}")
+    
     # Check if user is already logged in with auto token refresh
     if st.session_state.get("auth_token") and st.session_state.get("user_info"):
         # Check if token needs refresh

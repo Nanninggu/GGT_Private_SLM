@@ -322,6 +322,18 @@ def main():
     if sidebar_action == "clear_chat":
         st.session_state.messages = []
     elif sidebar_action == "logout":
+        # 서버에 로그아웃 요청 전송
+        auth_token = st.session_state.get("auth_token")
+        if auth_token:
+            try:
+                from services.api_service import APIService
+                api_service = APIService()
+                logout_result = api_service.logout(auth_token)
+                if not logout_result.get("success", False):
+                    print(f"서버 로그아웃 실패: {logout_result.get('error', 'Unknown error')}")
+            except Exception as e:
+                print(f"서버 로그아웃 요청 중 오류: {e}")
+        
         # Use new session management service if available
         user_info = st.session_state.get("user_info", {})
         user_id = user_info.get("id", "default")
@@ -331,18 +343,22 @@ def main():
             # 현재 메시지가 있으면 저장
             if st.session_state.get("messages"):
                 new_session_manager.save_current_session(user_id)
-            new_session_manager.logout_user(user_id)
+            # 사용자 세션만 제거 (전체 세션 상태 삭제는 하지 않음)
+            if user_id in st.session_state.get("user_sessions", {}):
+                del st.session_state.user_sessions[user_id]
         else:
             # Fallback to old session management
             session_manager.save_current_session()
-            session_manager.clear_session()
+            # session_manager.clear_session() - 메서드가 존재하지 않음
         
         # 영구 저장된 인증 상태도 삭제
         AuthPersistence.clear_auth_state()
         
-        # 인증 복원 플래그 초기화
-        if "auth_restored" in st.session_state:
-            del st.session_state.auth_restored
+        # 인증 관련 세션 상태 명시적 삭제
+        auth_keys = ["auth_token", "user_info", "refresh_token", "login_time", "auth_restored"]
+        for key in auth_keys:
+            if key in st.session_state:
+                del st.session_state[key]
         
         st.session_state.messages = []
         st.session_state.current_page = "login"

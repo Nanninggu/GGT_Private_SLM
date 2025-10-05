@@ -3,6 +3,7 @@ FastAPI backend server for the chatbot
 Converted from Spring Boot with enhanced RAG capabilities
 """
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sse_starlette.sse import EventSourceResponse
@@ -21,7 +22,7 @@ from contextlib import asynccontextmanager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ChatController is now replaced by direct chat_service usage
-from backend.controllers.auth_controller import auth_controller
+from backend.controllers.auth_controller import auth_controller, security
 from backend.controllers.web_search_controller import router as web_search_router
 from backend.controllers.accuracy_controller import AccuracyController
 from backend.controllers.performance_controller import PerformanceController
@@ -2202,14 +2203,23 @@ async def get_current_user(current_user = Depends(auth_controller.get_current_us
     }
 
 @app.post("/api/auth/logout")
-async def logout(current_user = Depends(auth_controller.get_current_user)):
+async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Logout user"""
     try:
-        success = auth_controller.logout(current_user.id)
+        token = credentials.credentials
+        # Get current user to validate token and get user_id
+        current_user = await auth_controller.get_current_user(credentials)
+        if not current_user:
+            raise HTTPException(status_code=401, detail="유효하지 않은 인증 토큰입니다.")
+        
+        # Logout with token blacklisting
+        success = auth_controller.logout(current_user.id, token)
         return {
             "success": success,
             "message": "로그아웃되었습니다." if success else "로그아웃 중 오류가 발생했습니다."
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Logout failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -20,12 +20,50 @@ logger = logging.getLogger(__name__)
 class ChatService:
     """Service layer for chat functionality"""
 
+    """
+        # `self`는 해당 클래스의 인스턴스 자체를 가리킴.
+        # 인스턴스 메서드에서 인스턴스 속성과 다른 메서드에 접근/수정할 때 사용됨.
+        # 각 인스턴스는 별도의 `self.*` 속성 집합을 가짐.
+        # 결국 외부 코드를 self.* 을 통해 해당 코드를 사용 할 수 있게 됨. (ex. self.repository = DBChatRepository())
+    """
     def __init__(self):
-        self.repository = DBChatRepository()
-        self.llm_service = ollama_service
-        self.rag_service = langchain_rag_service
-        self._initialized = False
+        self.repository = DBChatRepository()    # 인스턴스별 DB 리포지토리 할당
+        self.llm_service = ollama_service   # 외부 LLM 서비스 참조 할당
+        self.rag_service = langchain_rag_service    # RAG 서비스 참조 할당
+        self._initialized = False   # 인스턴스 초기화 상태 플래그
 
+
+    """
+    Create a new chat session
+
+    예제:
+    입력값:
+      - 없음 (메서드 호출 시 self는 ChatService 인스턴스)
+
+    출력값(리턴):
+      - ChatSession 객체
+
+    예시 리턴값(의사표현, 실제 타입은 ChatSession):
+    ChatSession(
+        id='550e8400-e29b-41d4-a716-446655440000',
+        messages=[],  # List[ChatMessage], 새 세션은 빈 리스트
+        created_at=datetime(2025, 10, 5, 10, 0, 0),
+        updated_at=datetime(2025, 10, 5, 10, 0, 0)
+    )
+
+    dict 형태(디버깅/로그용 예시):
+    {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "messages": [],
+        "created_at": "2025-10-05T10:00:00",
+        "updated_at": "2025-10-05T10:00:00"
+        
+        추가로 리턴 타입은 ChatSession 객체임.
+        함수 시그니처가 async def create_session(self) -> ChatSession:로 되어 있어 타입 힌트는 ChatSession이고, 
+        정상 종료 시 ChatSession 객체를 반환합니다. 
+        비동기 함수이므로 호출자는 await로 결과를 받아야 하며, 예외 발생 시 예외가 전파됩니다.
+    }
+    """
     async def create_session(self) -> ChatSession:
         """Create a new chat session"""
         try:

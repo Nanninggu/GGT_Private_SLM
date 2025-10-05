@@ -19,6 +19,8 @@ class AuthService:
         self.algorithm = settings.JWT_ALGORITHM
         self.access_token_expire_minutes = settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         self.refresh_token_expire_days = settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        # 토큰 블랙리스트 (메모리 기반, 프로덕션에서는 Redis 사용 권장)
+        self.token_blacklist = set()
     
     def hash_password(self, password: str) -> str:
         """Hash password using SHA-256 with salt"""
@@ -63,6 +65,10 @@ class AuthService:
     def verify_token(self, token: str) -> Optional[TokenData]:
         """Verify and decode JWT token"""
         try:
+            # Check if token is blacklisted
+            if token in self.token_blacklist:
+                return None
+                
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             
             # Check if token type is correct (access token)
@@ -289,11 +295,44 @@ class AuthService:
         except Exception:
             return None
     
-    def logout_user(self, user_id: str) -> bool:
-        """Logout user (in a real implementation, you might want to blacklist the token)"""
-        # For now, we'll just return True
-        # In a production system, you might want to maintain a blacklist of tokens
-        return True
+    def logout_user(self, user_id: str, token: str = None) -> bool:
+        """Logout user and blacklist token"""
+        try:
+            # Add token to blacklist if provided
+            if token:
+                self.token_blacklist.add(token)
+                print(f"Token blacklisted for user {user_id}")
+            
+            # Clean up expired tokens from blacklist (optional optimization)
+            self._cleanup_expired_tokens()
+            
+            return True
+        except Exception as e:
+            print(f"Logout error for user {user_id}: {e}")
+            return False
+    
+    def _cleanup_expired_tokens(self):
+        """Clean up expired tokens from blacklist"""
+        try:
+            current_time = datetime.utcnow().timestamp()
+            expired_tokens = []
+            
+            for token in self.token_blacklist:
+                try:
+                    payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm], options={"verify_exp": False})
+                    exp = payload.get('exp', 0)
+                    if exp < current_time:
+                        expired_tokens.append(token)
+                except:
+                    # Invalid token, remove it
+                    expired_tokens.append(token)
+            
+            # Remove expired tokens
+            for token in expired_tokens:
+                self.token_blacklist.discard(token)
+                
+        except Exception as e:
+            print(f"Token cleanup error: {e}")
 
 # Global auth service instance
 auth_service = AuthService()

@@ -40,9 +40,9 @@ class AuthController:
             )
         return user
     
-    def logout(self, user_id: str) -> bool:
+    def logout(self, user_id: str, token: str = None) -> bool:
         """Logout user"""
-        return self.auth_service.logout_user(user_id)
+        return self.auth_service.logout_user(user_id, token)
     
     def verify_token(self, token: str) -> bool:
         """Verify if token is valid"""

@@ -1744,6 +1744,30 @@ class ChatComponents:
             # Logout button
             st.markdown("---")
             if st.button("🚪 로그아웃", key="logout", use_container_width=True, type="secondary"):
+                # 서버에 로그아웃 요청 전송
+                auth_token = st.session_state.get("auth_token")
+                if auth_token:
+                    try:
+                        from services.api_service import APIService
+                        api_service = APIService()
+                        logout_result = api_service.logout(auth_token)
+                        if not logout_result.get("success", False):
+                            print(f"서버 로그아웃 실패: {logout_result.get('error', 'Unknown error')}")
+                    except Exception as e:
+                        print(f"서버 로그아웃 요청 중 오류: {e}")
+                
+                # 사용자 세션 정리
+                user_info = st.session_state.get("user_info", {})
+                user_id = user_info.get("id", "default")
+                if user_id in st.session_state.get("user_sessions", {}):
+                    del st.session_state.user_sessions[user_id]
+                
+                # 인증 관련 세션 상태 명시적 삭제
+                auth_keys = ["auth_token", "user_info", "refresh_token", "login_time", "auth_restored"]
+                for key in auth_keys:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                
                 # Clear all session state
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]

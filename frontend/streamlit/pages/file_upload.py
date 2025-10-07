@@ -180,6 +180,8 @@ def main():
         - 기본 컬렉션 'documents'를 사용합니다
         - LangChain RAG 모드에서 컬렉션 관리가 가능합니다
         """)
+        # Set default collection for basic RAG mode
+        selected_collection = "documents"
     
     # Upload mode selector
     upload_mode = st.sidebar.radio(

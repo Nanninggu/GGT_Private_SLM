@@ -5,7 +5,7 @@
     "username": "admin",
     "email": "admin@example.com"
   },
-  "current_session_id": "889c8640-cde0-4d25-8451-cc95c4f8ca57",
+  "current_session_id": "62f98b1e-709f-484e-a896-571c32e102b3",
   "sessions": {
     "user_eee65338-086b-457a-8746-b88cceac42a3_default_session": {
       "session_id": "user_eee65338-086b-457a-8746-b88cceac42a3_default_session",
@@ -152,7 +152,7 @@
       "session_id": "62f98b1e-709f-484e-a896-571c32e102b3",
       "title": "디아블로2_소서리스육성",
       "created_at": "2025-10-04T15:30:51.747637",
-      "last_activity": "2025-10-04T23:20:15.976545",
+      "last_activity": "2025-10-08T03:00:56.066808",
       "message_count": 37,
       "messages": [
         {
@@ -483,7 +483,7 @@
       "session_id": "787ddd28-59cd-4df1-9569-c0efa3564762",
       "title": "근로기준법",
       "created_at": "2025-10-04T23:45:57.861304",
-      "last_activity": "2025-10-05T01:53:11.846077",
+      "last_activity": "2025-10-08T01:38:14.714380",
       "message_count": 0,
       "messages": [],
       "metadata": {
@@ -497,7 +497,21 @@
       "session_id": "889c8640-cde0-4d25-8451-cc95c4f8ca57",
       "title": "새 대화 (10/05 01:53)",
       "created_at": "2025-10-05T01:53:11.848327",
-      "last_activity": "2025-10-06T02:14:37.533077",
+      "last_activity": "2025-10-08T01:38:03.753344",
+      "message_count": 0,
+      "messages": [],
+      "metadata": {
+        "user_id": "eee65338-086b-457a-8746-b88cceac42a3",
+        "is_active": true,
+        "tags": [],
+        "favorite": false
+      }
+    },
+    "6604ba25-1678-413d-8a2d-5041523133fa": {
+      "session_id": "6604ba25-1678-413d-8a2d-5041523133fa",
+      "title": "흠",
+      "created_at": "2025-10-08T02:10:31.506009",
+      "last_activity": "2025-10-08T02:28:37.757099",
       "message_count": 0,
       "messages": [],
       "metadata": {
@@ -524,6 +538,6 @@
       "auto_save": true
     }
   },
-  "last_activity": "2025-10-06T02:13:40.924864",
-  "login_time": "2025-10-06T02:13:40.924868"
+  "last_activity": "2025-10-08T03:00:52.203591",
+  "login_time": "2025-10-08T03:00:52.203595"
 }

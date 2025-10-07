@@ -113,41 +113,43 @@ def main():
     # Initialize session state with persistent session manager
     session_manager.initialize_session()
     
-    # 새로고침 시 인증 상태 자동 복원
-    if not st.session_state.get("auth_token") and not st.session_state.get("auth_restored"):
-        auth_data = AuthPersistence.load_auth_state()
-        if auth_data:
-            # 토큰 만료 확인
-            if not AuthPersistence.is_token_expired(auth_data.get("login_time", "")):
-                # 토큰이 유효하면 session_state에 복원
-                AuthPersistence.restore_auth_to_session(auth_data)
-                st.session_state.auth_restored = True
-                st.rerun()  # 복원 후 페이지 새로고침
-            else:
-                # 토큰이 만료되었으면 refresh 시도
-                refresh_token = auth_data.get("refresh_token")
-                if refresh_token:
-                    try:
-                        from services.api_service import APIService
-                        api_service = APIService(base_url="http://localhost:9502")
-                        result = api_service.refresh_token(refresh_token)
-                        if result.get("success"):
-                            # 새로운 토큰으로 인증 상태 업데이트
-                            AuthPersistence.save_auth_state(
-                                result.get("access_token"),
-                                result.get("refresh_token"),
-                                result.get("user", auth_data.get("user_info", {})),
-                                datetime.now().isoformat()
-                            )
-                            st.session_state.auth_restored = True
-                            st.rerun()
-                        else:
-                            # refresh 실패 시 저장된 인증 상태 삭제
-                            AuthPersistence.clear_auth_state()
-                    except:
-                        AuthPersistence.clear_auth_state()
+    # 🔥 중요: 로그아웃 플래그가 있으면 인증 상태 복원하지 않음
+    if not st.session_state.get("logout_flag", False):
+        # 새로고침 시 인증 상태 자동 복원
+        if not st.session_state.get("auth_token") and not st.session_state.get("auth_restored"):
+            auth_data = AuthPersistence.load_auth_state()
+            if auth_data:
+                # 토큰 만료 확인
+                if not AuthPersistence.is_token_expired(auth_data.get("login_time", "")):
+                    # 토큰이 유효하면 session_state에 복원
+                    AuthPersistence.restore_auth_to_session(auth_data)
+                    st.session_state.auth_restored = True
+                    st.rerun()  # 복원 후 페이지 새로고침
                 else:
-                    AuthPersistence.clear_auth_state()
+                    # 토큰이 만료되었으면 refresh 시도
+                    refresh_token = auth_data.get("refresh_token")
+                    if refresh_token:
+                        try:
+                            from services.api_service import APIService
+                            api_service = APIService(base_url="http://localhost:9502")
+                            result = api_service.refresh_token(refresh_token)
+                            if result.get("success"):
+                                # 새로운 토큰으로 인증 상태 업데이트
+                                AuthPersistence.save_auth_state(
+                                    result.get("access_token"),
+                                    result.get("refresh_token"),
+                                    result.get("user", auth_data.get("user_info", {})),
+                                    datetime.now().isoformat()
+                                )
+                                st.session_state.auth_restored = True
+                                st.rerun()
+                            else:
+                                # refresh 실패 시 저장된 인증 상태 삭제
+                                AuthPersistence.clear_auth_state()
+                        except:
+                            AuthPersistence.clear_auth_state()
+                    else:
+                        AuthPersistence.clear_auth_state()
     
     # Initialize other session state
     if "messages" not in st.session_state:
@@ -183,7 +185,7 @@ def main():
     
     # Route to different pages without calling st.set_page_config
     if current_page == "login":
-        from pages.login import main as login_main
+        from auth.login import main as login_main
         login_main()
         return
     elif current_page == "file_upload":
@@ -217,6 +219,13 @@ def main():
         # Default to main page
         st.session_state.current_page = "main"
         # Don't rerun here to avoid infinite loop
+    
+    # 🎉 로그인 성공 메시지 표시
+    if st.session_state.get("login_success", False):
+        st.success("🎉 로그인에 성공했습니다! AI 채팅 서비스를 이용해보세요!")
+        # 로그인 성공 플래그 제거 (한 번만 표시)
+        if "login_success" in st.session_state:
+            del st.session_state.login_success
     
     # Check authentication for main page
     if not check_auth_status():

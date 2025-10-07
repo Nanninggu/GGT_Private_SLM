@@ -107,49 +107,62 @@ def main():
         st.write(f"refresh_token: {bool(st.session_state.get('refresh_token'))}")
         st.write(f"login_time: {bool(st.session_state.get('login_time'))}")
     
-    # Check if user is already logged in with auto token refresh
-    if st.session_state.get("auth_token") and st.session_state.get("user_info"):
-        # Check if token needs refresh
-        login_time = st.session_state.get("login_time")
-        if login_time:
-            try:
-                login_datetime = datetime.fromisoformat(login_time)
-                # Check if more than 7 hours have passed (8 hours - 1 hour buffer)
-                if datetime.now() - login_datetime > timedelta(hours=7):
-                    # Try to refresh token
-                    refresh_token = st.session_state.get("refresh_token")
-                    if refresh_token:
-                        try:
-                            from services.api_service import APIService
-                            api_service = APIService()
-                            result = api_service.refresh_token(refresh_token)
-                            if result.get("success"):
-                                st.session_state.auth_token = result.get("access_token")
-                                st.session_state.refresh_token = result.get("refresh_token")
-                                st.session_state.login_time = datetime.now().isoformat()
-                                # Update user info if available
-                                if result.get("user"):
-                                    st.session_state.user_info = result.get("user")
-                                st.success("세션이 자동으로 갱신되었습니다.")
-                            else:
-                                # If refresh fails, clear session
-                                st.session_state.auth_token = None
-                                st.session_state.user_info = None
-                                st.session_state.refresh_token = None
-                                st.session_state.login_time = None
-                                st.warning("세션이 만료되었습니다. 다시 로그인해주세요.")
+    # 🔥 중요: 로그아웃 플래그 확인
+    if st.session_state.get("logout_flag", False):
+        # 로그아웃 후에는 인증 상태 복원하지 않음
+        st.info("로그아웃되었습니다. 다시 로그인해주세요.")
+        # 로그아웃 플래그 제거
+        if "logout_flag" in st.session_state:
+            del st.session_state.logout_flag
+        # 인증 상태 완전 초기화
+        auth_keys = ["auth_token", "user_info", "refresh_token", "login_time", "auth_restored"]
+        for key in auth_keys:
+            if key in st.session_state:
+                del st.session_state[key]
+    else:
+        # Check if user is already logged in with auto token refresh
+        if st.session_state.get("auth_token") and st.session_state.get("user_info"):
+            # Check if token needs refresh
+            login_time = st.session_state.get("login_time")
+            if login_time:
+                try:
+                    login_datetime = datetime.fromisoformat(login_time)
+                    # Check if more than 7 hours have passed (8 hours - 1 hour buffer)
+                    if datetime.now() - login_datetime > timedelta(hours=7):
+                        # Try to refresh token
+                        refresh_token = st.session_state.get("refresh_token")
+                        if refresh_token:
+                            try:
+                                from services.api_service import APIService
+                                api_service = APIService()
+                                result = api_service.refresh_token(refresh_token)
+                                if result.get("success"):
+                                    st.session_state.auth_token = result.get("access_token")
+                                    st.session_state.refresh_token = result.get("refresh_token")
+                                    st.session_state.login_time = datetime.now().isoformat()
+                                    # Update user info if available
+                                    if result.get("user"):
+                                        st.session_state.user_info = result.get("user")
+                                    st.success("세션이 자동으로 갱신되었습니다.")
+                                else:
+                                    # If refresh fails, clear session
+                                    st.session_state.auth_token = None
+                                    st.session_state.user_info = None
+                                    st.session_state.refresh_token = None
+                                    st.session_state.login_time = None
+                                    st.warning("세션이 만료되었습니다. 다시 로그인해주세요.")
+                                    return
+                            except:
+                                st.warning("세션 갱신 중 오류가 발생했습니다. 다시 로그인해주세요.")
                                 return
-                        except:
-                            st.warning("세션 갱신 중 오류가 발생했습니다. 다시 로그인해주세요.")
-                            return
-            except:
-                pass
-        
-        st.success("이미 로그인되어 있습니다.")
-        if st.button("메인 페이지로 이동"):
-            st.session_state.current_page = "main"
-            st.rerun()
-        return
+                except:
+                    pass
+            
+            st.success("이미 로그인되어 있습니다.")
+            if st.button("메인 페이지로 이동"):
+                st.session_state.current_page = "main"
+                st.rerun()
+            return
     
     # Main container
     st.markdown("""
@@ -204,16 +217,20 @@ def main():
                     
                     if session_manager and user_id != "default":
                         session_manager.initialize_user_session(user_id, user_info)
-                        st.success("로그인에 성공했습니다! 사용자별 세션이 초기화되었습니다.")
+                        st.success("✅ 로그인에 성공했습니다! 메인 페이지로 이동합니다...")
                     else:
                         # Fallback to old session management
                         try:
                             SessionManager.save_current_session()
                         except Exception as e:
                             print(f"세션 저장 중 오류 (무시됨): {e}")
-                        st.success("로그인에 성공했습니다!")
+                        st.success("✅ 로그인에 성공했습니다! 메인 페이지로 이동합니다...")
                     
+                    # 🚀 메인 페이지로 자동 이동
                     st.session_state.current_page = "main"
+                    st.session_state.login_success = True  # 로그인 성공 플래그 추가
+                    
+                    # 즉시 페이지 새로고침하여 메인 페이지로 이동
                     st.rerun()
                 else:
                     st.error(result.get("message", "로그인에 실패했습니다."))
@@ -259,22 +276,35 @@ def main():
                     st.session_state.refresh_token = result.get("refresh_token")
                     st.session_state.login_time = datetime.now().isoformat()
                     
+                    # 영구 저장을 위한 인증 상태 저장
+                    from utils.auth_persistence import AuthPersistence
+                    AuthPersistence.save_auth_state(
+                        result.get("access_token"),
+                        result.get("refresh_token"),
+                        result.get("user"),
+                        datetime.now().isoformat()
+                    )
+                    
                     # Initialize user session with new session management service
                     user_info = result.get("user")
                     user_id = user_info.get("id", "default")
                     
                     if session_manager and user_id != "default":
                         session_manager.initialize_user_session(user_id, user_info)
-                        st.success("회원가입이 완료되었습니다! 사용자별 세션이 초기화되었습니다.")
+                        st.success("✅ 회원가입이 완료되었습니다! 메인 페이지로 이동합니다...")
                     else:
                         # Fallback to old session management
                         try:
                             SessionManager.save_current_session()
                         except Exception as e:
                             print(f"세션 저장 중 오류 (무시됨): {e}")
-                        st.success("회원가입이 완료되었습니다! 자동으로 로그인됩니다.")
+                        st.success("✅ 회원가입이 완료되었습니다! 메인 페이지로 이동합니다...")
                     
+                    # 🚀 메인 페이지로 자동 이동
                     st.session_state.current_page = "main"
+                    st.session_state.login_success = True  # 로그인 성공 플래그 추가
+                    
+                    # 즉시 페이지 새로고침하여 메인 페이지로 이동
                     st.rerun()
                 else:
                     st.error(result.get("message", "회원가입에 실패했습니다."))

@@ -432,6 +432,9 @@ class PDFService:
             if not content or not content.strip():
                 continue
             
+            # Sanitize content to prevent PDF generation errors
+            content = self._sanitize_content_for_pdf(content)
+            
             # Role indicator and styling with enhanced quality
             if role == "user":
                 role_text = "👤 사용자"
@@ -704,6 +707,9 @@ class PDFService:
         """Add basic syntax highlighting for common programming languages"""
         import re
         
+        # First, clean up any existing malformed font tags to prevent nesting
+        code = self._clean_malformed_font_tags(code)
+        
         # Common keywords for syntax highlighting
         keywords = [
             'def', 'class', 'import', 'from', 'if', 'else', 'elif', 'for', 'while', 'try', 'except', 'finally',
@@ -713,33 +719,166 @@ class PDFService:
             'int', 'string', 'boolean', 'float', 'double', 'char', 'void', 'null', 'undefined', 'true', 'false'
         ]
         
-        # Create pattern for keywords
+        # Create pattern for keywords - use a simpler approach to avoid lookbehind issues
         keyword_pattern = r'\b(' + '|'.join(keywords) + r')\b'
         
         def highlight_keyword(match):
             keyword = match.group(1)
+            # Check if we're already inside a font tag by looking at the context
+            start_pos = match.start()
+            before_text = code[:start_pos]
+            # Count unclosed font tags
+            open_fonts = before_text.count('<font') - before_text.count('</font>')
+            if open_fonts > 0:
+                return keyword  # Don't highlight if already inside a font tag
             return f'<font color="#0066CC"><b>{keyword}</b></font>'
         
         # Apply keyword highlighting
         highlighted_code = re.sub(keyword_pattern, highlight_keyword, code)
         
-        # Highlight strings (basic implementation)
+        # Highlight strings (basic implementation) - use simpler approach
         string_pattern = r'(["\'])(?:(?!\1)[^\\]|\\.)*\1'
         def highlight_string(match):
             string_content = match.group(0)
+            start_pos = match.start()
+            before_text = code[:start_pos]
+            # Count unclosed font tags
+            open_fonts = before_text.count('<font') - before_text.count('</font>')
+            if open_fonts > 0:
+                return string_content  # Don't highlight if already inside a font tag
             return f'<font color="#008800">{string_content}</font>'
         
         highlighted_code = re.sub(string_pattern, highlight_string, highlighted_code)
         
-        # Highlight comments
+        # Highlight comments - use simpler approach
         comment_pattern = r'(#.*?$|//.*?$|/\*.*?\*/)'
         def highlight_comment(match):
             comment = match.group(1)
+            start_pos = match.start()
+            before_text = code[:start_pos]
+            # Count unclosed font tags
+            open_fonts = before_text.count('<font') - before_text.count('</font>')
+            if open_fonts > 0:
+                return comment  # Don't highlight if already inside a font tag
             return f'<font color="#666666"><i>{comment}</i></font>'
         
         highlighted_code = re.sub(comment_pattern, highlight_comment, highlighted_code, flags=re.MULTILINE)
         
         return highlighted_code
+    
+    def _clean_malformed_font_tags(self, text: str) -> str:
+        """Clean up malformed font tags to prevent parsing errors"""
+        import re
+        
+        # Remove malformed font tags with incomplete color attributes
+        text = re.sub(r'<font\s+color=<[^>]*>', '', text)
+        text = re.sub(r'<font\s+color="<[^>]*>', '', text)
+        text = re.sub(r'<font\s+color=\'<[^>]*>', '', text)
+        
+        # Remove nested font tags
+        text = re.sub(r'<font[^>]*><font[^>]*>', '<font color="#000000">', text)
+        
+        # Remove unclosed font tags
+        text = re.sub(r'<font[^>]*(?<!>)$', '', text, flags=re.MULTILINE)
+        
+        # Remove font tags with invalid color values
+        text = re.sub(r'<font[^>]*color="[^"]*<[^"]*"[^>]*>', '', text)
+        text = re.sub(r'<font[^>]*color=\'[^\']*<[^\']*\'[^>]*>', '', text)
+        
+        # Clean up any remaining malformed HTML
+        text = re.sub(r'<[^>]*<[^>]*>', '', text)
+        
+        # Remove malformed HTML with mismatched tags
+        text = re.sub(r'<i[^>]*>[^<]*</font>', '', text)
+        text = re.sub(r'<font[^>]*>[^<]*</i>', '', text)
+        
+        # Remove any remaining malformed tag combinations
+        text = re.sub(r'<[^>]*>[^<]*</[^>]*>', lambda m: m.group(0) if self._is_valid_html_tag(m.group(0)) else '', text)
+        
+        return text
+    
+    def _is_valid_html_tag(self, tag: str) -> bool:
+        """Check if an HTML tag is valid"""
+        import re
+        
+        # Extract opening and closing tags
+        match = re.match(r'<([^>]+)>([^<]*)</([^>]+)>', tag)
+        if not match:
+            return False
+        
+        opening_tag = match.group(1).split()[0]  # Get tag name without attributes
+        closing_tag = match.group(3)
+        
+        return opening_tag == closing_tag
+    
+    def _sanitize_content_for_pdf(self, content: str) -> str:
+        """Sanitize content to prevent PDF generation errors"""
+        if not content:
+            return ""
+        
+        import re
+        
+        # For content with complex malformed HTML, strip all HTML and rebuild cleanly
+        if self._has_complex_malformed_html(content):
+            # Extract text content and rebuild with proper formatting
+            clean_text = self._extract_text_from_malformed_html(content)
+            return clean_text
+        
+        # For simpler cases, use the existing cleaning methods
+        content = self._clean_malformed_font_tags(content)
+        
+        # Remove any remaining malformed HTML tags
+        content = re.sub(r'<[^>]*<[^>]*>', '', content)
+        
+        # Remove unclosed tags
+        content = re.sub(r'<[^>]*(?<!>)$', '', content, flags=re.MULTILINE)
+        
+        # Clean up any remaining problematic HTML patterns
+        content = re.sub(r'<font[^>]*color="[^"]*<[^"]*"[^>]*>', '', content)
+        content = re.sub(r'<font[^>]*color=\'[^\']*<[^\']*\'[^>]*>', '', content)
+        
+        # Remove any remaining malformed attributes
+        content = re.sub(r'<[^>]*\s+[^=]*=<[^>]*>', '', content)
+        
+        return content
+    
+    def _has_complex_malformed_html(self, content: str) -> bool:
+        """Check if content has complex malformed HTML that needs aggressive cleaning"""
+        import re
+        
+        # Check for common malformed patterns
+        malformed_patterns = [
+            r'<font[^>]*>[^<]*</[^i]>',  # font tag closed with wrong tag
+            r'<i[^>]*>[^<]*</font>',     # i tag closed with font
+            r'<font[^>]*color=<[^>]*>',  # malformed color attribute
+            r'<[^>]*<[^>]*>',            # nested angle brackets
+        ]
+        
+        for pattern in malformed_patterns:
+            if re.search(pattern, content):
+                return True
+        
+        return False
+    
+    def _extract_text_from_malformed_html(self, content: str) -> str:
+        """Extract clean text from malformed HTML content"""
+        import re
+        
+        # Remove all HTML tags
+        clean_text = re.sub(r'<[^>]+>', '', content)
+        
+        # Clean up HTML entities
+        clean_text = clean_text.replace('&nbsp;', ' ')
+        clean_text = clean_text.replace('&lt;', '<')
+        clean_text = clean_text.replace('&gt;', '>')
+        clean_text = clean_text.replace('&amp;', '&')
+        clean_text = clean_text.replace('&quot;', '"')
+        clean_text = clean_text.replace('&#x27;', "'")
+        
+        # Clean up extra whitespace
+        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+        
+        return clean_text
     
     def _enhance_pdf_metadata(self, pdf_content: bytes, messages: List[Dict[str, Any]], session_id: str, session_name: str) -> bytes:
         """Enhance PDF with additional metadata and structure improvements"""
@@ -949,6 +1088,9 @@ class PDFService:
     def _process_inline_code(self, text: str, inline_code_style):
         """Process inline code (single backticks) in text with enhanced quality"""
         import re
+        
+        # First, clean up any malformed HTML tags in the input text
+        text = self._clean_malformed_font_tags(text)
         
         # Find inline code patterns
         inline_code_pattern = r'`([^`]+)`'

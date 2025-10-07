@@ -1,5 +1,52 @@
 {
-  "selected_theme": "minimal",
-  "last_updated": "2025-10-05T01:51:32.830393",
-  "user_id": "b4ee0d4f-b710-4162-9527-9987a1208345"
+  "selected_theme": "gemini",
+  "last_updated": "2025-10-08T03:00:29.737533",
+  "user_id": "12d92d2d-5f13-428c-aa62-9d4840f9ef26",
+  "font_settings": {
+    "global_font": {
+      "family": "Inter",
+      "size": "14px",
+      "weight": "400",
+      "line_height": "1.5"
+    },
+    "menu_fonts": {
+      "main_menu": {
+        "family": "Inter",
+        "size": "16px",
+        "weight": "600"
+      },
+      "sub_menu": {
+        "family": "Inter",
+        "size": "14px",
+        "weight": "500"
+      },
+      "page_title": {
+        "family": "Inter",
+        "size": "1.9rem",
+        "weight": "800"
+      },
+      "page_subtitle": {
+        "family": "Inter",
+        "size": "0.95rem",
+        "weight": "400"
+      }
+    },
+    "content_fonts": {
+      "body_text": {
+        "family": "Inter",
+        "size": "14px",
+        "weight": "400"
+      },
+      "button_text": {
+        "family": "Inter",
+        "size": "14px",
+        "weight": "600"
+      },
+      "input_text": {
+        "family": "Inter",
+        "size": "16px",
+        "weight": "400"
+      }
+    }
+  }
 }

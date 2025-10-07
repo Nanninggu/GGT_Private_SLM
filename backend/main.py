@@ -1505,9 +1505,8 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
 async def upload_multiple_files(files: List[UploadFile] = File(...), collection_name: str = Form("documents")):
     """Upload and process multiple files"""
     try:
-        # Switch to specified collection if different from current
-        if collection_name != "langchain_documents":
-            await langchain_rag_service.set_collection(collection_name)
+        # For basic RAG, we use the rag_service directly with the specified collection
+        # No need to switch collections as rag_service.add_document() handles collection parameter
         
         results = []
         

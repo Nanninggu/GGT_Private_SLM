@@ -11,10 +11,7 @@ import os
 # Add current directory to Python path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-try:
-    from services.pdf_service import PDFService
-except ImportError:
-    PDFService = None
+# PDF service removed - only Markdown export supported
 try:
     from services.api_service import APIService
 except ImportError:
@@ -153,45 +150,14 @@ class ChatComponents:
                     if timestamp:
                         st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
                 
-                # User message with PDF icon
-                col1, col2 = st.columns([1, 0.08])
+                # User message with Markdown export icon
+                col1, col2 = st.columns([1, 0.05])
                 with col1:
                     if timestamp:
                         st.caption(f"👤 사용자 • {ChatComponents._format_timestamp(timestamp)}")
                 with col2:
-                    # PDF and Markdown export buttons
-                    col2_1, col2_2 = st.columns(2)
-                    
-                    with col2_1:
-                        if st.button("📄", key=f"download_user_message_pdf_{message_id}", help="PDF 저장", use_container_width=True, type="primary"):
-                            # Generate and download PDF directly
-                            if PDFService:
-                                try:
-                                    pdf_service = PDFService()
-                                    single_message = [message]
-                                    pdf_content = pdf_service.generate_chat_pdf(
-                                        single_message,
-                                        "single_message",
-                                        "개별 메시지",
-                                        True
-                                    )
-                                    
-                                    filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                                    
-                                    st.download_button(
-                                        label="📥 PDF 다운로드",
-                                        data=pdf_content,
-                                        file_name=filename,
-                                        mime="application/pdf",
-                                        key=f"download_user_pdf_{message_id}"
-                                    )
-                                except Exception as e:
-                                    st.error(f"PDF 생성 오류: {str(e)}")
-                            else:
-                                st.info("PDF 서비스가 사용할 수 없습니다.")
-                    
-                    with col2_2:
-                        if st.button("📝", key=f"download_user_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="secondary"):
+                    # Markdown export button only
+                    if st.button("📝", key=f"download_user_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="primary"):
                             # Generate and download Markdown directly
                             if APIService:
                                 try:
@@ -204,11 +170,12 @@ class ChatComponents:
                                         filename = f"user_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
                                         
                                         st.download_button(
-                                            label="📥 마크다운 다운로드",
+                                            label="📥",
                                             data=result.get("content", ""),
                                             file_name=filename,
                                             mime="text/markdown",
-                                            key=f"download_user_md_{message_id}"
+                                            key=f"download_user_md_{message_id}",
+                                            help="마크다운 형태로 다운로드 합니다"
                                         )
                                     else:
                                         st.error(f"마크다운 생성 오류: {result.get('error', '알 수 없는 오류')}")
@@ -272,45 +239,14 @@ class ChatComponents:
                 # Display feedback UI
                 ChatComponents._render_feedback_ui(message_id, message)
                 
-                # AI message with PDF and Markdown icons
-                col1, col2 = st.columns([1, 0.08])
+                # AI message with Markdown export icon
+                col1, col2 = st.columns([1, 0.05])
                 with col1:
                     if timestamp:
                         st.caption(f"🤖 {ChatComponents._format_timestamp(timestamp)}")
                 with col2:
-                    # PDF and Markdown export buttons
-                    col2_1, col2_2 = st.columns(2)
-                    
-                    with col2_1:
-                        if st.button("📄", key=f"download_message_pdf_{message_id}", help="PDF 저장", use_container_width=True, type="primary"):
-                            # Generate and download PDF directly
-                            if PDFService:
-                                try:
-                                    pdf_service = PDFService()
-                                    single_message = [message]
-                                    pdf_content = pdf_service.generate_chat_pdf(
-                                        single_message,
-                                        "single_message",
-                                        "개별 메시지",
-                                        True
-                                    )
-                                    
-                                    filename = f"assistant_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                                    
-                                    st.download_button(
-                                        label="📥 PDF 다운로드",
-                                        data=pdf_content,
-                                        file_name=filename,
-                                        mime="application/pdf",
-                                        key=f"download_assistant_pdf_{message_id}"
-                                    )
-                                except Exception as e:
-                                    st.error(f"PDF 생성 오류: {str(e)}")
-                            else:
-                                st.info("PDF 서비스가 사용할 수 없습니다.")
-                    
-                    with col2_2:
-                        if st.button("📝", key=f"download_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="secondary"):
+                    # Markdown export button only
+                    if st.button("📝", key=f"download_message_md_{message_id}", help="마크다운 저장", use_container_width=True, type="primary"):
                             # Generate and download Markdown directly
                             if APIService:
                                 try:
@@ -323,11 +259,12 @@ class ChatComponents:
                                         filename = f"assistant_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
                                         
                                         st.download_button(
-                                            label="📥 마크다운 다운로드",
+                                            label="📥",
                                             data=result.get("content", ""),
                                             file_name=filename,
                                             mime="text/markdown",
-                                            key=f"download_assistant_md_{message_id}"
+                                            key=f"download_assistant_md_{message_id}",
+                                            help="마크다운 형태로 다운로드 합니다"
                                         )
                                     else:
                                         st.error(f"마크다운 생성 오류: {result.get('error', '알 수 없는 오류')}")
@@ -722,20 +659,20 @@ class ChatComponents:
             }
         }
         
-        /* PDF icon button styles - compact and clean */
+        /* Markdown export button styles - clean and compact */
         .stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%) !important;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
             color: white !important;
             border: none !important;
             border-radius: 50% !important;
-            width: 32px !important;
-            height: 32px !important;
-            min-height: 32px !important;
+            width: 28px !important;
+            height: 28px !important;
+            min-height: 28px !important;
             padding: 0 !important;
-            font-size: 12px !important;
+            font-size: 11px !important;
             cursor: pointer !important;
             transition: all 0.3s ease !important;
-            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3) !important;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -744,17 +681,53 @@ class ChatComponents:
         
         .stButton > button[kind="primary"]:hover {
             transform: translateY(-1px) !important;
-            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.4) !important;
-            background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%) !important;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
         }
         
         .stButton > button[kind="primary"]:active {
             transform: translateY(0) !important;
-            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3) !important;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
         }
         
-        /* Ensure PDF icon buttons are properly sized */
+        /* Ensure Markdown icon buttons are properly sized */
         .stButton {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Download button styling with 📥 icon */
+        .stDownloadButton > button {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 28px !important;
+            height: 28px !important;
+            min-height: 28px !important;
+            padding: 0 !important;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+        }
+        
+        .stDownloadButton > button:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4) !important;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+        }
+        
+        .stDownloadButton > button:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+        }
+        
+        .stDownloadButton {
             margin: 0 !important;
             padding: 0 !important;
         }
@@ -1756,6 +1729,13 @@ class ChatComponents:
                     except Exception as e:
                         print(f"서버 로그아웃 요청 중 오류: {e}")
                 
+                # 🔥 중요: 로그아웃 플래그 설정
+                st.session_state.logout_flag = True
+                
+                # 영구 저장된 인증 상태도 삭제
+                from utils.auth_persistence import AuthPersistence
+                AuthPersistence.clear_auth_state()
+                
                 # 사용자 세션 정리
                 user_info = st.session_state.get("user_info", {})
                 user_id = user_info.get("id", "default")
@@ -1767,10 +1747,6 @@ class ChatComponents:
                 for key in auth_keys:
                     if key in st.session_state:
                         del st.session_state[key]
-                
-                # Clear all session state
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]
                 
                 # Show success message
                 st.success("로그아웃되었습니다.")

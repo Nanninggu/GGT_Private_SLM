@@ -394,10 +394,27 @@ class RagService:
             
             # Use the LLM directly to get Korean response
             import asyncio
-            loop = asyncio.get_event_loop()
-            korean_response = loop.run_until_complete(
-                self.ollama_service.generate(korean_prompt)
-            )
+            import concurrent.futures
+            
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If we're in an async context, use ThreadPoolExecutor
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(
+                            asyncio.run, 
+                            self.ollama_service.generate(korean_prompt)
+                        )
+                        korean_response = future.result()
+                else:
+                    korean_response = loop.run_until_complete(
+                        self.ollama_service.generate(korean_prompt)
+                    )
+            except RuntimeError:
+                # No event loop running, safe to use asyncio.run
+                korean_response = asyncio.run(
+                    self.ollama_service.generate(korean_prompt)
+                )
             
             return korean_response
             

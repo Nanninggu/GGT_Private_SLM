@@ -33,6 +33,10 @@ class CustomOllamaEmbeddings(Embeddings):
             base_url=base_url,
             timeout=60.0
         )
+        self._sync_client = httpx.Client(
+            base_url=base_url,
+            timeout=60.0
+        )
     
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of documents asynchronously"""
@@ -48,14 +52,38 @@ class CustomOllamaEmbeddings(Embeddings):
     
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of documents synchronously"""
-        return asyncio.run(self.aembed_documents(texts))
+        embeddings = []
+        for text in texts:
+            embedding = self._get_embedding_sync(text)
+            embeddings.append(embedding)
+        return embeddings
     
     def embed_query(self, text: str) -> List[float]:
         """Embed a single query synchronously"""
-        return asyncio.run(self.aembed_query(text))
+        return self._get_embedding_sync(text)
+    
+    def _get_embedding_sync(self, text: str) -> List[float]:
+        """Get embedding for a single text synchronously"""
+        try:
+            response = self._sync_client.post(
+                "/api/embeddings",
+                json={
+                    "model": self.model,
+                    "prompt": text,
+                    "options": {
+                        "num_ctx": settings.OLLAMA_EMBEDDING_NUM_CTX
+                    }
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["embedding"]
+        except Exception as e:
+            logger.error(f"Failed to get embedding: {e}")
+            raise
     
     async def _get_embedding(self, text: str) -> List[float]:
-        """Get embedding for a single text"""
+        """Get embedding for a single text asynchronously"""
         try:
             response = await self.client.post(
                 "/api/embeddings",
@@ -75,8 +103,9 @@ class CustomOllamaEmbeddings(Embeddings):
             raise
     
     async def close(self):
-        """Close the HTTP client"""
+        """Close the HTTP clients"""
         await self.client.aclose()
+        self._sync_client.close()
 
 class LangChainVectorService:
     """LangChain-based vector store service using PostgreSQL + pgvector"""

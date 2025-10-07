@@ -977,7 +977,9 @@ def render_vector_db_management(chat_controller):
                 doc_count = collection.get("document_count", 0)
                 is_current = name == current_collection
                 user_id = collection.get("user_id")
-                is_shared = user_id is None
+                # metadata에서 is_shared 값을 확인
+                metadata = collection.get("metadata", {})
+                is_shared = metadata.get("is_shared", False)
                 
                 with st.container():
                     col_name, col_count, col_actions = st.columns([3, 1, 2])

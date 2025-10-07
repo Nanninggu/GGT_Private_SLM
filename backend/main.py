@@ -1883,13 +1883,44 @@ async def delete_collection(collection_name: str, current_user: User = Depends(a
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        result = await langchain_rag_service.delete_collection(collection_name, current_user.id)
-        
-        return {
-            "success": True,
-            "message": f"Collection '{collection_name}' deleted successfully",
-            "result": result
-        }
+        # First try to delete from LangChain RAG system
+        try:
+            result = await langchain_rag_service.delete_collection(collection_name, current_user.id)
+            return {
+                "success": True,
+                "message": f"Collection '{collection_name}' deleted successfully",
+                "result": result
+            }
+        except ValueError as e:
+            # If not found in LangChain system, try basic RAG system
+            if "does not exist" in str(e):
+                logger.info(f"Collection '{collection_name}' not found in LangChain system, trying basic RAG system")
+                
+                # Try to delete from basic RAG system
+                try:
+                    deleted = await rag_service.vector_service.delete_collection(collection_name)
+                    if deleted:
+                        return {
+                            "success": True,
+                            "message": f"Collection '{collection_name}' deleted successfully from basic RAG system",
+                            "result": {"deleted": True}
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "message": f"Collection '{collection_name}' does not exist",
+                            "error": "COLLECTION_NOT_FOUND"
+                        }
+                except Exception as basic_e:
+                    logger.error(f"Failed to delete from basic RAG system: {basic_e}")
+                    return {
+                        "success": False,
+                        "message": f"Collection '{collection_name}' does not exist",
+                        "error": "COLLECTION_NOT_FOUND"
+                    }
+            else:
+                # Re-raise other ValueError exceptions
+                raise e
         
     except ValueError as e:
         # Collection doesn't exist - return a more user-friendly message

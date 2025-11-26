@@ -14,6 +14,7 @@ from backend.services.quality_service import quality_service
 from backend.services.personalization_service import personalization_service
 from backend.services.monitoring_service import get_monitoring_service
 from backend.config.settings import settings
+from backend.utils.helpers import generate_session_id
 
 logger = logging.getLogger(__name__)
 
@@ -26,21 +27,22 @@ class ChatService:
         self.rag_service = langchain_rag_service
         self._initialized = False
 
-    async def create_session(self) -> ChatSession:
+    async def create_session(self, user_id: str = "default") -> ChatSession:
         """Create a new chat session"""
         try:
             import logging
             logger = logging.getLogger(__name__)
             logger.info("Creating new session in ChatService...")
             
-            session_id = str(uuid.uuid4())
+            session_id = generate_session_id(user_id)
             logger.info(f"Generated session ID: {session_id}")
             
             session = ChatSession(
                 id=session_id,
                 messages=[],
                 created_at=datetime.now(),
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
+                user_id=user_id
             )
             logger.info("ChatSession object created")
             
@@ -243,9 +245,12 @@ class ChatService:
 
         return messages
 
-    async def get_all_sessions(self) -> List[str]:
+    async def get_all_sessions(self, current_user: Optional[Any] = None) -> List[str]:
         """Get all session IDs"""
-        return await self.repository.get_all_sessions()
+        user_id = None
+        if current_user and current_user.role.value != 'admin':
+            user_id = current_user.id
+        return await self.repository.get_all_sessions(user_id)
 
     async def session_exists(self, session_id: str) -> bool:
         """Check if a session exists without loading all sessions"""
@@ -267,21 +272,43 @@ class ChatService:
     async def create_chat_session(self, session_id: str, user_id: str, title: str) -> Dict[str, Any]:
         """Create a new chat session in database"""
         try:
-            # Use the database function to create/update session
-            result = await self.repository.execute_query(
-                "SELECT update_session_title(%s, %s, %s)",
-                (session_id, title, user_id)
+            # Check if session exists
+            check_result = await self.repository.execute_query(
+                "SELECT session_id FROM chat_sessions WHERE session_id = %s",
+                (session_id,)
             )
             
-            if result and result[0][0]:  # Function returned True
-                return {
-                    "session_id": session_id,
-                    "user_id": user_id,
-                    "title": title,
-                    "created_at": datetime.now().isoformat()
-                }
+            if check_result:
+                # Update existing session
+                await self.repository.execute_query(
+                    """
+                    UPDATE chat_sessions 
+                    SET 
+                        title = %s,
+                        title_edited = TRUE,
+                        updated_at = CURRENT_TIMESTAMP,
+                        last_activity = CURRENT_TIMESTAMP,
+                        user_id = COALESCE(%s, user_id)
+                    WHERE session_id = %s
+                    """,
+                    (title, user_id, session_id)
+                )
             else:
-                raise Exception("Failed to create session")
+                # Create new session if it doesn't exist
+                await self.repository.execute_query(
+                    """
+                    INSERT INTO chat_sessions (session_id, user_id, title, title_edited, created_at, updated_at, last_activity)
+                    VALUES (%s, %s, %s, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """,
+                    (session_id, user_id, title)
+                )
+            
+            return {
+                "session_id": session_id,
+                "user_id": user_id,
+                "title": title,
+                "created_at": datetime.now().isoformat()
+            }
         except Exception as e:
             logger.error(f"Error creating chat session: {e}")
             raise e
@@ -289,13 +316,102 @@ class ChatService:
     async def update_session_title(self, session_id: str, title: str, user_id: str = "default") -> bool:
         """Update chat session title in database"""
         try:
-            result = await self.repository.execute_query(
-                "SELECT update_session_title(%s, %s, %s)",
-                (session_id, title, user_id)
+            # Check if session exists
+            check_result = await self.repository.execute_query(
+                "SELECT session_id FROM chat_sessions WHERE session_id = %s",
+                (session_id,)
             )
-            return result and result[0][0] if result else False
+            
+            if check_result:
+                # Update existing session
+                await self.repository.execute_query(
+                    """
+                    UPDATE chat_sessions 
+                    SET 
+                        title = %s,
+                        title_edited = TRUE,
+                        updated_at = CURRENT_TIMESTAMP,
+                        last_activity = CURRENT_TIMESTAMP,
+                        user_id = COALESCE(%s, user_id)
+                    WHERE session_id = %s
+                    """,
+                    (title, user_id, session_id)
+                )
+            else:
+                # Create new session if it doesn't exist
+                await self.repository.execute_query(
+                    """
+                    INSERT INTO chat_sessions (session_id, user_id, title, title_edited, created_at, updated_at, last_activity)
+                    VALUES (%s, %s, %s, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """,
+                    (session_id, user_id, title)
+                )
+            return True
         except Exception as e:
             logger.error(f"Error updating session title: {e}")
+            return False
+    
+    async def update_session_description(self, session_id: str, description: str, user_id: str = "default") -> bool:
+        """Update chat session description in database"""
+        try:
+            # Ensure description column exists
+            try:
+                await self.repository.execute_query(
+                    "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS description TEXT DEFAULT NULL"
+                )
+                logger.info("Added description column to chat_sessions table")
+            except Exception as e:
+                logger.warning(f"Could not add description column: {e}")
+
+            # Check if session exists
+            check_result = await self.repository.execute_query(
+                "SELECT session_id FROM chat_sessions WHERE session_id = %s",
+                (session_id,)
+            )
+
+            if check_result and len(check_result) > 0:
+                # Update existing session - only update description and updated_at
+                try:
+                    update_result = await self.repository.execute_query(
+                        """
+                        UPDATE chat_sessions
+                        SET
+                            description = %s,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE session_id = %s
+                        """,
+                        (description, session_id)
+                    )
+                    if update_result is not True:
+                        logger.error(f"Failed to update session description for {session_id}")
+                        return False
+                    logger.info(f"Updated description for existing session {session_id}")
+                except Exception as e:
+                    logger.error(f"Failed to update existing session {session_id}: {e}")
+                    return False
+            else:
+                # Create new session if it doesn't exist - only use basic columns
+                try:
+                    insert_result = await self.repository.execute_query(
+                        """
+                        INSERT INTO chat_sessions (session_id, description, created_at, updated_at)
+                        VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        """,
+                        (session_id, description)
+                    )
+                    if insert_result is not True:
+                        logger.error(f"Failed to insert session description for {session_id}")
+                        return False
+                    logger.info(f"Created new session {session_id} with description")
+                except Exception as e:
+                    logger.error(f"Failed to insert new session {session_id}: {e}")
+                    return False
+
+            return True
+        except Exception as e:
+            logger.error(f"Error updating session description: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
     
     async def get_user_sessions(self, user_id: str) -> List[Dict[str, Any]]:
@@ -330,13 +446,13 @@ class ChatService:
             logger.error(f"Error getting user sessions: {e}")
             return []
     
-    async def get_session_info(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Get session information"""
+    async def get_session_info(self, session_id: str, user_id: str = "default") -> Optional[Dict[str, Any]]:
+        """Get session information, create if not exists"""
         try:
+            # 실제 데이터베이스 스키마에 맞게 수정 (존재하는 컬럼만 조회)
             result = await self.repository.execute_query(
                 """
-                SELECT session_id, user_id, title, title_edited, created_at, 
-                       updated_at, last_activity, message_count, is_active
+                SELECT session_id, user_id, title, description, created_at, updated_at
                 FROM chat_sessions 
                 WHERE session_id = %s
                 """,
@@ -345,17 +461,99 @@ class ChatService:
             
             if result:
                 row = result[0]
+                user_id = row[1] if len(row) > 1 else user_id
+                title = row[2] if len(row) > 2 else None
+                description = row[3] if len(row) > 3 else None
+                
+                # 메시지 수는 별도로 계산
+                message_count_result = await self.repository.execute_query(
+                    """
+                    SELECT COUNT(*) 
+                    FROM chat_messages 
+                    WHERE session_id = %s
+                    """,
+                    (session_id,)
+                )
+                message_count = message_count_result[0][0] if message_count_result else 0
+                
+                # 마지막 활동 시간은 메시지의 최신 타임스탬프
+                last_activity_result = await self.repository.execute_query(
+                    """
+                    SELECT MAX(created_at) 
+                    FROM chat_messages 
+                    WHERE session_id = %s
+                    """,
+                    (session_id,)
+                )
+                last_activity = last_activity_result[0][0] if last_activity_result and last_activity_result[0][0] else None
+                
                 return {
                     "session_id": row[0],
-                    "user_id": row[1],
-                    "title": row[2],
-                    "title_edited": row[3],
-                    "created_at": row[4].isoformat() if row[4] else None,
-                    "updated_at": row[5].isoformat() if row[5] else None,
-                    "last_activity": row[6].isoformat() if row[6] else None,
-                    "message_count": row[7],
-                    "is_active": row[8]
+                    "user_id": user_id,
+                    "title": title,
+                    "description": description,
+                    "created_at": row[4].isoformat() if len(row) > 4 and row[4] else None,
+                    "updated_at": row[5].isoformat() if len(row) > 5 and row[5] else None,
+                    "last_activity": last_activity.isoformat() if last_activity else None,
+                    "message_count": message_count
                 }
+            else:
+                # 세션이 데이터베이스에 없으면 기본 제목으로 생성
+                logger.info(f"Session {session_id} not found in database, creating with default title")
+                default_title = "새 대화"
+                await self.repository.execute_query(
+                    """
+                    INSERT INTO chat_sessions (session_id, user_id, title, title_edited, created_at, updated_at, last_activity)
+                    VALUES (%s, %s, %s, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """,
+                    (session_id, user_id, default_title)
+                )
+                
+                # 생성 후 다시 조회
+                result = await self.repository.execute_query(
+                    """
+                    SELECT session_id, user_id, title, description, created_at, updated_at
+                    FROM chat_sessions 
+                    WHERE session_id = %s
+                    """,
+                    (session_id,)
+                )
+                
+                if result:
+                    row = result[0]
+                    # 메시지 수는 별도로 계산
+                    message_count_result = await self.repository.execute_query(
+                        """
+                        SELECT COUNT(*) 
+                        FROM chat_messages 
+                        WHERE session_id = %s
+                        """,
+                        (session_id,)
+                    )
+                    message_count = message_count_result[0][0] if message_count_result else 0
+                    
+                    # 마지막 활동 시간은 메시지의 최신 타임스탬프
+                    last_activity_result = await self.repository.execute_query(
+                        """
+                        SELECT MAX(created_at) 
+                        FROM chat_messages 
+                        WHERE session_id = %s
+                        """,
+                        (session_id,)
+                    )
+                    last_activity = last_activity_result[0][0] if last_activity_result and last_activity_result[0][0] else None
+                    
+                    return {
+                        "session_id": row[0],
+                        "user_id": row[1] if len(row) > 1 else user_id,
+                        "title": row[2] if len(row) > 2 else default_title,
+                        "description": row[3] if len(row) > 3 else None,
+                        "created_at": row[4].isoformat() if len(row) > 4 and row[4] else None,
+                        "updated_at": row[5].isoformat() if len(row) > 5 and row[5] else None,
+                        "last_activity": last_activity.isoformat() if last_activity else None,
+                        "message_count": message_count
+                    }
+            
             return None
         except Exception as e:
             logger.error(f"Error getting session info: {e}")

@@ -63,8 +63,10 @@ class UserRepository:
                 return True
                 
         except Exception as e:
-            print(f"Error creating user: {e}", exc_info=True)
-            return False
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating user: {e}", exc_info=True)
+            raise  # 예외를 다시 발생시켜서 상위에서 처리할 수 있도록
     
     async def get_user_by_username(self, username: str) -> Optional[User]:
         """Get user by username"""
@@ -85,9 +87,9 @@ class UserRepository:
                         password_hash=row[3],
                         role=UserRole(row[4]),
                         is_active=row[5],
-                        created_at=row[6],
-                        updated_at=row[7],
-                        last_login=row[8]
+                        created_at=row[6] if isinstance(row[6], datetime) else datetime.fromisoformat(row[6]) if row[6] else None,
+                        updated_at=row[7] if isinstance(row[7], datetime) else datetime.fromisoformat(row[7]) if row[7] else None,
+                        last_login=row[8] if isinstance(row[8], datetime) else datetime.fromisoformat(row[8]) if row[8] else None
                     )
                 return None
         except Exception as e:
@@ -113,9 +115,9 @@ class UserRepository:
                         password_hash=row[3],
                         role=UserRole(row[4]),
                         is_active=row[5],
-                        created_at=row[6],
-                        updated_at=row[7],
-                        last_login=row[8]
+                        created_at=row[6] if isinstance(row[6], datetime) else datetime.fromisoformat(row[6]) if row[6] else None,
+                        updated_at=row[7] if isinstance(row[7], datetime) else datetime.fromisoformat(row[7]) if row[7] else None,
+                        last_login=row[8] if isinstance(row[8], datetime) else datetime.fromisoformat(row[8]) if row[8] else None
                     )
                 return None
         except Exception as e:
@@ -141,13 +143,41 @@ class UserRepository:
                         password_hash=row[3],
                         role=UserRole(row[4]),
                         is_active=row[5],
-                        created_at=row[6],
-                        updated_at=row[7],
-                        last_login=row[8]
+                        created_at=row[6] if isinstance(row[6], datetime) else datetime.fromisoformat(row[6]) if row[6] else None,
+                        updated_at=row[7] if isinstance(row[7], datetime) else datetime.fromisoformat(row[7]) if row[7] else None,
+                        last_login=row[8] if isinstance(row[8], datetime) else datetime.fromisoformat(row[8]) if row[8] else None
                     )
                 return None
         except Exception as e:
             print(f"Error getting user by ID: {e}")
+            return None
+
+    async def get_user_by_username_or_email(self, identifier: str) -> Optional[User]:
+        """Get user by username or email"""
+        try:
+            async with self.db_service.get_session() as session:
+                result = await session.execute(text("""
+                    SELECT id, username, email, password_hash, role, is_active, 
+                           created_at, updated_at, last_login
+                    FROM users WHERE username = :identifier OR email = :identifier
+                """), {"identifier": identifier})
+                
+                row = result.fetchone()
+                if row:
+                    return User(
+                        id=str(row[0]),
+                        username=row[1],
+                        email=row[2],
+                        password_hash=row[3],
+                        role=UserRole(row[4]),
+                        is_active=row[5],
+                        created_at=row[6] if isinstance(row[6], datetime) else datetime.fromisoformat(row[6]) if row[6] else None,
+                        updated_at=row[7] if isinstance(row[7], datetime) else datetime.fromisoformat(row[7]) if row[7] else None,
+                        last_login=row[8] if isinstance(row[8], datetime) else datetime.fromisoformat(row[8]) if row[8] else None
+                    )
+                return None
+        except Exception as e:
+            print(f"Error getting user by username or email: {e}")
             return None
     
     async def update_user(self, user: User) -> bool:
@@ -210,9 +240,9 @@ class UserRepository:
                         password_hash=row[3],
                         role=UserRole(row[4]),
                         is_active=row[5],
-                        created_at=row[6],
-                        updated_at=row[7],
-                        last_login=row[8]
+                        created_at=row[6] if isinstance(row[6], datetime) else datetime.fromisoformat(row[6]) if row[6] else None,
+                        updated_at=row[7] if isinstance(row[7], datetime) else datetime.fromisoformat(row[7]) if row[7] else None,
+                        last_login=row[8] if isinstance(row[8], datetime) else datetime.fromisoformat(row[8]) if row[8] else None
                     ))
                 return users
         except Exception as e:

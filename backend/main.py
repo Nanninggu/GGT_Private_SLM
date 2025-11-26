@@ -2,7 +2,7 @@
 FastAPI backend server for the chatbot
 Converted from Spring Boot with enhanced RAG capabilities
 """
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sse_starlette.sse import EventSourceResponse
@@ -40,6 +40,7 @@ from backend.services.markdown_service import MarkdownService
 from backend.services.accuracy_service import accuracy_service
 from backend.services.chat_service import ChatService
 from backend.services.cache_service import cache_service
+from sqlalchemy import text
 
 # Configure logging
 logging.basicConfig(
@@ -62,6 +63,7 @@ class CollectionRequest(BaseModel):
 class CreateCollectionRequest(BaseModel):
     collection_name: str
     description: Optional[str] = ""
+    type: Optional[str] = "personal"  # "personal" or "shared"
 
 class RenameCollectionRequest(BaseModel):
     old_name: str
@@ -146,6 +148,7 @@ class MessageRequest(BaseModel):
     rag_mode: Optional[str] = "LangChain RAG"  # RAG mode selection
     model_type: Optional[str] = "fast"  # Model type selection
     custom_params: Optional[Dict[str, Any]] = None  # 사용자 맞춤 설정
+    collection_names: Optional[List[str]] = None  # 선택된 데이터셋 목록
 
 class SessionRequest(BaseModel):
     session_id: str
@@ -163,6 +166,14 @@ class MarkdownExportRequest(BaseModel):
     session_id: str
     session_name: Optional[str] = "채팅 기록"
     include_metadata: bool = True
+
+class UpdateSessionTitleRequest(BaseModel):
+    title: str
+    user_id: Optional[str] = "default"
+
+class UpdateSessionDescriptionRequest(BaseModel):
+    description: str
+    user_id: Optional[str] = "default"
 
 class SingleMessageMarkdownRequest(BaseModel):
     message: Dict[str, Any]
@@ -457,10 +468,10 @@ async def test_login():
 
 # Chat endpoints
 @app.post("/api/chat/session")
-async def create_session():
+async def create_session(current_user: User = Depends(auth_controller.get_current_user)):
     """Create a new chat session"""
     try:
-        session = await chat_service.create_session()
+        session = await chat_service.create_session(user_id=current_user.id)
         return {
             "success": True,
             "session_id": session.id,
@@ -471,7 +482,7 @@ async def create_session():
 
 @app.post("/api/chat/save-message")
 async def save_message(request: dict):
-    """Save a message to a session"""
+    """Save a message to a session with full metadata (sources, accuracy, etc.)"""
     try:
         message = request.get("message")
         session_id = request.get("session_id", "default")
@@ -482,6 +493,18 @@ async def save_message(request: dict):
         # Create a simple message object for saving
         from backend.models.chat import ChatMessage, MessageRole
         from datetime import datetime
+        
+        # Extract sources, accuracy, and metadata from the message
+        sources = message.get("sources", [])
+        accuracy = message.get("accuracy")
+        extra_metadata = message.get("metadata", {})
+        
+        # Build full metadata including sources and accuracy for database storage
+        full_metadata = {
+            **(extra_metadata or {}),
+            "sources": sources if sources else [],
+            "accuracy": accuracy
+        }
         
         chat_message = ChatMessage(
             id=message.get("id", str(uuid.uuid4())),
@@ -496,41 +519,63 @@ async def save_message(request: dict):
         if not session:
             session = await chat_service.create_session()
             session.id = session_id
+            # 세션 생성 시간이 없으면 현재 시간으로 설정
+            if not hasattr(session, 'created_at') or not session.created_at:
+                session.created_at = datetime.now()
+            if not hasattr(session, 'updated_at') or not session.updated_at:
+                session.updated_at = datetime.now()
         
-        # Add message to session
+        # Add message to session in memory
         session.add_message(chat_message)
         logger.info(f"Added message to session. Session now has {len(session.messages)} messages")
         
-        # Save session directly to file system
+        # Save message directly to database without deleting existing messages
+        from sqlalchemy import text
         import json
-        import os
-        # Use absolute path to backend/data directory
-        backend_dir = os.path.dirname(os.path.abspath(__file__))
-        data_dir = os.path.join(backend_dir, "data")
-        os.makedirs(data_dir, exist_ok=True)
         
-        file_path = os.path.join(data_dir, f"session_{session_id}.json")
-        session_data = {
-            "id": session.id,
-            "created_at": session.created_at.isoformat(),
-            "updated_at": session.updated_at.isoformat(),
-            "messages": [
-                {
-                    "id": msg.id,
-                    "role": msg.role.value,
-                    "content": msg.content,
-                    "timestamp": msg.timestamp.isoformat(),
-                    "session_id": msg.session_id,
-                    "metadata": msg.metadata or {}
-                }
-                for msg in session.messages
-            ]
-        }
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(session_data, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"Session {session_id} saved to file successfully with {len(session.messages)} messages")
+        try:
+            async with db_service.get_session() as db_session:
+                # Ensure session exists
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_sessions (session_id, created_at, updated_at)
+                        VALUES (:session_id, :created_at, :updated_at)
+                        ON CONFLICT (session_id) 
+                        DO UPDATE SET updated_at = :updated_at
+                    """),
+                    {
+                        "session_id": session_id,
+                        "created_at": session.created_at,
+                        "updated_at": session.updated_at
+                    }
+                )
+                
+                # Insert message only if it doesn't exist (by id) - cast string UUID to UUID type
+                # Include sources and accuracy in metadata for proper restoration
+                metadata_json = json.dumps(full_metadata)
+                logger.info(f"Attempting to save message {chat_message.id} for session {session_id} with sources={len(sources)}, accuracy={accuracy is not None}")
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_messages 
+                        (id, session_id, role, content, metadata, created_at)
+                        VALUES (CAST(:id AS UUID), :session_id, :role, :content, :metadata, :created_at)
+                        ON CONFLICT (id) DO NOTHING
+                    """),
+                    {
+                        "id": chat_message.id,
+                        "session_id": session_id,
+                        "role": chat_message.role.value,
+                        "content": chat_message.content,
+                        "metadata": metadata_json,
+                        "created_at": chat_message.timestamp
+                    }
+                )
+                
+                await db_session.commit()
+                logger.info(f"Message {chat_message.id} saved to database for session {session_id}")
+        except Exception as e:
+            logger.error(f"Failed to save message to database: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to save message: {str(e)}")
         
         return {"success": True, "message": "Message saved successfully"}
         
@@ -591,8 +636,14 @@ async def send_message(request: MessageRequest):
             # Use basic RAG service
             result = await rag_service.rag_query(request.message, session_id, custom_params=request.custom_params)
         else:
-            # Use LangChain RAG service (default)
-            result = await langchain_rag_service.rag_query(request.message, session_id, request.model_type, custom_params=request.custom_params)
+            # Use LangChain RAG service (default) with selected collection
+            result = await langchain_rag_service.rag_query(
+                request.message, 
+                session_id, 
+                request.model_type, 
+                collection_names=request.collection_names,
+                custom_params=request.custom_params
+            )
         
         if not result["success"]:
             # If RAG fails, return error message instead of fallback
@@ -638,6 +689,125 @@ async def send_message(request: MessageRequest):
         # Get context information
         context_count = result.get("metadata", {}).get("context_count", 0)
         context_files = result.get("metadata", {}).get("context_files", [])
+        
+        # Save messages to database
+        try:
+            from backend.models.chat import ChatMessage, MessageRole
+            from sqlalchemy import text
+            import json
+            
+            user_msg_id = str(uuid.uuid4())
+            assistant_msg_id = str(uuid.uuid4())
+            
+            # Prepare assistant message content with ending
+            ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: RAG 기반\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
+            assistant_content = result["response"] + ending_message
+            
+            async with db_service.get_session() as db_session:
+                # Ensure session exists
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_sessions (session_id, created_at, updated_at)
+                        VALUES (:session_id, :created_at, :updated_at)
+                        ON CONFLICT (session_id) 
+                        DO UPDATE SET updated_at = :updated_at
+                    """),
+                    {
+                        "session_id": session_id,
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now()
+                    }
+                )
+                
+                # Save user message - cast string UUID to UUID type
+                logger.info(f"Attempting to save user message {user_msg_id} for session {session_id}")
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_messages 
+                        (id, session_id, role, content, metadata, created_at)
+                        VALUES (CAST(:id AS UUID), :session_id, :role, :content, :metadata, :created_at)
+                        ON CONFLICT (id) DO NOTHING
+                    """),
+                    {
+                        "id": user_msg_id,
+                        "session_id": session_id,
+                        "role": "user",
+                        "content": request.message,
+                        "metadata": json.dumps({}),
+                        "created_at": datetime.now()
+                    }
+                )
+                
+                # Save assistant message - cast string UUID to UUID type
+                logger.info(f"Attempting to save assistant message {assistant_msg_id} for session {session_id}")
+                
+                # model_info 생성 (저장용)
+                model_info_dict = {
+                    "모델": model_name,
+                    "모델 타입": model_type,
+                    "설명": model_description,
+                    "답변 방식": "RAG 기반" if context_count > 0 else "기본 모델",
+                    "RAG 모드": rag_mode
+                }
+                
+                # sources와 accuracy 정보 준비 (나중에 생성되므로 여기서는 빈 값으로 설정)
+                # 실제 sources와 accuracy는 응답 생성 후에 설정됨
+                similarity_scores = result.get("metadata", {}).get("similarity_scores", [])
+                context_sources = result.get("context", [])
+                
+                # sources 데이터 생성
+                sources_data = []
+                if context_sources:
+                    for i, doc in enumerate(context_sources):
+                        sources_data.append({
+                            "filename": doc.get("filename") or doc.get("metadata", {}).get("filename") or doc.get("metadata", {}).get("file_name") or "Unknown",
+                            "similarity_score": doc.get("similarity") or (similarity_scores[i] if i < len(similarity_scores) else 0.0),
+                            "content_preview": doc.get("content_preview") or doc.get("content", "")[:200] or "",
+                            "document_id": doc.get("id") or doc.get("document_id") or ""
+                        })
+                
+                # accuracy 데이터 생성
+                accuracy_data = None
+                if context_count > 0 or similarity_scores:
+                    avg_similarity = (sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0.0)
+                    accuracy_data = {
+                        "confidence_score": avg_similarity,
+                        "context_count": context_count,
+                        "avg_similarity": avg_similarity,
+                        "fallback_used": result.get("metadata", {}).get("fallback_mode", False)
+                    }
+                
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_messages 
+                        (id, session_id, role, content, metadata, created_at)
+                        VALUES (CAST(:id AS UUID), :session_id, :role, :content, :metadata, :created_at)
+                        ON CONFLICT (id) DO NOTHING
+                    """),
+                    {
+                        "id": assistant_msg_id,
+                        "session_id": session_id,
+                        "role": "assistant",
+                        "content": assistant_content,
+                        "metadata": json.dumps({
+                            "model_type": model_type,
+                            "model_name": model_name,
+                            "rag_mode": rag_mode,
+                            "context_count": context_count,
+                            "context_files": context_files,
+                            "model_info": model_info_dict,
+                            "sources": sources_data,
+                            "accuracy": accuracy_data
+                        }),
+                        "created_at": datetime.now()
+                    }
+                )
+                
+                await db_session.commit()
+                logger.info(f"Messages saved to database for session {session_id}")
+        except Exception as e:
+            logger.error(f"Failed to save messages to database: {e}")
+            # Continue even if save fails
         similarity_scores = result.get("metadata", {}).get("similarity_scores", [])
         context_sources = result.get("context", [])
         
@@ -677,18 +847,78 @@ async def send_message(request: MessageRequest):
         ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}{source_info}\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
         final_response = result["response"] + ending_message
         
-        # Format response for frontend
+        # sources 정보 생성
+        sources_data = []
+        if context_sources:
+            # context_files에서 filename 목록 가져오기 (fallback용)
+            context_files_list = result.get("metadata", {}).get("context_files", [])
+            
+            for i, doc in enumerate(context_sources):
+                # filename 추출: 여러 소스에서 시도
+                filename = (
+                    doc.get("filename") or 
+                    doc.get("metadata", {}).get("filename") or 
+                    doc.get("metadata", {}).get("file_name") or
+                    (context_files_list[i] if i < len(context_files_list) else None) or
+                    f"문서 {i+1}"
+                )
+                
+                # "Unknown"이면 더 나은 fallback 사용
+                if filename == "Unknown":
+                    filename = f"문서 {i+1}"
+                
+                similarity = doc.get("similarity", similarity_scores[i] if i < len(similarity_scores) else 0)
+                content_preview = doc.get("content_preview", doc.get("content", "")[:200] + "...")
+                document_id = doc.get("id", doc.get("document_id", ""))
+                
+                sources_data.append({
+                    "filename": filename,
+                    "similarity_score": similarity,
+                    "content_preview": content_preview,
+                    "document_id": document_id
+                })
+        
+        # accuracy 정보 생성
+        metadata = result.get("metadata", {})
+        avg_similarity = metadata.get("similarity", metadata.get("avg_similarity", 
+            (sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0)))
+        
+        accuracy_data = None
+        if context_count > 0 or similarity_scores:
+            accuracy_data = {
+                "confidence_score": avg_similarity,
+                "context_count": context_count,
+                "avg_similarity": avg_similarity,
+                "fallback_used": fallback_used
+            }
+        
+        # model_info 생성
+        model_info_dict = {
+            "모델": model_name,
+            "모델 타입": model_type,
+            "설명": model_description,
+            "답변 방식": rag_status,
+            "RAG 모드": rag_mode
+        }
+        
+        # Format response for frontend (use the same IDs that were saved)
         return {
             "success": True,
             "user_message": {
-                "id": str(uuid.uuid4()),
+                "id": user_msg_id,
                 "content": request.message,
                 "timestamp": datetime.now().isoformat()
             },
             "assistant_message": {
-                "id": str(uuid.uuid4()),
+                "id": assistant_msg_id,
                 "content": final_response,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "sources": sources_data,
+                "accuracy": accuracy_data,
+                "metadata": {
+                    **metadata,
+                    "model_info": model_info_dict
+                }
             },
             "context": result.get("context", []),
             "metadata": result.get("metadata", {})
@@ -698,42 +928,239 @@ async def send_message(request: MessageRequest):
         logger.error(f"Failed to process message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+async def save_assistant_message_background(
+    session_id: str,
+    assistant_msg_id: str,
+    final_response_text: str,
+    metadata_json: str,
+    model_type: str = None,
+    model_name: str = None,
+    rag_mode: str = None,
+    context_count: int = 0,
+    context_files: list = None
+):
+    """Save assistant message to database in background"""
+    try:
+        from sqlalchemy import text
+        
+        print(f"[DEBUG] save_assistant_message_background called for session {session_id}")
+        print(f"[DEBUG] assistant_msg_id: {assistant_msg_id}")
+        print(f"[DEBUG] content length: {len(final_response_text) if final_response_text else 0}")
+        logger.info(f"Background: Attempting to save assistant message {assistant_msg_id} for session {session_id}")
+        
+        async with db_service.get_session() as db_session:
+            # Update session timestamp
+            await db_session.execute(
+                text("""
+                    UPDATE chat_sessions 
+                    SET updated_at = :updated_at
+                    WHERE session_id = :session_id
+                """),
+                {
+                    "session_id": session_id,
+                    "updated_at": datetime.now()
+                }
+            )
+            
+            # Save assistant message with provided metadata
+            await db_session.execute(
+                text("""
+                    INSERT INTO chat_messages 
+                    (id, session_id, role, content, metadata, created_at)
+                    VALUES (CAST(:id AS UUID), :session_id, :role, :content, :metadata, :created_at)
+                    ON CONFLICT (id) DO NOTHING
+                """),
+                {
+                    "id": assistant_msg_id,
+                    "session_id": session_id,
+                    "role": "assistant",
+                    "content": final_response_text,
+                    "metadata": metadata_json,
+                    "created_at": datetime.now()
+                }
+            )
+            
+            await db_session.commit()
+            
+            # Verify message was saved
+            verify_result = await db_session.execute(
+                text("SELECT COUNT(*) FROM chat_messages WHERE id = CAST(:id AS UUID)"),
+                {"id": assistant_msg_id}
+            )
+            count = verify_result.scalar()
+            if count > 0:
+                logger.info(f"Background: Assistant message {assistant_msg_id} successfully saved to database for session {session_id}")
+            else:
+                logger.warning(f"Background: Assistant message {assistant_msg_id} was not saved (possibly conflict)")
+    except Exception as save_error:
+        logger.error(f"Background: Failed to save assistant message to database: {save_error}", exc_info=True)
+
 @app.post("/api/chat/stream")
-async def stream_chat(request: ChatRequest):
+async def stream_chat(request: ChatRequest, background_tasks: BackgroundTasks, current_user: User = Depends(auth_controller.get_current_user)):
     """Stream chat response using selected RAG mode with Server-Sent Events"""
     try:
+        session_id = request.session_id or "default"
+        rag_mode = request.rag_mode or "LangChain RAG"
+        # 현재 사용자 ID 가져오기 (chat_service.get_all_sessions와 일관성 유지)
+        user_id = current_user.id if current_user else "default"
+        
+        # Save user message before streaming starts
+        user_msg_id = None
+        try:
+            from sqlalchemy import text
+            import json as json_lib
+            user_msg_id = str(uuid.uuid4())
+            
+            logger.info(f"Attempting to save user message {user_msg_id} for session {session_id}, user {user_id}")
+            
+            async with db_service.get_session() as db_session:
+                # Ensure session exists with user_id
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_sessions (session_id, user_id, created_at, updated_at)
+                        VALUES (:session_id, :user_id, :created_at, :updated_at)
+                        ON CONFLICT (session_id) 
+                        DO UPDATE SET updated_at = :updated_at, user_id = COALESCE(chat_sessions.user_id, :user_id)
+                    """),
+                    {
+                        "session_id": session_id,
+                        "user_id": user_id,
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now()
+                    }
+                )
+                
+                # Save user message - cast string UUID to UUID type
+                await db_session.execute(
+                    text("""
+                        INSERT INTO chat_messages 
+                        (id, session_id, role, content, metadata, created_at)
+                        VALUES (CAST(:id AS UUID), :session_id, :role, :content, :metadata, :created_at)
+                        ON CONFLICT (id) DO NOTHING
+                    """),
+                    {
+                        "id": user_msg_id,
+                        "session_id": session_id,
+                        "role": "user",
+                        "content": request.message,
+                        "metadata": json_lib.dumps({}),
+                        "created_at": datetime.now()
+                    }
+                )
+                
+                await db_session.commit()
+                
+                # Verify message was saved
+                verify_result = await db_session.execute(
+                    text("SELECT COUNT(*) FROM chat_messages WHERE id = CAST(:id AS UUID)"),
+                    {"id": user_msg_id}
+                )
+                count = verify_result.scalar()
+                if count > 0:
+                    logger.info(f"User message {user_msg_id} successfully saved to database for session {session_id}")
+                else:
+                    logger.warning(f"User message {user_msg_id} was not saved (possibly conflict)")
+        except Exception as save_error:
+            logger.error(f"Failed to save user message to database: {save_error}", exc_info=True)
+        
+        # Variables to store response data for saving after streaming
+        response_data = {
+            "final_text": None,
+            "model_type": None,
+            "model_name": None,
+            "rag_mode": rag_mode,
+            "context_count": 0,
+            "context_files": [],
+            "detailed_sources": [],
+            "accuracy_info": None,
+            "model_description": "",
+            "rag_status": "",
+            "should_save": False  # Flag to indicate if assistant message should be saved
+        }
+        
         async def generate_response():
             try:
                 # Use selected RAG mode
-                rag_mode = request.rag_mode or "LangChain RAG"
                 logger.info(f"Processing {rag_mode} stream query: {request.message[:100]}...")
                 
                 if rag_mode == "기본 RAG":
                     # Use basic RAG service
-                    result = await rag_service.rag_query(request.message, request.session_id)
+                    result = await rag_service.rag_query(request.message, session_id)
                 else:
                     # Use LangChain RAG service (default)
-                    result = await langchain_rag_service.rag_query(request.message, request.session_id, request.model_type, request.collection_names)
+                    result = await langchain_rag_service.rag_query(request.message, session_id, request.model_type, request.collection_names)
                 
                 if result["success"] and result.get("response"):
                     # Stream the response
                     response_text = result["response"]
                     
                     # Send context information first
-                    if result.get("context"):
-                        metadata = result.get("metadata", {})
+                    metadata = result.get("metadata", {})
+                    similarity_scores = metadata.get("similarity_scores", [])
+                    context_sources = result.get("context", [])
+                    context_count = len(context_sources)
+                    avg_similarity = metadata.get("similarity", metadata.get("avg_similarity", 
+                        (sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0)))
+                    
+                    # 메시지 저장을 위해 외부 변수 선언
+                    detailed_sources_for_save = []
+                    accuracy_info_for_save = None
+                    
+                    if context_sources:
+                        # sources 정보 생성
+                        detailed_sources = []
+                        # context_files에서 filename 목록 가져오기 (fallback용)
+                        context_files_list = metadata.get("context_files", [])
+                        
+                        for i, doc in enumerate(context_sources):
+                            # filename 추출: 여러 소스에서 시도
+                            filename = (
+                                doc.get("filename") or 
+                                doc.get("metadata", {}).get("filename") or 
+                                doc.get("metadata", {}).get("file_name") or
+                                (context_files_list[i] if i < len(context_files_list) else None) or
+                                f"문서 {i+1}"
+                            )
+                            
+                            # "Unknown"이면 더 나은 fallback 사용
+                            if filename == "Unknown":
+                                filename = f"문서 {i+1}"
+                            
+                            similarity = doc.get("similarity", similarity_scores[i] if i < len(similarity_scores) else 0)
+                            content_preview = doc.get("content_preview", doc.get("content", "")[:200] + "...")
+                            document_id = doc.get("id", doc.get("document_id", ""))
+                            
+                            detailed_sources.append({
+                                "filename": filename,
+                                "similarity_score": similarity,
+                                "content_preview": content_preview,
+                                "document_id": document_id
+                            })
+                        
                         context_info = {
                             "type": "context",
-                            "sources": [doc.get("filename", "Unknown") for doc in result["context"]],
+                            "sources": [doc.get("filename") or doc.get("metadata", {}).get("filename") or doc.get("metadata", {}).get("file_name") or f"문서 {i+1}" for i, doc in enumerate(context_sources)],
                             "context_files": metadata.get("context_files", []),
                             "source_collection": metadata.get("source_collection", "documents"),
                             "source_collections": metadata.get("source_collections", []),
                             "collections_used": metadata.get("collections_used", []),
                             "multi_collection": metadata.get("multi_collection", False),
-                            "context_count": len(result["context"]),
-                            "detailed_sources": result["context"],
-                            "similarity_scores": [doc.get("similarity", 0) for doc in result["context"]]
+                            "context_count": context_count,
+                            "detailed_sources": detailed_sources,
+                            "similarity_scores": similarity_scores,
+                            "similarity": avg_similarity,
+                            "accuracy": {
+                                "confidence_score": avg_similarity,
+                                "context_count": context_count,
+                                "avg_similarity": avg_similarity,
+                                "fallback_used": metadata.get("fallback_mode", False)
+                            } if context_count > 0 or similarity_scores else None
                         }
+                        
+                        # 메시지 저장을 위해 정보 저장
+                        detailed_sources_for_save = detailed_sources
+                        accuracy_info_for_save = context_info.get("accuracy")
+                        
                         yield {
                             "event": "context",
                             "data": json.dumps(context_info)
@@ -764,6 +1191,13 @@ async def stream_chat(request: ChatRequest):
                     ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
                     final_response_text = response_text + ending_message
                     
+                    # Store response data for saving after streaming
+                    response_data["final_text"] = final_response_text
+                    response_data["model_type"] = model_type
+                    response_data["model_name"] = model_name
+                    response_data["context_count"] = len(result.get("context", []))
+                    response_data["context_files"] = result.get("metadata", {}).get("context_files", [])
+                    
                     # Stream the response text with optimized chunking
                     chunk_size = 8  # Slightly larger chunks for better performance
                     for i in range(0, len(final_response_text), chunk_size):
@@ -780,13 +1214,56 @@ async def stream_chat(request: ChatRequest):
                         delay = 0.005 if len(chunk) > 5 else 0.01
                         await asyncio.sleep(delay)
                     
-                    # Send completion signal with proper formatting
+                    # Create model_info for metadata
+                    model_info_dict = {
+                        "모델": model_name,
+                        "모델 타입": model_type,
+                        "설명": model_description,
+                        "답변 방식": rag_status,
+                        "RAG 모드": rag_mode
+                    }
+                    
+                    # Save assistant message SYNCHRONOUSLY before sending completion signal
+                    import json as json_lib
+                    
+                    assistant_msg_id = str(uuid.uuid4())
+                    # Use response_data values which were set earlier
+                    saved_context_count = response_data.get("context_count", 0)
+                    saved_context_files = response_data.get("context_files", [])
+                    
+                    message_metadata = {
+                        "model_type": model_type,
+                        "model_name": model_name,
+                        "rag_mode": rag_mode,
+                        "context_count": saved_context_count,
+                        "context_files": saved_context_files,
+                        "sources": detailed_sources_for_save,
+                        "accuracy": accuracy_info_for_save,
+                        "model_info": model_info_dict
+                    }
+                    
+                    # Save synchronously using await
+                    await save_assistant_message_background(
+                        session_id,
+                        assistant_msg_id,
+                        final_response_text,
+                        json_lib.dumps(message_metadata),
+                        model_type,
+                        model_name,
+                        rag_mode,
+                        saved_context_count,
+                        saved_context_files
+                    )
+                    logger.info(f"Assistant message {assistant_msg_id} saved for session {session_id}")
+                    
+                    # Send completion signal with model_info
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
                             "finished": True,
-                            "type": "completion"
+                            "type": "completion",
+                            "model_info": model_info_dict
                         })
                     }
                 else:
@@ -807,13 +1284,23 @@ async def stream_chat(request: ChatRequest):
                         }
                         await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)
                     
-                    # Send completion signal with proper formatting
+                    # Create model_info for metadata
+                    model_info_dict = {
+                        "모델": model_name,
+                        "모델 타입": model_type,
+                        "설명": model_description,
+                        "답변 방식": rag_status,
+                        "RAG 모드": rag_mode
+                    }
+                    
+                    # Send completion signal with model_info
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
                             "finished": True,
-                            "type": "completion"
+                            "type": "completion",
+                            "model_info": model_info_dict
                         })
                     }
                     
@@ -826,6 +1313,79 @@ async def stream_chat(request: ChatRequest):
                         "finished": True
                     })
                 }
+            finally:
+                # Save assistant message after streaming completes (or fails)
+                if response_data.get("should_save") and response_data.get("final_text"):
+                    try:
+                        from sqlalchemy import text
+                        import json as json_lib
+                        
+                        assistant_msg_id = str(uuid.uuid4())
+                        logger.info(f"Finally block: Saving assistant message {assistant_msg_id} for session {session_id}")
+                        
+                        async with db_service.get_session() as db_session:
+                            # Update session timestamp
+                            await db_session.execute(
+                                text("""
+                                    UPDATE chat_sessions 
+                                    SET updated_at = :updated_at
+                                    WHERE session_id = :session_id
+                                """),
+                                {
+                                    "session_id": session_id,
+                                    "updated_at": datetime.now()
+                                }
+                            )
+                            
+                            # Save assistant message with sources and accuracy
+                            message_metadata = {
+                                "model_type": response_data.get("model_type"),
+                                "model_name": response_data.get("model_name"),
+                                "rag_mode": response_data.get("rag_mode"),
+                                "context_count": response_data.get("context_count", 0),
+                                "context_files": response_data.get("context_files", []),
+                                "sources": response_data.get("detailed_sources", []),
+                                "accuracy": response_data.get("accuracy_info"),
+                                "model_info": {
+                                    "모델": response_data.get("model_name"),
+                                    "모델 타입": response_data.get("model_type"),
+                                    "설명": response_data.get("model_description", ""),
+                                    "답변 방식": response_data.get("rag_status", ""),
+                                    "RAG 모드": response_data.get("rag_mode")
+                                }
+                            }
+                            
+                            await db_session.execute(
+                                text("""
+                                    INSERT INTO chat_messages 
+                                    (id, session_id, role, content, metadata, created_at)
+                                    VALUES (CAST(:id AS UUID), :session_id, :role, :content, :metadata, :created_at)
+                                    ON CONFLICT (id) DO NOTHING
+                                """),
+                                {
+                                    "id": assistant_msg_id,
+                                    "session_id": session_id,
+                                    "role": "assistant",
+                                    "content": response_data.get("final_text", ""),
+                                    "metadata": json_lib.dumps(message_metadata),
+                                    "created_at": datetime.now()
+                                }
+                            )
+                            
+                            await db_session.commit()
+                            
+                            # Verify message was saved
+                            verify_result = await db_session.execute(
+                                text("SELECT COUNT(*) FROM chat_messages WHERE id = CAST(:id AS UUID)"),
+                                {"id": assistant_msg_id}
+                            )
+                            count = verify_result.scalar()
+                            if count > 0:
+                                logger.info(f"Finally block: Assistant message {assistant_msg_id} saved successfully for session {session_id}")
+                            else:
+                                logger.warning(f"Finally block: Assistant message {assistant_msg_id} was not saved (possibly conflict)")
+                    except Exception as save_error:
+                        logger.error(f"Finally block: Failed to save assistant message: {save_error}", exc_info=True)
         
         return EventSourceResponse(generate_response())
         
@@ -854,13 +1414,62 @@ async def stream_chat_langchain(request: ChatRequest):
                     response_text = result["response"]
                     
                     # Send context information first
-                    if result.get("context"):
+                    metadata = result.get("metadata", {})
+                    similarity_scores = metadata.get("similarity_scores", [])
+                    context_sources = result.get("context", [])
+                    context_count = len(context_sources)
+                    avg_similarity = metadata.get("similarity", metadata.get("avg_similarity", 
+                        (sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0)))
+                    
+                    if context_sources:
+                        # sources 정보 생성
+                        detailed_sources = []
+                        # context_files에서 filename 목록 가져오기 (fallback용)
+                        context_files_list = metadata.get("context_files", [])
+                        
+                        for i, doc in enumerate(context_sources):
+                            # filename 추출: 여러 소스에서 시도
+                            filename = (
+                                doc.get("filename") or 
+                                doc.get("metadata", {}).get("filename") or 
+                                doc.get("metadata", {}).get("file_name") or
+                                (context_files_list[i] if i < len(context_files_list) else None) or
+                                f"문서 {i+1}"
+                            )
+                            
+                            # "Unknown"이면 더 나은 fallback 사용
+                            if filename == "Unknown":
+                                filename = f"문서 {i+1}"
+                            
+                            similarity = doc.get("similarity", similarity_scores[i] if i < len(similarity_scores) else 0)
+                            content_preview = doc.get("content_preview", doc.get("content", "")[:200] + "...")
+                            document_id = doc.get("id", doc.get("document_id", ""))
+                            
+                            detailed_sources.append({
+                                "filename": filename,
+                                "similarity_score": similarity,
+                                "content_preview": content_preview,
+                                "document_id": document_id
+                            })
+                        
                         context_info = {
                             "type": "context",
-                            "sources": [doc.get("metadata", {}).get("filename", "Unknown") for doc in result["context"]],
-                            "context_files": result.get("metadata", {}).get("context_files", []),
-                            "similarity_scores": [doc.get("similarity", 0) for doc in result["context"]],
-                            "context_count": len(result["context"])
+                            "sources": [doc.get("filename") or doc.get("metadata", {}).get("filename") or doc.get("metadata", {}).get("file_name") or f"문서 {i+1}" for i, doc in enumerate(context_sources)],
+                            "context_files": metadata.get("context_files", []),
+                            "source_collection": metadata.get("source_collection", "documents"),
+                            "source_collections": metadata.get("source_collections", []),
+                            "collections_used": metadata.get("collections_used", []),
+                            "multi_collection": metadata.get("multi_collection", False),
+                            "context_count": context_count,
+                            "detailed_sources": detailed_sources,
+                            "similarity_scores": similarity_scores,
+                            "similarity": avg_similarity,
+                            "accuracy": {
+                                "confidence_score": avg_similarity,
+                                "context_count": context_count,
+                                "avg_similarity": avg_similarity,
+                                "fallback_used": metadata.get("fallback_mode", False)
+                            } if context_count > 0 or similarity_scores else None
                         }
                         yield {
                             "event": "context",
@@ -908,13 +1517,23 @@ async def stream_chat_langchain(request: ChatRequest):
                         delay = 0.005 if len(chunk) > 5 else 0.01
                         await asyncio.sleep(delay)
                     
-                    # Send completion signal with proper formatting
+                    # Create model_info for metadata
+                    model_info_dict = {
+                        "모델": model_name,
+                        "모델 타입": model_type,
+                        "설명": model_description,
+                        "답변 방식": rag_status,
+                        "RAG 모드": rag_mode
+                    }
+                    
+                    # Send completion signal with model_info
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
                             "finished": True,
-                            "type": "completion"
+                            "type": "completion",
+                            "model_info": model_info_dict
                         })
                     }
                 else:
@@ -935,13 +1554,23 @@ async def stream_chat_langchain(request: ChatRequest):
                         }
                         await asyncio.sleep(0.01)  # 스트리밍 지연 70% 감소 (30ms → 10ms)
                     
-                    # Send completion signal with proper formatting
+                    # Create model_info for metadata
+                    model_info_dict = {
+                        "모델": model_name,
+                        "모델 타입": model_type,
+                        "설명": model_description,
+                        "답변 방식": rag_status,
+                        "RAG 모드": rag_mode
+                    }
+                    
+                    # Send completion signal with model_info
                     yield {
                         "event": "message",
                         "data": json.dumps({
                             "content": "",
                             "finished": True,
-                            "type": "completion"
+                            "type": "completion",
+                            "model_info": model_info_dict
                         })
                     }
                     
@@ -974,7 +1603,15 @@ async def get_chat_history(session_id: str, limit: Optional[int] = None):
                     "role": msg.role.value,
                     "content": msg.content,
                     "timestamp": msg.timestamp.isoformat(),
-                    "sources": [{"filename": s.filename, "similarity_score": s.similarity_score} for s in msg.sources] if msg.sources else [],
+                    "sources": [
+                        {
+                            "filename": s.filename, 
+                            "similarity_score": s.similarity_score,
+                            "content_preview": s.content_preview,
+                            "document_id": s.document_id
+                        } 
+                        for s in msg.sources
+                    ] if msg.sources else [],
                     "accuracy": {
                         "confidence_score": msg.accuracy.confidence_score,
                         "context_count": msg.accuracy.context_count,
@@ -990,10 +1627,10 @@ async def get_chat_history(session_id: str, limit: Optional[int] = None):
         raise HTTPException(status_code=404, detail=str(e))
 
 @app.get("/api/chat/sessions")
-async def get_sessions():
+async def get_sessions(current_user: User = Depends(auth_controller.get_current_user)):
     """Get all session IDs"""
     try:
-        session_ids = await chat_service.get_all_sessions()
+        session_ids = await chat_service.get_all_sessions(current_user)
         return {
             "success": True,
             "sessions": session_ids
@@ -1081,22 +1718,43 @@ async def create_chat_session(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/chat/sessions/{session_id}/title")
-async def update_session_title(session_id: str, request: dict):
+async def update_session_title(session_id: str, request: UpdateSessionTitleRequest):
     """Update chat session title"""
     try:
-        title = request.get("title")
-        user_id = request.get("user_id", "default")
-        
-        if not title:
+        if not request.title:
             raise HTTPException(status_code=400, detail="Title is required")
         
-        result = await chat_service.update_session_title(session_id, title, user_id)
+        result = await chat_service.update_session_title(session_id, request.title, request.user_id)
         return {
             "success": result,
             "message": "Session title updated successfully" if result else "Failed to update session title"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/chat/sessions/{session_id}/description")
+async def update_session_description(session_id: str, request: UpdateSessionDescriptionRequest):
+    """Update chat session description"""
+    try:
+        if not session_id:
+            raise HTTPException(status_code=400, detail="Session ID is required")
+        
+        result = await chat_service.update_session_description(session_id, request.description or "", request.user_id)
+        
+        if result:
+            return {
+                "success": True,
+                "message": "Session description updated successfully"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update session description")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating session description: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to update session description: {str(e)}")
 
 @app.post("/api/chat/sessions/{session_id}/generate-title")
 async def generate_session_title(session_id: str, request: dict):
@@ -1133,7 +1791,12 @@ async def get_user_sessions(user_id: str):
             "sessions": sessions
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error getting user sessions: {e}")
+        return {
+            "success": False,
+            "sessions": [],
+            "error": str(e)
+        }
 
 @app.get("/api/chat/sessions/{session_id}")
 async def get_session_info(session_id: str):
@@ -1251,18 +1914,74 @@ async def langchain_chat_message(request: MessageRequest):
             ending_message = f"\n\n---\n\n**AI 모델 정보**\n- 모델: {model_name}\n- 모델 타입: {model_type}\n- 설명: {model_description}\n- 답변 방식: {rag_status}\n- RAG 모드: {rag_mode}\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*"
             final_response = rag_result["response"] + ending_message
             
+            # sources 정보 생성
+            sources_data = []
+            context_sources = rag_result.get("context", [])
+            similarity_scores = rag_result.get("metadata", {}).get("similarity_scores", [])
+            context_count = rag_result.get("metadata", {}).get("context_count", 0)
+            
+            if context_sources:
+                # context_files에서 filename 목록 가져오기 (fallback용)
+                context_files_list = rag_result.get("metadata", {}).get("context_files", [])
+                
+                for i, doc in enumerate(context_sources):
+                    # filename 추출: 여러 소스에서 시도
+                    filename = (
+                        doc.get("filename") or 
+                        doc.get("metadata", {}).get("filename") or 
+                        doc.get("metadata", {}).get("file_name") or
+                        (context_files_list[i] if i < len(context_files_list) else None) or
+                        f"문서 {i+1}"
+                    )
+                    
+                    # "Unknown"이면 더 나은 fallback 사용
+                    if filename == "Unknown":
+                        filename = f"문서 {i+1}"
+                    
+                    similarity = doc.get("similarity", similarity_scores[i] if i < len(similarity_scores) else 0)
+                    content_preview = doc.get("content_preview", doc.get("content", "")[:200] + "...")
+                    document_id = doc.get("id", doc.get("document_id", ""))
+                    
+                    sources_data.append({
+                        "filename": filename,
+                        "similarity_score": similarity,
+                        "content_preview": content_preview,
+                        "document_id": document_id
+                    })
+            
+            # accuracy 정보 생성
+            metadata = rag_result.get("metadata", {})
+            avg_similarity = metadata.get("similarity", metadata.get("avg_similarity", 
+                (sum(similarity_scores) / len(similarity_scores) if similarity_scores else 0)))
+            
+            accuracy_data = None
+            if context_count > 0 or similarity_scores:
+                accuracy_data = {
+                    "confidence_score": avg_similarity,
+                    "context_count": context_count,
+                    "avg_similarity": avg_similarity,
+                    "fallback_used": fallback_used
+                }
+            
             # Create proper model_info
             proper_model_info = {
-                "model": model_name,
-                "model_type": model_type,
-                "langchain": True
+                "모델": model_name,
+                "모델 타입": model_type,
+                "설명": model_description,
+                "답변 방식": rag_status,
+                "RAG 모드": rag_mode
             }
             
             assistant_message = {
                 "id": assistant_message_id,
                 "content": final_response,
                 "timestamp": datetime.now().isoformat(),
-                "model_info": proper_model_info
+                "sources": sources_data,
+                "accuracy": accuracy_data,
+                "metadata": {
+                    **metadata,
+                    "model_info": proper_model_info
+                }
             }
             
             return {
@@ -1357,6 +2076,330 @@ async def delete_document(doc_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/documents")
+async def get_documents(
+    request: Request,
+    collection_name: Optional[str] = None,
+    limit: Optional[int] = 100,
+    offset: Optional[int] = 0,
+    order_by: Optional[str] = "created_at",  # created_at, updated_at
+    order_direction: Optional[str] = "desc"  # asc, desc
+):
+    """Get document list with filtering and pagination"""
+    try:
+        # Get current user if authenticated (optional)
+        user_id = None
+        try:
+            if request:
+                authorization = request.headers.get("Authorization")
+                if authorization and authorization.startswith("Bearer "):
+                    token = authorization[7:]
+                    user = await auth_service.get_current_user(token)
+                    if user and hasattr(user, 'id'):
+                        user_id = user.id
+        except:
+            pass
+        
+        async with db_service.get_session() as session:
+            # Check if user_id column exists in documents table
+            try:
+                user_id_column_check = await session.execute(text("""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'documents' AND column_name = 'user_id'
+                """))
+                has_user_id = user_id_column_check.fetchone() is not None
+            except:
+                has_user_id = False
+
+            # Check if collection is a LangChain collection
+            is_langchain_collection = False
+            collection_uuid = None
+            has_langchain_user_id = False
+
+            if collection_name and collection_name != "documents":
+                # Check if it's a LangChain collection
+                langchain_collection_result = await session.execute(
+                    text("SELECT uuid FROM langchain_pg_collection WHERE name = :collection_name"),
+                    {"collection_name": collection_name}
+                )
+                langchain_collection_row = langchain_collection_result.fetchone()
+                if langchain_collection_row:
+                    is_langchain_collection = True
+                    collection_uuid = str(langchain_collection_row.uuid)
+                    
+                    # Check if user_id column exists in langchain_pg_collection
+                    try:
+                        langchain_user_id_check = await session.execute(text("""
+                            SELECT column_name
+                            FROM information_schema.columns
+                            WHERE table_name = 'langchain_pg_collection' AND column_name = 'user_id'
+                        """))
+                        has_langchain_user_id = langchain_user_id_check.fetchone() is not None
+                    except:
+                        has_langchain_user_id = False
+            
+            if is_langchain_collection:
+                # Query from langchain_pg_embedding table
+                # LangChain stores documents as chunks, so we group by filename to show each document as one entry
+                
+                # Build query conditionally based on whether user_id column exists
+                # Build WHERE clause parts
+                where_clauses = ["c.name = :collection_name", "(e.cmetadata->>'filename') IS NOT NULL"]
+                params = {"collection_name": collection_name}
+                
+                # Add user filter to WHERE clause if authenticated and user_id column exists
+                if user_id and has_langchain_user_id:
+                    where_clauses.append("(c.user_id = :user_id OR c.user_id IS NULL)")
+                    params["user_id"] = user_id
+                
+                where_clause = " AND ".join(where_clauses)
+                
+                if has_langchain_user_id:
+                    query = f"""
+                        SELECT
+                            (e.cmetadata->>'filename') as id,
+                            string_agg(e.document, E'\\n\\n--- 청크 구분선 ---\\n\\n') as content,
+                            jsonb_build_object(
+                                'filename', (e.cmetadata->>'filename'),
+                                'file_type', MAX(e.cmetadata->>'file_type'),
+                                'chunk_count', COUNT(*),
+                                'total_chunks', COUNT(*)
+                            ) as metadata,
+                            c.name as collection_name,
+                            c.user_id::text as user_id,
+                            MIN(COALESCE(
+                                (e.cmetadata->>'created_at')::timestamp,
+                                (e.cmetadata->>'created_date')::timestamp,
+                                (e.cmetadata->>'upload_date')::timestamp,
+                                CURRENT_TIMESTAMP
+                            )) as created_at,
+                            MAX(COALESCE(
+                                (e.cmetadata->>'updated_at')::timestamp,
+                                (e.cmetadata->>'modified_date')::timestamp,
+                                (e.cmetadata->>'created_at')::timestamp,
+                                CURRENT_TIMESTAMP
+                            )) as updated_at,
+                            CASE WHEN COUNT(CASE WHEN e.embedding IS NOT NULL THEN 1 END) > 0 THEN true ELSE false END as has_embedding
+                        FROM langchain_pg_embedding e
+                        JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                        WHERE {where_clause}
+                        GROUP BY (e.cmetadata->>'filename'), c.name, c.user_id
+                    """
+                else:
+                    query = f"""
+                        SELECT
+                            (e.cmetadata->>'filename') as id,
+                            string_agg(e.document, E'\\n\\n--- 청크 구분선 ---\\n\\n') as content,
+                            jsonb_build_object(
+                                'filename', (e.cmetadata->>'filename'),
+                                'file_type', MAX(e.cmetadata->>'file_type'),
+                                'chunk_count', COUNT(*),
+                                'total_chunks', COUNT(*)
+                            ) as metadata,
+                            c.name as collection_name,
+                            NULL as user_id,
+                            MIN(COALESCE(
+                                (e.cmetadata->>'created_at')::timestamp,
+                                (e.cmetadata->>'created_date')::timestamp,
+                                (e.cmetadata->>'upload_date')::timestamp,
+                                CURRENT_TIMESTAMP
+                            )) as created_at,
+                            MAX(COALESCE(
+                                (e.cmetadata->>'updated_at')::timestamp,
+                                (e.cmetadata->>'modified_date')::timestamp,
+                                (e.cmetadata->>'created_at')::timestamp,
+                                CURRENT_TIMESTAMP
+                            )) as updated_at,
+                            CASE WHEN COUNT(CASE WHEN e.embedding IS NOT NULL THEN 1 END) > 0 THEN true ELSE false END as has_embedding
+                        FROM langchain_pg_embedding e
+                        JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                        WHERE {where_clause}
+                        GROUP BY (e.cmetadata->>'filename'), c.name
+                    """
+                
+                # Order by
+                valid_order_by = ["created_at", "updated_at"]
+                if order_by not in valid_order_by:
+                    order_by = "created_at"
+                
+                valid_direction = ["asc", "desc"]
+                if order_direction not in valid_direction:
+                    order_direction = "desc"
+                
+                query += f" ORDER BY {order_by} {order_direction}"
+                
+                # Limit and offset
+                query += " LIMIT :limit OFFSET :offset"
+                params["limit"] = limit or 100
+                params["offset"] = offset or 0
+                
+                # Get total count (count unique documents by filename)
+                count_query = f"""
+                    SELECT COUNT(DISTINCT (e.cmetadata->>'filename'))
+                    FROM langchain_pg_embedding e
+                    JOIN langchain_pg_collection c ON e.collection_id = c.uuid
+                    WHERE {where_clause}
+                """
+                # count_params uses the same params as the main query (already includes user_id if needed)
+                
+                # Execute queries
+                result = await session.execute(text(query), params)
+                rows = result.fetchall()
+                
+                count_result = await session.execute(text(count_query), params)
+                total_count = count_result.scalar() or 0
+                
+                documents = []
+                seen_files = set()  # Track unique files to avoid duplicates
+                for row in rows:
+                    metadata = row.metadata if isinstance(row.metadata, dict) else (json.loads(row.metadata) if row.metadata else {})
+                    
+                    # 방법4: 파일명 추출 개선 (Unknown이면 UUID 기반으로 변경)
+                    filename = (
+                        metadata.get("filename") or 
+                        metadata.get("file_name") or 
+                        metadata.get("source") or 
+                        f"doc_{str(row.id)[:8]}"
+                    )
+                    
+                    # 파일명이 "Unknown"이면 UUID 기반으로 변경
+                    if filename == "Unknown":
+                        filename = f"doc_{str(row.id)[:8]}"
+                    
+                    # Create unique key for file
+                    file_key = f"{filename}_{row.collection_name}"
+                    
+                    # Only add if we haven't seen this file yet (to avoid duplicate chunks)
+                    if file_key not in seen_files:
+                        seen_files.add(file_key)
+                        documents.append({
+                            "id": str(row.id),
+                            "content": (row.content[:200] + "..." if len(row.content) > 200 else row.content) if row.content else "",
+                            "metadata": {**metadata, "filename": filename},
+                            "collection_name": row.collection_name,
+                            "user_id": str(row.user_id) if row.user_id else None,
+                            "created_at": row.created_at.isoformat() if row.created_at else None,
+                            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                            "embedding": row.has_embedding
+                        })
+                
+                # Update total count to reflect unique files
+                total_count = len(documents)
+                
+                return {
+                    "success": True,
+                    "documents": documents,
+                    "total": total_count,
+                    "limit": limit or 100,
+                    "offset": offset or 0
+                }
+            else:
+                # Original query for documents table
+                if has_user_id:
+                    query = """
+                        SELECT
+                            id,
+                            content,
+                            metadata,
+                            collection_name,
+                            user_id,
+                            created_at,
+                            updated_at,
+                            CASE WHEN embedding IS NOT NULL THEN true ELSE false END as has_embedding
+                        FROM documents
+                        WHERE 1=1
+                    """
+                else:
+                    query = """
+                        SELECT
+                            id,
+                            content,
+                            metadata,
+                            collection_name,
+                            NULL as user_id,
+                            created_at,
+                            updated_at,
+                            CASE WHEN embedding IS NOT NULL THEN true ELSE false END as has_embedding
+                        FROM documents
+                        WHERE 1=1
+                    """
+                params = {}
+                
+                # Filter by collection
+                if collection_name:
+                    query += " AND collection_name = :collection_name"
+                    params["collection_name"] = collection_name
+                
+                # Filter by user (if authenticated, show only user's documents)
+                # For backward compatibility, if not authenticated, show all documents
+                if user_id:
+                    query += " AND (user_id = :user_id OR user_id IS NULL)"
+                    params["user_id"] = user_id
+                
+                # Order by
+                valid_order_by = ["created_at", "updated_at"]
+                if order_by not in valid_order_by:
+                    order_by = "created_at"
+                
+                valid_direction = ["asc", "desc"]
+                if order_direction not in valid_direction:
+                    order_direction = "desc"
+                
+                query += f" ORDER BY {order_by} {order_direction}"
+                
+                # Limit and offset
+                query += " LIMIT :limit OFFSET :offset"
+                params["limit"] = limit or 100
+                params["offset"] = offset or 0
+                
+                # Get total count
+                count_query = """
+                    SELECT COUNT(*) 
+                    FROM documents
+                    WHERE 1=1
+                """
+                count_params = {}
+                if collection_name:
+                    count_query += " AND collection_name = :collection_name"
+                    count_params["collection_name"] = collection_name
+                if user_id:
+                    count_query += " AND (user_id = :user_id OR user_id IS NULL)"
+                    count_params["user_id"] = user_id
+                
+                # Get documents
+                result = await session.execute(text(query), params)
+                rows = result.fetchall()
+                
+                # Get total count
+                count_result = await session.execute(text(count_query), count_params)
+                total_count = count_result.scalar()
+                
+                documents = []
+                for row in rows:
+                    metadata = row.metadata if isinstance(row.metadata, dict) else (json.loads(row.metadata) if row.metadata else {})
+                    documents.append({
+                        "id": str(row.id),
+                        "content": row.content[:200] + "..." if len(row.content) > 200 else row.content,  # Preview only
+                        "metadata": metadata,
+                        "collection_name": row.collection_name,
+                        "user_id": str(row.user_id) if row.user_id else None,
+                        "created_at": row.created_at.isoformat() if row.created_at else None,
+                        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                        "embedding": row.has_embedding
+                    })
+                
+                return {
+                    "success": True,
+                    "documents": documents,
+                    "total": total_count,
+                    "limit": limit or 100,
+                    "offset": offset or 0
+                }
+    except Exception as e:
+        logger.error(f"Failed to get documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/documents/count")
 async def get_document_count():
     """Get total document count"""
     try:
@@ -1406,10 +2449,33 @@ async def vector_search(query: str, top_k: Optional[int] = None, similarity_thre
 
 # File upload endpoint with collection support
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...), collection_name: str = Form("documents")):
+async def upload_file(
+    request: Request,
+    file: UploadFile = File(...), 
+    collection_name: str = Form("documents"),
+    create_embedding: str = Form("true")
+):
     """Upload and process file"""
+    extraction_result = None
+    content = None
+    should_create_embedding = False
+    user_id = None
+    
+    # Try to get current user if authentication token is provided (optional for backward compatibility)
     try:
-        logger.info(f"Starting file upload: {file.filename} to collection: {collection_name}")
+        authorization = request.headers.get("Authorization")
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization[7:]
+            user = await auth_service.get_current_user(token)
+            if user and hasattr(user, 'id'):
+                user_id = user.id
+    except:
+        # If authentication fails, continue without user_id (backward compatibility)
+        pass
+    
+    try:
+        should_create_embedding = create_embedding.lower() == "true"
+        logger.info(f"Starting file upload: {file.filename} to collection: {collection_name}, create_embedding: {should_create_embedding}, user_id: {user_id}")
         
         # Read file content
         content = await file.read()
@@ -1429,13 +2495,188 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
             )
         
         # Add to knowledge base with collection name
-        logger.info(f"Adding document to knowledge base in collection: {collection_name}")
-        doc_id = await rag_service.add_document(
-            extraction_result["text"],
-            extraction_result["metadata"],
-            collection_name
-        )
-        logger.info(f"Document added successfully with ID: {doc_id}")
+        if should_create_embedding:
+            logger.info(f"Adding document to knowledge base in collection: {collection_name}")
+            try:
+                doc_id = await rag_service.add_document(
+                    extraction_result["text"],
+                    extraction_result["metadata"],
+                    collection_name,
+                    user_id
+                )
+                logger.info(f"Document added successfully with ID: {doc_id}")
+                
+                # Verify that embedding was actually created by checking the database
+                actual_embedding_created = False
+                try:
+                    async with db_service.get_session() as session:
+                        result = await session.execute(text("""
+                            SELECT CASE WHEN embedding IS NOT NULL THEN true ELSE false END as has_embedding
+                            FROM documents 
+                            WHERE id = :doc_id
+                        """), {"doc_id": doc_id})
+                        row = result.fetchone()
+                        if row:
+                            actual_embedding_created = row.has_embedding
+                        else:
+                            # If document not found, check if it's a chunk ID (multiple chunks)
+                            # For chunked documents, check if any chunk has embedding
+                            result = await session.execute(text("""
+                                SELECT COUNT(*) as count
+                                FROM documents 
+                                WHERE metadata::text LIKE :doc_id_pattern
+                                AND embedding IS NOT NULL
+                            """), {"doc_id_pattern": f"%{doc_id}%"})
+                            chunk_count = result.scalar()
+                            actual_embedding_created = chunk_count > 0
+                except Exception as check_error:
+                    logger.warning(f"Failed to verify embedding creation: {check_error}")
+                    # Assume embedding was created if no error occurred during add_document
+                    actual_embedding_created = True
+                
+                return {
+                    "success": True,
+                    "document_id": doc_id,
+                    "filename": file.filename,
+                    "size": len(content),
+                    "extracted_text_length": len(extraction_result["text"]),
+                    "extraction_method": extraction_result["metadata"].get("extraction_method", "unknown"),
+                    "collection": collection_name,
+                    "embedding_created": actual_embedding_created,
+                    "message": f"File uploaded and processed successfully{' with embedding' if actual_embedding_created else ' without embedding'}"
+                }
+            except Exception as embed_error:
+                # If embedding fails, save document without embedding as fallback
+                error_msg = str(embed_error)
+                # Also check the cause/context of the error
+                error_cause = str(embed_error.__cause__) if embed_error.__cause__ else ""
+                full_error_msg = f"{error_msg} {error_cause}".lower()
+                logger.warning(f"Embedding generation failed, saving document without embedding: {error_msg}")
+                
+                # Check if it's really an embedding error (including "server error" patterns)
+                # More comprehensive pattern matching
+                is_embedding_error = (
+                    "embedding" in full_error_msg or 
+                    "ollama" in full_error_msg or 
+                    "server error" in full_error_msg or
+                    "500" in error_msg or
+                    "internal server error" in full_error_msg or
+                    "11434" in error_msg or  # Ollama port
+                    "/api/embeddings" in error_msg.lower() or  # Embeddings endpoint
+                    "nomic-embed" in full_error_msg or  # Embedding model name
+                    "embeddings" in full_error_msg  # Plural form
+                )
+                
+                if not is_embedding_error:
+                    # Not an embedding error, re-raise
+                    logger.error(f"Non-embedding error during document addition: {error_msg}")
+                    raise
+                
+                # Save document without embedding
+                try:
+                    async with db_service.get_session() as session:
+                        import uuid
+                        doc_id = str(uuid.uuid4())
+
+                        # Check if user_id column exists
+                        try:
+                            user_id_column_check = await session.execute(text("""
+                                SELECT column_name
+                                FROM information_schema.columns
+                                WHERE table_name = 'documents' AND column_name = 'user_id'
+                            """))
+                            has_user_id = user_id_column_check.fetchone() is not None
+                        except:
+                            has_user_id = False
+
+                        if has_user_id:
+                            await session.execute(text("""
+                                INSERT INTO documents (id, content, metadata, collection_name, embedding, user_id)
+                                VALUES (:id, :content, :metadata, :collection_name, NULL, :user_id)
+                            """), {
+                                "id": doc_id,
+                                "content": extraction_result["text"],
+                                "metadata": json.dumps(extraction_result["metadata"]),
+                                "collection_name": collection_name,
+                                "user_id": user_id
+                            })
+                        else:
+                            await session.execute(text("""
+                                INSERT INTO documents (id, content, metadata, collection_name, embedding)
+                                VALUES (:id, :content, :metadata, :collection_name, NULL)
+                            """), {
+                                "id": doc_id,
+                                "content": extraction_result["text"],
+                                "metadata": json.dumps(extraction_result["metadata"]),
+                                "collection_name": collection_name
+                            })
+                        await session.commit()
+                    
+                    logger.info(f"Document saved without embedding with ID: {doc_id}")
+                    return {
+                        "success": True,
+                        "document_id": doc_id,
+                        "filename": file.filename,
+                        "size": len(content),
+                        "extracted_text_length": len(extraction_result["text"]),
+                        "extraction_method": extraction_result["metadata"].get("extraction_method", "unknown"),
+                        "collection": collection_name,
+                        "embedding_created": False,
+                        "warning": f"임베딩 생성 실패로 문서만 저장되었습니다. RAG 검색에는 사용할 수 없습니다. 오류: {error_msg}"
+                    }
+                except Exception as save_error:
+                    # If saving without embedding also fails, raise original error
+                    logger.error(f"Failed to save document without embedding: {save_error}")
+                    if "ollama" in error_msg.lower() or "embedding" in error_msg.lower():
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"임베딩 생성 실패: {error_msg}. Ollama 서버가 실행 중이고 '{settings.OLLAMA_EMBEDDING_MODEL}' 모델이 설치되어 있는지 확인하세요. 또는 벡터화 옵션을 끄고 문서만 저장할 수 있습니다."
+                        )
+                    raise
+        else:
+            # Just save the document without embedding
+            logger.info(f"Saving document without embedding to collection: {collection_name}")
+            async with db_service.get_session() as session:
+                import uuid
+                doc_id = str(uuid.uuid4())
+
+                # Check if user_id column exists
+                try:
+                    user_id_column_check = await session.execute(text("""
+                        SELECT column_name
+                        FROM information_schema.columns
+                        WHERE table_name = 'documents' AND column_name = 'user_id'
+                    """))
+                    has_user_id = user_id_column_check.fetchone() is not None
+                except:
+                    has_user_id = False
+
+                if has_user_id:
+                    await session.execute(text("""
+                        INSERT INTO documents (id, content, metadata, collection_name, embedding, user_id)
+                        VALUES (:id, :content, :metadata, :collection_name, NULL, :user_id)
+                    """), {
+                        "id": doc_id,
+                        "content": extraction_result["text"],
+                        "metadata": json.dumps(extraction_result["metadata"]),
+                        "collection_name": collection_name,
+                        "user_id": user_id
+                    })
+                else:
+                    await session.execute(text("""
+                        INSERT INTO documents (id, content, metadata, collection_name, embedding)
+                        VALUES (:id, :content, :metadata, :collection_name, NULL)
+                    """), {
+                        "id": doc_id,
+                        "content": extraction_result["text"],
+                        "metadata": json.dumps(extraction_result["metadata"]),
+                        "collection_name": collection_name
+                    })
+                await session.commit()
+            logger.info(f"Document saved without embedding with ID: {doc_id}")
+            
+            # Verify that embedding was NOT created (since we explicitly set it to NULL)
+            actual_embedding_created = False
         
         return {
             "success": True,
@@ -1445,25 +2686,94 @@ async def upload_file(file: UploadFile = File(...), collection_name: str = Form(
             "extracted_text_length": len(extraction_result["text"]),
             "extraction_method": extraction_result["metadata"].get("extraction_method", "unknown"),
             "collection": collection_name,
-            "message": "File uploaded and processed successfully"
+            "embedding_created": actual_embedding_created,
+            "message": f"File uploaded and processed successfully{' with embedding' if actual_embedding_created else ' without embedding'}"
         }
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"File upload failed: {e}")
-        # Provide more detailed error information
-        error_detail = f"파일 업로드 중 오류가 발생했습니다: {str(e)}"
-        if "timeout" in str(e).lower():
-            error_detail += " (타임아웃 발생 - 파일이 너무 크거나 처리 시간이 오래 걸립니다)"
-        elif "connection" in str(e).lower():
-            error_detail += " (연결 오류 - 서버 상태를 확인해주세요)"
-        raise HTTPException(status_code=500, detail=error_detail)
+        error_msg = str(e)
+        logger.error(f"File upload failed: {e}", exc_info=True)
+        
+        # Check if it's an embedding error that should trigger fallback
+        # Only try fallback if we have extraction_result (text extraction succeeded)
+        # Check for various error patterns: embedding, ollama, server error, 500, etc.
+        error_cause = str(e.__cause__) if e.__cause__ else ""
+        full_error_msg = f"{error_msg} {error_cause}".lower()
+        is_embedding_error = (
+            "embedding" in full_error_msg or 
+            "ollama" in full_error_msg or 
+            "server error" in full_error_msg or
+            "500" in error_msg or
+            "internal server error" in full_error_msg or
+            "11434" in error_msg or  # Ollama port
+            "/api/embeddings" in error_msg.lower() or  # Embeddings endpoint
+            "nomic-embed" in full_error_msg or  # Embedding model name
+            "embeddings" in full_error_msg  # Plural form
+        )
+        
+        if (should_create_embedding and 
+            is_embedding_error and
+            extraction_result is not None and extraction_result):
+            # Try to save without embedding as final fallback
+            try:
+                logger.warning(f"Final fallback: saving document without embedding due to: {error_msg}")
+                async with db_service.get_session() as session:
+                    import uuid
+                    doc_id = str(uuid.uuid4())
+                    await session.execute(text("""
+                        INSERT INTO documents (id, content, metadata, collection_name, embedding, user_id)
+                        VALUES (:id, :content, :metadata, :collection_name, NULL, :user_id)
+                    """), {
+                        "id": doc_id,
+                        "content": extraction_result["text"],
+                        "metadata": json.dumps(extraction_result["metadata"]),
+                        "collection_name": collection_name,
+                        "user_id": user_id
+                    })
+                    await session.commit()
+                
+                logger.info(f"Document saved without embedding (final fallback) with ID: {doc_id}")
+                return {
+                    "success": True,
+                    "document_id": doc_id,
+                    "filename": file.filename,
+                    "size": len(content),
+                    "extracted_text_length": len(extraction_result["text"]),
+                    "extraction_method": extraction_result["metadata"].get("extraction_method", "unknown"),
+                    "collection": collection_name,
+                    "embedding_created": False,
+                    "warning": f"임베딩 생성 실패로 문서만 저장되었습니다. RAG 검색에는 사용할 수 없습니다. 오류: {error_msg}"
+                }
+            except Exception as final_error:
+                logger.error(f"Final fallback also failed: {final_error}")
+                # If even the final fallback fails, return error
+                error_detail = f"파일 업로드 중 오류가 발생했습니다: {error_msg}. 문서 저장도 실패했습니다: {str(final_error)}"
+                raise HTTPException(status_code=500, detail=error_detail)
+        else:
+            # Provide more detailed error information
+            error_detail = f"파일 업로드 중 오류가 발생했습니다: {error_msg}"
+            if "timeout" in error_msg.lower():
+                error_detail += " (타임아웃 발생 - 파일이 너무 크거나 처리 시간이 오래 걸립니다)"
+            elif "connection" in error_msg.lower():
+                error_detail += " (연결 오류 - 서버 상태를 확인해주세요)"
+            elif "embedding" in error_msg.lower() or "ollama" in error_msg.lower():
+                error_detail += " (임베딩 생성 실패 - Ollama 서버 상태를 확인하거나 벡터화 옵션을 끄고 다시 시도해보세요)"
+            raise HTTPException(status_code=500, detail=error_detail)
 
 # LangChain file upload endpoint with collection support
 @app.post("/api/langchain/upload")
 async def upload_file_langchain(file: UploadFile = File(...), collection_name: str = Form("langchain_documents"), current_user: User = Depends(auth_controller.get_current_user)):
     """Upload and process file using LangChain"""
     try:
+        # Log the received collection_name parameter for debugging
+        logger.info(f"Received collection_name parameter: '{collection_name}' (type: {type(collection_name)})")
+        
+        # Ensure collection_name is not empty, None, or "undefined" - use default if needed
+        if not collection_name or collection_name.strip() == "" or collection_name.strip().lower() == "undefined":
+            collection_name = "langchain_documents"
+            logger.warning(f"collection_name was empty, None, or 'undefined', using default: {collection_name}")
+        
         logger.info(f"Starting LangChain file upload: {file.filename} to collection: {collection_name}")
         
         # Read file content
@@ -1492,16 +2802,34 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
                     status_code=403, 
                     detail=f"You don't have permission to upload files to collection '{collection_name}'. Only the collection owner can upload files."
                 )
-            logger.info(f"Switching to collection: {collection_name}")
-            await langchain_rag_service.set_collection(collection_name)
+        
+        # Always switch to the specified collection before adding document (ensures document goes to correct collection)
+        logger.info(f"Switching to collection: {collection_name}")
+        collection_set = await langchain_rag_service.set_collection(collection_name, current_user.id)
+        
+        # 컬렉션 설정 실패 시 오류 반환 (문서가 잘못된 컬렉션에 저장되는 것 방지)
+        if not collection_set:
+            logger.error(f"Failed to set collection '{collection_name}' for user {current_user.id}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"컬렉션 '{collection_name}' 설정에 실패했습니다. 컬렉션이 존재하지 않거나 접근 권한이 없습니다."
+            )
         
         # Add to LangChain knowledge base
-        logger.info("Adding document to LangChain knowledge base...")
+        # 방법2: 메타데이터에 filename 명시적으로 추가
+        extraction_result["metadata"]["filename"] = file.filename
+        extraction_result["metadata"]["file_name"] = file.filename  # 백업용
+        logger.info(f"Adding document to LangChain knowledge base with filename: {file.filename}...")
+        # collection_name을 명시적으로 전달하여 올바른 컬렉션에 저장되도록 보장
         doc_ids = await langchain_rag_service.add_document(
             extraction_result["text"],
-            extraction_result["metadata"]
+            extraction_result["metadata"],
+            collection_name  # 컬렉션 이름 명시적으로 전달
         )
         logger.info(f"Document added successfully with IDs: {doc_ids}")
+        
+        # DB 커밋이 완료될 때까지 잠시 대기 (방법3: 대기 시간 증가)
+        await asyncio.sleep(1.0)  # 1초 대기하여 DB 트랜잭션 커밋 완료 보장
         
         return {
             "success": True,
@@ -1527,9 +2855,25 @@ async def upload_file_langchain(file: UploadFile = File(...), collection_name: s
 
 # Multiple files upload endpoint with collection support
 @app.post("/api/upload/multiple")
-async def upload_multiple_files(files: List[UploadFile] = File(...), collection_name: str = Form("documents")):
+async def upload_multiple_files(
+    request: Request,
+    files: List[UploadFile] = File(...), 
+    collection_name: str = Form("documents")
+):
     """Upload and process multiple files"""
     try:
+        # Get current user if authenticated (optional for backward compatibility)
+        user_id = None
+        try:
+            authorization = request.headers.get("Authorization")
+            if authorization and authorization.startswith("Bearer "):
+                token = authorization[7:]
+                user = await auth_service.get_current_user(token)
+                if user and hasattr(user, 'id'):
+                    user_id = user.id
+        except:
+            pass
+        
         # Switch to specified collection if different from current
         if collection_name != "langchain_documents":
             await langchain_rag_service.set_collection(collection_name)
@@ -1558,7 +2902,8 @@ async def upload_multiple_files(files: List[UploadFile] = File(...), collection_
                 doc_id = await rag_service.add_document(
                     extraction_result["text"],
                     extraction_result["metadata"],
-                    collection_name
+                    collection_name,
+                    user_id
                 )
                 
                 results.append({
@@ -1580,6 +2925,10 @@ async def upload_multiple_files(files: List[UploadFile] = File(...), collection_
         
         # Count successful uploads
         successful_uploads = sum(1 for r in results if r["success"])
+        
+        # DB 커밋이 완료될 때까지 잠시 대기 (방법3: 대기 시간 증가)
+        if successful_uploads > 0:
+            await asyncio.sleep(1.0)  # 1초 대기하여 DB 트랜잭션 커밋 완료 보장
         
         return {
             "success": True,
@@ -1609,7 +2958,18 @@ async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), c
                     status_code=403, 
                     detail=f"You don't have permission to upload files to collection '{collection_name}'. Only the collection owner can upload files."
                 )
-            await langchain_rag_service.set_collection(collection_name)
+        
+        # Always switch to the specified collection before adding documents
+        logger.info(f"Switching to collection: {collection_name}")
+        collection_set = await langchain_rag_service.set_collection(collection_name, current_user.id)
+        
+        # 컬렉션 설정 실패 시 오류 반환 (문서가 잘못된 컬렉션에 저장되는 것 방지)
+        if not collection_set:
+            logger.error(f"Failed to set collection '{collection_name}' for user {current_user.id}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"컬렉션 '{collection_name}' 설정에 실패했습니다. 컬렉션이 존재하지 않거나 접근 권한이 없습니다."
+            )
         
         results = []
         
@@ -1632,9 +2992,14 @@ async def upload_multiple_files_langchain(files: List[UploadFile] = File(...), c
                     continue
                 
                 # Add to LangChain knowledge base
+                # 방법2: 메타데이터에 filename 명시적으로 추가
+                extraction_result["metadata"]["filename"] = file.filename
+                extraction_result["metadata"]["file_name"] = file.filename  # 백업용
+                # collection_name을 명시적으로 전달하여 올바른 컬렉션에 저장되도록 보장
                 doc_ids = await langchain_rag_service.add_document(
                     extraction_result["text"],
-                    extraction_result["metadata"]
+                    extraction_result["metadata"],
+                    collection_name  # 컬렉션 이름 명시적으로 전달
                 )
                 
                 results.append({
@@ -1709,8 +3074,14 @@ async def get_collections(current_user: User = Depends(auth_controller.get_curre
                     "metadata": collection.get("metadata", {}),
                     "created_at": collection.get("created_at"),
                     "document_count": collection.get("document_count", 0),
-                    "user_id": collection.get("user_id")
+                    "user_id": collection.get("user_id"),
+                    "type": collection.get("type", "personal" if collection.get("user_id") else "shared"),
+                    "is_shared": collection.get("is_shared", False)
                 })
+        
+        logger.info(f"Returning {len(all_collections)} collections")
+        for c in all_collections:
+            logger.info(f"Collection: {c['name']} ({c['id']}) - Count: {c['document_count']}")
         
         current_collection = getattr(langchain_rag_service, 'current_collection', 'langchain_documents')
         
@@ -1744,13 +3115,13 @@ async def get_current_collection():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/collections/switch")
-async def switch_collection(request: CollectionRequest):
+async def switch_collection(request: CollectionRequest, current_user: User = Depends(auth_controller.get_current_user)):
     """Switch the active collection for RAG queries"""
     try:
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        success = await langchain_rag_service.set_collection(request.collection_name)
+        success = await langchain_rag_service.set_collection(request.collection_name, current_user.id)
         
         if success:
             return {
@@ -1775,14 +3146,48 @@ async def get_collection_info(collection_name: str):
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        collection_info = await langchain_rag_service.get_collection_info(collection_name)
+        # Try to get collection info from basic RAG (documents table) first
+        try:
+            basic_collection_info = await vector_service.get_collection(collection_name)
+            if basic_collection_info and basic_collection_info.get("document_count", 0) >= 0:
+                # Found in basic RAG collections
+                return {
+                    "success": True,
+                    "collection": {
+                        "name": basic_collection_info.get("name", collection_name),
+                        "document_count": basic_collection_info.get("document_count", 0),
+                        "created_at": basic_collection_info.get("created_at"),
+                        "updated_at": basic_collection_info.get("updated_at"),
+                        "type": "basic_rag"
+                    }
+                }
+        except Exception as basic_error:
+            logger.debug(f"Collection not found in basic RAG: {basic_error}")
         
-        if not collection_info:
-            raise HTTPException(status_code=404, detail=f"Collection '{collection_name}' not found")
+        # Try LangChain RAG collections
+        try:
+            langchain_collection_info = await langchain_rag_service.get_collection_info(collection_name)
+            if langchain_collection_info:
+                return {
+                    "success": True,
+                    "collection": {
+                        **langchain_collection_info,
+                        "type": "langchain_rag"
+                    }
+                }
+        except Exception as langchain_error:
+            logger.debug(f"Collection not found in LangChain RAG: {langchain_error}")
         
+        # If not found in either, return empty collection info (collection exists but has no documents)
         return {
             "success": True,
-            "collection": collection_info
+            "collection": {
+                "name": collection_name,
+                "document_count": 0,
+                "created_at": None,
+                "updated_at": None,
+                "type": "unknown"
+            }
         }
         
     except HTTPException:
@@ -1793,21 +3198,28 @@ async def get_collection_info(collection_name: str):
 
 @app.post("/api/collections/create")
 async def create_collection(request: CreateCollectionRequest, current_user: User = Depends(auth_controller.get_current_user)):
-    """Create a new personal collection for the current user"""
+    """Create a new collection (personal or shared) for the current user"""
     try:
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
+        
+        # Validate type
+        if request.type not in ["personal", "shared"]:
+            raise HTTPException(status_code=400, detail="Type must be 'personal' or 'shared'")
+        
+        is_shared = request.type == "shared"
         
         result = await langchain_rag_service.create_collection(
             request.collection_name, 
             request.description,
             current_user.id,
-            is_shared=False  # Mark as personal collection
+            is_shared=is_shared
         )
         
+        collection_type = "공유" if is_shared else "개인"
         return {
             "success": True,
-            "message": f"Personal collection '{request.collection_name}' created successfully",
+            "message": f"{collection_type} 데이터셋 '{request.collection_name}'이(가) 생성되었습니다",
             "collection": result
         }
         
@@ -1908,33 +3320,62 @@ async def delete_collection(collection_name: str, current_user: User = Depends(a
         if not services_initialized:
             raise HTTPException(status_code=503, detail="Services not initialized")
         
-        result = await langchain_rag_service.delete_collection(collection_name, current_user.id)
+        # Prevent deletion of default collections
+        if collection_name in ["documents", "langchain_documents"]:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete the default collection '{collection_name}'"
+            )
         
-        return {
-            "success": True,
-            "message": f"Collection '{collection_name}' deleted successfully",
-            "result": result
-        }
+        deleted_results = {}
         
-    except ValueError as e:
-        # Collection doesn't exist - return a more user-friendly message
-        logger.info(f"ValueError caught: {str(e)}")
-        if "does not exist" in str(e):
-            logger.info("Collection does not exist, returning structured response")
+        # Try to delete from Basic RAG (documents table) first
+        try:
+            basic_deleted = await vector_service.delete_collection(collection_name)
+            if basic_deleted:
+                deleted_results["basic_rag"] = True
+                logger.info(f"Deleted Basic RAG collection '{collection_name}'")
+        except Exception as basic_error:
+            logger.debug(f"Collection '{collection_name}' not found in Basic RAG: {basic_error}")
+            deleted_results["basic_rag"] = False
+        
+        # Try to delete from LangChain RAG
+        try:
+            langchain_result = await langchain_rag_service.delete_collection(collection_name, current_user.id)
+            deleted_results["langchain_rag"] = langchain_result
+            logger.info(f"Deleted LangChain RAG collection '{collection_name}'")
+        except ValueError as langchain_error:
+            # Collection doesn't exist in LangChain RAG - this is OK
+            logger.debug(f"Collection '{collection_name}' not found in LangChain RAG: {langchain_error}")
+            deleted_results["langchain_rag"] = False
+        except Exception as langchain_error:
+            # Other errors (like permission) - log but don't fail if Basic RAG deletion succeeded
+            if "not authorized" in str(langchain_error).lower() or "permission" in str(langchain_error).lower():
+                logger.warning(f"Not authorized to delete LangChain collection '{collection_name}': {langchain_error}")
+                deleted_results["langchain_rag"] = False
+            else:
+                logger.debug(f"Collection '{collection_name}' not found in LangChain RAG: {langchain_error}")
+                deleted_results["langchain_rag"] = False
+        
+        # Check if at least one deletion succeeded
+        if deleted_results.get("basic_rag") or deleted_results.get("langchain_rag"):
+            return {
+                "success": True,
+                "message": f"Collection '{collection_name}' deleted successfully",
+                "deleted_from": {
+                    "basic_rag": deleted_results.get("basic_rag", False),
+                    "langchain_rag": deleted_results.get("langchain_rag", False)
+                }
+            }
+        else:
             return {
                 "success": False,
                 "message": f"Collection '{collection_name}' does not exist",
                 "error": "COLLECTION_NOT_FOUND"
             }
-        elif "not authorized" in str(e).lower() or "permission" in str(e).lower():
-            logger.info("User not authorized to delete collection")
-            return {
-                "success": False,
-                "message": f"You are not authorized to delete collection '{collection_name}'",
-                "error": "UNAUTHORIZED"
-            }
-        logger.info("ValueError does not match 'does not exist' pattern, raising HTTPException")
-        raise HTTPException(status_code=400, detail=str(e))
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to delete collection: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1985,7 +3426,15 @@ async def export_chat_markdown(request: MarkdownExportRequest):
                         "role": msg.role.value,
                         "content": msg.content,
                         "timestamp": msg.timestamp.isoformat(),
-                        "sources": [{"filename": s.filename, "similarity_score": s.similarity_score} for s in msg.sources] if msg.sources else [],
+                        "sources": [
+                        {
+                            "filename": s.filename, 
+                            "similarity_score": s.similarity_score,
+                            "content_preview": s.content_preview,
+                            "document_id": s.document_id
+                        } 
+                        for s in msg.sources
+                    ] if msg.sources else [],
                         "accuracy": {
                             "confidence_score": msg.accuracy.confidence_score,
                             "context_count": msg.accuracy.context_count,
@@ -2131,13 +3580,40 @@ async def download_markdown_file(filename: str):
 async def register(request: RegisterRequest):
     """Register a new user"""
     try:
+        logger.info(f"Register request for user: {request.username}")
         result = await auth_controller.register(request)
+        logger.info(f"Register result: success={result.success}, message={result.message}")
         if not result.success:
             raise HTTPException(status_code=400, detail=result.message)
-        return result
+        
+        # Convert AuthResponse to dictionary for JSON serialization
+        response_dict = {
+            "success": result.success,
+            "message": result.message,
+            "access_token": result.access_token,
+            "refresh_token": result.refresh_token,
+            "expires_in": result.expires_in
+        }
+        
+        # Convert User object to dictionary
+        if result.user:
+            response_dict["user"] = {
+                "id": result.user.id,
+                "username": result.user.username,
+                "email": result.user.email,
+                "role": result.user.role.value,
+                "is_active": result.user.is_active,
+                "created_at": result.user.created_at.isoformat() if result.user.created_at else None,
+                "updated_at": result.user.updated_at.isoformat() if result.user.updated_at else None,
+                "last_login": result.user.last_login.isoformat() if result.user.last_login else None
+            }
+        
+        return response_dict
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Registration failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e) if str(e) else "Registration failed")
 
 @app.post("/api/auth/login")
 async def login(request: LoginRequest):

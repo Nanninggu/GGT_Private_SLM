@@ -15,42 +15,6 @@ class ChatController:
     def __init__(self):
         self.chat_service = ChatService()
 
-    async def create_session(self) -> Dict[str, Any]:
-        """Create a new chat session"""
-        try:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info("Creating new session...")
-            
-            session = await self.chat_service.create_session()
-            logger.info(f"Session created successfully: {session.id}")
-            
-            return {
-                "success": True,
-                "session_id": session.id,
-                "created_at": session.created_at.isoformat()
-            }
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error creating session: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return {
-                "success": False,
-                "error": str(e)
-            }
-
-    async def create_session_object(self) -> ChatSession:
-        """Create a new chat session and return the object"""
-        try:
-            return await self.chat_service.create_session()
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error creating session object: {e}")
-            raise
-    
     async def save_session(self, session) -> bool:
         """Save a chat session"""
         try:
@@ -300,6 +264,8 @@ class ChatController:
         try:
             return await self.chat_service.get_session(session_id)
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
             logger.error(f"Error getting session {session_id}: {e}")
             return None
 

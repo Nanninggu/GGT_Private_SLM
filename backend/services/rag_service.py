@@ -31,19 +31,25 @@ class RagService:
             logger.error(f"Failed to initialize RAG service: {e}")
             raise
     
-    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None) -> str:
+    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None, user_id: Optional[str] = None) -> str:
         """Add document to knowledge base"""
         try:
             # Clean and preprocess content
             cleaned_content = self._preprocess_content(content)
             
             # Add to vector database
-            doc_id = await self.vector_service.add_document(cleaned_content, metadata, collection_name)
+            doc_id = await self.vector_service.add_document(cleaned_content, metadata, collection_name, user_id)
             
             logger.info(f"Document added to knowledge base: {doc_id} in collection: {collection_name}")
             return doc_id
             
         except Exception as e:
+            error_msg = str(e)
+            # Check if it's an embedding-related error
+            if "embedding" in error_msg.lower() or "ollama" in error_msg.lower():
+                logger.warning(f"Embedding generation failed in rag_service: {error_msg}")
+                # Re-raise with more context so the caller can handle it
+                raise Exception(f"임베딩 생성 실패: {error_msg}") from e
             logger.error(f"Failed to add document: {e}")
             raise
     

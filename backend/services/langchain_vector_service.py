@@ -6,8 +6,10 @@ import logging
 from typing import List, Dict, Any, Optional
 import json
 import uuid
+from datetime import datetime
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+import concurrent.futures
 
 from langchain_core.documents import Document
 from langchain_community.vectorstores import PGVector
@@ -15,7 +17,6 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.embeddings import Embeddings
 import httpx
-import asyncio
 from typing import List
 
 from backend.config.settings import settings
@@ -29,10 +30,12 @@ class CustomOllamaEmbeddings(Embeddings):
     def __init__(self, model: str, base_url: str = "http://localhost:11434"):
         self.model = model
         self.base_url = base_url
-        self.client = httpx.AsyncClient(
+        self.async_client = httpx.AsyncClient(
             base_url=base_url,
             timeout=60.0
         )
+        # Synchronous client for use in sync methods (not bound to any event loop)
+        self._sync_client = None
     
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of documents asynchronously"""
@@ -46,18 +49,31 @@ class CustomOllamaEmbeddings(Embeddings):
         """Embed a single query asynchronously"""
         return await self._get_embedding(text)
     
+    def _get_sync_client(self):
+        """Get or create synchronous HTTP client (not bound to event loop)"""
+        if self._sync_client is None:
+            self._sync_client = httpx.Client(
+                base_url=self.base_url,
+                timeout=60.0
+            )
+        return self._sync_client
+    
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed a list of documents synchronously"""
-        return asyncio.run(self.aembed_documents(texts))
+        """Embed a list of documents synchronously using sync client"""
+        embeddings = []
+        for text in texts:
+            embedding = self._get_embedding_sync(text)
+            embeddings.append(embedding)
+        return embeddings
     
     def embed_query(self, text: str) -> List[float]:
-        """Embed a single query synchronously"""
-        return asyncio.run(self.aembed_query(text))
+        """Embed a single query synchronously using sync client"""
+        return self._get_embedding_sync(text)
     
     async def _get_embedding(self, text: str) -> List[float]:
-        """Get embedding for a single text"""
+        """Get embedding for a single text (async)"""
         try:
-            response = await self.client.post(
+            response = await self.async_client.post(
                 "/api/embeddings",
                 json={
                     "model": self.model,
@@ -71,12 +87,36 @@ class CustomOllamaEmbeddings(Embeddings):
             data = response.json()
             return data["embedding"]
         except Exception as e:
-            logger.error(f"Failed to get embedding: {e}")
+            logger.error(f"Failed to get embedding (async): {e}")
+            raise
+    
+    def _get_embedding_sync(self, text: str) -> List[float]:
+        """Get embedding for a single text (synchronous using sync client)"""
+        try:
+            client = self._get_sync_client()
+            response = client.post(
+                "/api/embeddings",
+                json={
+                    "model": self.model,
+                    "prompt": text,
+                    "options": {
+                        "num_ctx": settings.OLLAMA_EMBEDDING_NUM_CTX
+                    }
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["embedding"]
+        except Exception as e:
+            logger.error(f"Failed to get embedding (sync): {e}")
             raise
     
     async def close(self):
-        """Close the HTTP client"""
-        await self.client.aclose()
+        """Close both HTTP clients"""
+        if self.async_client:
+            await self.async_client.aclose()
+        if self._sync_client:
+            self._sync_client.close()
 
 class LangChainVectorService:
     """LangChain-based vector store service using PostgreSQL + pgvector"""
@@ -112,7 +152,8 @@ class LangChainVectorService:
                 embedding_function=self.embeddings,
                 collection_name="langchain_documents",
                 distance_strategy="cosine",
-                use_jsonb=True  # Use JSONB for metadata to avoid deprecation warning
+                use_jsonb=True,  # Use JSONB for metadata to avoid deprecation warning
+                pre_delete_collection=False  # Don't delete existing collection on init
             )
             
             logger.info("LangChain vector service initialized successfully")
@@ -121,9 +162,16 @@ class LangChainVectorService:
             logger.error(f"Failed to initialize LangChain vector service: {e}")
             raise
     
-    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> List[str]:
+    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None) -> List[str]:
         """Add document to vector store using LangChain"""
         try:
+            # If collection_name is provided, ensure we're using the correct collection
+            if collection_name:
+                logger.info(f"Setting collection to '{collection_name}' before adding document")
+                success = await self.set_collection(collection_name)
+                if not success:
+                    raise Exception(f"Failed to set collection to '{collection_name}'. Collection may not exist.")
+            
             if not self.documents:
                 raise Exception("Vector store not initialized")
             
@@ -141,9 +189,13 @@ class LangChainVectorService:
             logger.info(f"Document split into {len(chunks)} chunks")
             
             # Add chunks to vector store
-            logger.info("Adding chunks to vector store...")
+            # With AUTOCOMMIT mode, changes are immediately persisted to the database
+            logger.info(f"Adding chunks to vector store (collection: {collection_name or 'current'})...")
             doc_ids = await self.documents.aadd_documents(chunks)
-            logger.info(f"Successfully added {len(doc_ids)} document chunks to vector store")
+            logger.info(f"Successfully added {len(doc_ids)} document chunks to vector store (AUTOCOMMIT mode)")
+            
+            # Give a small delay to ensure database has finished processing
+            await asyncio.sleep(0.1)
             
             return doc_ids
             
@@ -323,7 +375,16 @@ class LangChainVectorService:
             async with session:
                 collections = []
                 
-                # Always include the default 'langchain_documents' collection (shared)
+                # First, find the actual UUID of 'langchain_documents' collection in the database
+                langchain_docs_result = await session.execute(text("""
+                    SELECT uuid, cmetadata
+                    FROM langchain_pg_collection
+                    WHERE name = 'langchain_documents'
+                    LIMIT 1
+                """))
+                langchain_docs_row = langchain_docs_result.fetchone()
+                
+                # Default collection info
                 default_collection = {
                     "id": "default",
                     "name": "langchain_documents",
@@ -333,17 +394,62 @@ class LangChainVectorService:
                     "user_id": None  # Shared collection
                 }
                 
-                # Count documents in default collection (all documents)
-                doc_count_result = await session.execute(text("""
-                    SELECT COUNT(*) 
-                    FROM langchain_pg_embedding
-                """))
-                default_collection["document_count"] = doc_count_result.scalar() or 0
+                # Count documents in default collection using actual collection_id
+                if langchain_docs_row:
+                    default_collection["id"] = str(langchain_docs_row.uuid)
+                    default_collection["metadata"] = langchain_docs_row.cmetadata or {}
+                    
+                    # Count only documents that belong to this specific collection
+                    doc_count_result = await session.execute(text("""
+                        SELECT COUNT(*) 
+                        FROM langchain_pg_embedding
+                        WHERE collection_id = CAST(:collection_id AS UUID)
+                    """), {"collection_id": str(langchain_docs_row.uuid)})
+                    default_collection["document_count"] = doc_count_result.scalar() or 0
+                    
+                    # Get created_at from the first document in this collection
+                    created_at = None
+                    if default_collection["document_count"] > 0:
+                        try:
+                            doc_metadata_result = await session.execute(text("""
+                                SELECT cmetadata
+                                FROM langchain_pg_embedding
+                                WHERE collection_id = CAST(:collection_id AS UUID)
+                                ORDER BY uuid ASC
+                                LIMIT 1
+                            """), {"collection_id": str(langchain_docs_row.uuid)})
+                            
+                            doc_metadata_row = doc_metadata_result.fetchone()
+                            if doc_metadata_row and doc_metadata_row.cmetadata:
+                                doc_metadata = doc_metadata_row.cmetadata
+                                if isinstance(doc_metadata, str):
+                                    try:
+                                        doc_metadata = json.loads(doc_metadata)
+                                    except:
+                                        doc_metadata = {}
+                                
+                                if isinstance(doc_metadata, dict):
+                                    created_at = (
+                                        doc_metadata.get("created_at") or 
+                                        doc_metadata.get("created_date") or 
+                                        doc_metadata.get("upload_date") or
+                                        doc_metadata.get("date") or
+                                        doc_metadata.get("timestamp")
+                                    )
+                        except Exception as e:
+                            logger.debug(f"Failed to get created_at from document metadata: {e}")
+                    
+                    default_collection["created_at"] = created_at
+                else:
+                    # langchain_documents collection doesn't exist yet, count is 0
+                    logger.info("langchain_documents collection not found in database, will be created on first use")
                 
                 # Add default collection
                 collections.append(default_collection)
                 
                 # Get collections from langchain_pg_collection table with user filter
+                # Personal collections: user_id matches the current user
+                # Shared collections: user_id is NULL (accessible by all users)
                 if user_id:
                     result = await session.execute(text("""
                         SELECT 
@@ -352,7 +458,7 @@ class LangChainVectorService:
                             cmetadata,
                             user_id
                         FROM langchain_pg_collection 
-                        WHERE user_id = :user_id OR (cmetadata->>'is_shared')::boolean = true
+                        WHERE user_id = :user_id OR user_id IS NULL
                         ORDER BY name
                     """), {"user_id": user_id})
                 else:
@@ -368,7 +474,8 @@ class LangChainVectorService:
                 
                 for row in result:
                     metadata = row.cmetadata or {}
-                    is_shared = metadata.get("is_shared", False)
+                    # Shared collections have NULL user_id, personal collections have user_id set
+                    is_shared = row.user_id is None
                     
                     collection = {
                         "id": str(row.uuid),
@@ -377,6 +484,7 @@ class LangChainVectorService:
                         "created_at": None,
                         "document_count": 0,
                         "user_id": row.user_id,
+                        "type": "shared" if is_shared else "personal",
                         "is_shared": is_shared,
                         "created_by": metadata.get("created_by", row.user_id)
                     }
@@ -385,10 +493,62 @@ class LangChainVectorService:
                     doc_count_result = await session.execute(text("""
                         SELECT COUNT(*) 
                         FROM langchain_pg_embedding 
-                        WHERE collection_id = :collection_id
+                        WHERE collection_id = CAST(:collection_id AS UUID)
                     """), {"collection_id": collection["id"]})
                     
-                    collection["document_count"] = doc_count_result.scalar() or 0
+                    count = doc_count_result.scalar() or 0
+                    logger.info(f"Collection {collection['name']} ({collection['id']}) has {count} documents")
+                    collection["document_count"] = count
+                    
+                    # Get created_at from collection metadata first, then from documents
+                    created_at = None
+                    
+                    # 1. Try to get from collection metadata
+                    if isinstance(metadata, dict):
+                        created_at = metadata.get("created_at") or metadata.get("created_date")
+                    
+                    # 2. If not in metadata, try to get from the oldest document's metadata
+                    if not created_at and collection["document_count"] > 0:
+                        try:
+                            # Get the oldest document's metadata
+                            doc_metadata_result = await session.execute(text("""
+                                SELECT cmetadata
+                                FROM langchain_pg_embedding 
+                                WHERE collection_id = CAST(:collection_id AS UUID)
+                                ORDER BY uuid ASC
+                                LIMIT 1
+                            """), {"collection_id": collection["id"]})
+                            
+                            doc_metadata_row = doc_metadata_result.fetchone()
+                            if doc_metadata_row and doc_metadata_row.cmetadata:
+                                doc_metadata = doc_metadata_row.cmetadata
+                                if isinstance(doc_metadata, str):
+                                    try:
+                                        doc_metadata = json.loads(doc_metadata)
+                                    except:
+                                        doc_metadata = {}
+                                
+                                if isinstance(doc_metadata, dict):
+                                    created_at = (
+                                        doc_metadata.get("created_at") or 
+                                        doc_metadata.get("created_date") or 
+                                        doc_metadata.get("upload_date") or
+                                        doc_metadata.get("date") or
+                                        doc_metadata.get("timestamp")
+                                    )
+                        except Exception as e:
+                            logger.debug(f"Failed to get created_at from document metadata: {e}")
+                    
+                    # 3. If still not found and collection has documents, 
+                    # estimate creation date as the time when first document was likely added
+                    # Since we can't extract timestamp from UUID v4, we'll use a fallback:
+                    # For collections with documents but no metadata, we can't determine exact date
+                    # So we'll leave it as None and let frontend show "알 수 없음"
+                    # But for better UX, we could use collection UUID creation time if it's UUID v1
+                    # However, most UUIDs are v4 (random), so we can't extract timestamp
+                    
+                    collection["created_at"] = created_at
+                    
                     collections.append(collection)
                 
                 logger.info(f"Found {len(collections)} collections for user {user_id}")
@@ -417,38 +577,62 @@ class LangChainVectorService:
             async with session:
                 # Handle default 'langchain_documents' collection
                 if collection_name == "langchain_documents":
-                    # Count documents in default collection (all documents)
-                    doc_count_result = await session.execute(text("""
-                        SELECT COUNT(*) 
-                        FROM langchain_pg_embedding
+                    # First, find the actual UUID of 'langchain_documents' collection
+                    langchain_docs_result = await session.execute(text("""
+                        SELECT uuid, cmetadata
+                        FROM langchain_pg_collection
+                        WHERE name = 'langchain_documents'
+                        LIMIT 1
                     """))
+                    langchain_docs_row = langchain_docs_result.fetchone()
                     
-                    doc_count = doc_count_result.scalar() or 0
-                    
-                    # Get sample documents from default collection
-                    sample_docs_result = await session.execute(text("""
-                        SELECT 
-                            document,
-                            cmetadata
-                        FROM langchain_pg_embedding 
-                        LIMIT 5
-                    """))
-                    
-                    sample_documents = []
-                    for doc_row in sample_docs_result:
-                        sample_documents.append({
-                            "content": doc_row.document[:200] + "..." if len(doc_row.document) > 200 else doc_row.document,
-                            "metadata": doc_row.cmetadata or {}
-                        })
-                    
-                    return {
-                        "id": "default",
-                        "name": "langchain_documents",
-                        "metadata": {},
-                        "created_at": None,
-                        "document_count": doc_count,
-                        "sample_documents": sample_documents
-                    }
+                    if langchain_docs_row:
+                        collection_uuid = str(langchain_docs_row.uuid)
+                        
+                        # Count documents in default collection using actual collection_id
+                        doc_count_result = await session.execute(text("""
+                            SELECT COUNT(*) 
+                            FROM langchain_pg_embedding
+                            WHERE collection_id = CAST(:collection_id AS UUID)
+                        """), {"collection_id": collection_uuid})
+                        
+                        doc_count = doc_count_result.scalar() or 0
+                        
+                        # Get sample documents from this specific collection
+                        sample_docs_result = await session.execute(text("""
+                            SELECT 
+                                document,
+                                cmetadata
+                            FROM langchain_pg_embedding 
+                            WHERE collection_id = CAST(:collection_id AS UUID)
+                            LIMIT 5
+                        """), {"collection_id": collection_uuid})
+                        
+                        sample_documents = []
+                        for doc_row in sample_docs_result:
+                            sample_documents.append({
+                                "content": doc_row.document[:200] + "..." if len(doc_row.document) > 200 else doc_row.document,
+                                "metadata": doc_row.cmetadata or {}
+                            })
+                        
+                        return {
+                            "id": collection_uuid,
+                            "name": "langchain_documents",
+                            "metadata": langchain_docs_row.cmetadata or {},
+                            "created_at": None,
+                            "document_count": doc_count,
+                            "sample_documents": sample_documents
+                        }
+                    else:
+                        # Collection doesn't exist yet
+                        return {
+                            "id": "default",
+                            "name": "langchain_documents",
+                            "metadata": {},
+                            "created_at": None,
+                            "document_count": 0,
+                            "sample_documents": []
+                        }
                 
                 # Get collection details from langchain_pg_collection table
                 result = await session.execute(text("""
@@ -464,14 +648,60 @@ class LangChainVectorService:
                 if not row:
                     raise Exception(f"Collection '{collection_name}' not found")
                 
+                metadata = row.cmetadata or {}
+                if isinstance(metadata, str):
+                    try:
+                        metadata = json.loads(metadata)
+                    except:
+                        metadata = {}
+                
                 # Get document count and sample documents
                 doc_count_result = await session.execute(text("""
                     SELECT COUNT(*) 
                     FROM langchain_pg_embedding 
-                    WHERE collection_id = :collection_id
+                    WHERE collection_id = CAST(:collection_id AS UUID)
                 """), {"collection_id": str(row.uuid)})
                 
                 doc_count = doc_count_result.scalar() or 0
+                logger.info(f"Collection {collection_name} ({row.uuid}) has {doc_count} documents")
+                
+                # Get created_at from collection metadata first, then from documents
+                created_at = None
+                
+                # 1. Try to get from collection metadata
+                if isinstance(metadata, dict):
+                    created_at = metadata.get("created_at") or metadata.get("created_date")
+                
+                # 2. If not in metadata, try to get from the oldest document's metadata
+                if not created_at and doc_count > 0:
+                    try:
+                        doc_metadata_result = await session.execute(text("""
+                            SELECT cmetadata
+                            FROM langchain_pg_embedding 
+                            WHERE collection_id = CAST(:collection_id AS UUID)
+                            ORDER BY uuid ASC
+                            LIMIT 1
+                        """), {"collection_id": str(row.uuid)})
+                        
+                        doc_metadata_row = doc_metadata_result.fetchone()
+                        if doc_metadata_row and doc_metadata_row.cmetadata:
+                            doc_metadata = doc_metadata_row.cmetadata
+                            if isinstance(doc_metadata, str):
+                                try:
+                                    doc_metadata = json.loads(doc_metadata)
+                                except:
+                                    doc_metadata = {}
+                            
+                            if isinstance(doc_metadata, dict):
+                                created_at = (
+                                    doc_metadata.get("created_at") or 
+                                    doc_metadata.get("created_date") or 
+                                    doc_metadata.get("upload_date") or
+                                    doc_metadata.get("date") or
+                                    doc_metadata.get("timestamp")
+                                )
+                    except Exception as e:
+                        logger.debug(f"Failed to get created_at from document metadata: {e}")
                 
                 # Get sample documents
                 sample_docs_result = await session.execute(text("""
@@ -479,7 +709,7 @@ class LangChainVectorService:
                         document,
                         cmetadata
                     FROM langchain_pg_embedding 
-                    WHERE collection_id = :collection_id
+                    WHERE collection_id = CAST(:collection_id AS UUID)
                     LIMIT 5
                 """), {"collection_id": str(row.uuid)})
                 
@@ -493,8 +723,8 @@ class LangChainVectorService:
                 return {
                     "id": str(row.uuid),
                     "name": row.name,
-                    "metadata": row.cmetadata or {},
-                    "created_at": None,
+                    "metadata": metadata,
+                    "created_at": created_at,
                     "document_count": doc_count,
                     "sample_documents": sample_documents
                 }
@@ -521,6 +751,8 @@ class LangChainVectorService:
                     raise ValueError(f"Collection '{collection_name}' already exists")
             
             # Create collection in langchain_pg_collection table with user_id
+            # For shared collections, user_id should be NULL so all users can access it
+            # For personal collections, user_id should be set to the creator's user_id
             collection_uuid = str(uuid.uuid4())
             async with db_service.get_session() as session:
                 result = await session.execute(
@@ -535,9 +767,10 @@ class LangChainVectorService:
                         "metadata": json.dumps({
                             "description": description, 
                             "created_by": user_id or "system",
-                            "is_shared": is_shared
+                            "is_shared": is_shared,
+                            "created_at": datetime.now().isoformat()  # Store creation timestamp
                         }),
-                        "user_id": user_id
+                        "user_id": None if is_shared else user_id  # Shared collections have NULL user_id
                     }
                 )
                 row = result.fetchone()
@@ -607,7 +840,7 @@ class LangChainVectorService:
                 
                 # Delete all documents in the collection
                 await session.execute(
-                    text("DELETE FROM langchain_pg_embedding WHERE collection_id = :collection_id"),
+                    text("DELETE FROM langchain_pg_embedding WHERE collection_id = CAST(:collection_id AS UUID)"),
                     {"collection_id": collection_uuid}
                 )
                 
@@ -797,7 +1030,8 @@ class LangChainVectorService:
                 embedding_function=self.embeddings,
                 collection_name=collection_name,
                 distance_strategy="cosine",
-                use_jsonb=True  # Use JSONB for metadata to avoid deprecation warning
+                use_jsonb=True,  # Use JSONB for metadata to avoid deprecation warning
+                pre_delete_collection=False  # Don't delete existing collection
             )
             
             logger.info(f"Switched to collection: {collection_name}")

@@ -5,6 +5,7 @@ from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from backend.models.user import LoginRequest, RegisterRequest, AuthResponse
+from typing import Any
 from backend.services.auth_service import auth_service
 
 # Security scheme for JWT
@@ -16,11 +17,11 @@ class AuthController:
     def __init__(self):
         self.auth_service = auth_service
     
-    async def register(self, request: RegisterRequest) -> AuthResponse:
+    async def register(self, request: Any) -> AuthResponse:
         """Register a new user"""
         return await self.auth_service.register_user(request)
     
-    async def login(self, request: LoginRequest) -> AuthResponse:
+    async def login(self, request: Any) -> AuthResponse:
         """Login user"""
         return await self.auth_service.login_user(request)
     

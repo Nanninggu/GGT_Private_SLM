@@ -215,6 +215,7 @@ async def _save_search_results_to_collection(
                 logger.info(f"Saving document {i+1}/{len(formatted_results)}: {result.get('title', 'Unknown')}")
                 
                 # LangChain RAG 서비스를 사용하여 벡터 저장
+                # collection_name을 명시적으로 전달하여 올바른 컬렉션에 저장되도록 보장
                 doc_ids = await langchain_vector_service.add_document(
                     content=result["content"],
                     metadata={
@@ -225,7 +226,8 @@ async def _save_search_results_to_collection(
                         "source": "web_search",
                         "user_id": "web_search_user",
                         **result["metadata"]
-                    }
+                    },
+                    collection_name=collection_name  # 컬렉션 이름 명시적으로 전달
                 )
                 
                 logger.info(f"Document {i+1} saved successfully with {len(doc_ids)} chunks")

@@ -24,15 +24,17 @@ backend/
 └── env.example          # 환경 변수 예제
 ```
 
-### 프론트엔드 (MVC 패턴)
+### 프론트엔드 (Vue.js)
 ```
-frontend/streamlit/
-├── controllers/     # 뷰 컨트롤러
-├── components/      # UI 컴포넌트 (뷰)
-├── services/        # API 서비스
-├── pages/           # 페이지 구성
-├── utils/           # 유틸리티 함수
-└── main.py          # Streamlit 애플리케이션 진입점
+vue-frontend/
+├── src/
+│   ├── components/      # Vue 컴포넌트
+│   ├── views/           # 페이지 뷰
+│   ├── services/        # API 서비스
+│   ├── stores/          # 상태 관리
+│   └── router/          # 라우팅
+├── public/              # 정적 파일
+└── package.json         # Vue 프로젝트 설정
 ```
 
 ## 🚀 빠른 시작
@@ -94,8 +96,8 @@ cp backend/env.example backend/.env
 
 ### 7. 프론트엔드 실행 (새 터미널)
 ```bash
-# 프론트엔드 앱 시작
-./start_frontend.sh
+# Vue 프론트엔드 앱 시작
+./start_vue_frontend.sh
 ```
 
 ## 📋 주요 기능
@@ -114,7 +116,7 @@ cp backend/env.example backend/.env
   - 요약 보고서 PDF
   - 개별 메시지 PDF
 - **RESTful API**: FastAPI 기반 백엔드 API
-- **직관적 UI**: Streamlit 기반 사용자 인터페이스
+- **직관적 UI**: Vue.js 기반 사용자 인터페이스
 
 ## 🔧 기술 스택
 
@@ -127,10 +129,10 @@ cp backend/env.example backend/.env
 - **Pydantic**: 데이터 검증 및 직렬화
 
 ### 프론트엔드
-- **Streamlit**: 웹 애플리케이션 프레임워크
-- **Requests**: HTTP 클라이언트
-- **ReportLab**: PDF 생성 라이브러리
-- **WeasyPrint**: HTML to PDF 변환
+- **Vue.js**: 프로그레시브 자바스크립트 프레임워크
+- **TypeScript**: 타입 안전성
+- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
+- **Axios**: HTTP 클라이언트 라이브러리
 
 ### AI/ML
 - **Ollama**: 로컬 LLM 서버
@@ -144,10 +146,11 @@ cp backend/env.example backend/.env
 2. **서비스 계층**: Services - 비즈니스 로직 및 AI 모델 통합
 3. **데이터 계층**: Repositories - 데이터 저장 및 검색
 
-### 프론트엔드 MVC 패턴
-1. **Model**: API 서비스를 통한 데이터 관리
-2. **View**: Streamlit 컴포넌트 기반 UI
-3. **Controller**: 사용자 입력 처리 및 상태 관리
+### 프론트엔드 Vue.js 패턴
+1. **Components**: 재사용 가능한 Vue 컴포넌트
+2. **Views**: 라우팅된 페이지 컴포넌트
+3. **Services**: API 통신 및 비즈니스 로직
+4. **Stores**: Pinia를 활용한 상태 관리
 
 ## ⚙️ 설정
 
@@ -162,7 +165,7 @@ TEMPERATURE = 0.7                       # 생성 온도
 
 ### API 설정
 - 백엔드 서버: `http://localhost:8000`
-- Streamlit 앱: `http://localhost:8501`
+- Vue 프론트엔드: `http://localhost:5173`
 
 ## 🔍 웹 검색 및 컬렉션 저장 기능
 
@@ -179,7 +182,7 @@ TEMPERATURE = 0.7                       # 생성 온도
 - **메타데이터 보존**: URL, 도메인, 제목 등 검색 결과 메타데이터 유지
 
 ### 사용 방법
-1. **웹 검색 페이지 접속**: Streamlit 앱에서 "웹 검색" 페이지 선택
+1. **웹 검색 페이지 접속**: Vue 프론트엔드에서 "웹 검색" 페이지 선택
 2. **검색어 입력**: 검색할 키워드나 질문 입력
 3. **컬렉션 선택**: 결과를 저장할 컬렉션 선택 (또는 새 컬렉션 생성)
 4. **검색 실행**: "검색만 하기" 또는 "검색 후 컬렉션에 저장" 선택

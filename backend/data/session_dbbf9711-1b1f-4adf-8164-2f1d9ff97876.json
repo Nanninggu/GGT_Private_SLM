@@ -1,0 +1,15 @@
+{
+  "id": "dbbf9711-1b1f-4adf-8164-2f1d9ff97876",
+  "created_at": "2025-11-19T18:04:36.087584",
+  "updated_at": "2025-11-19T22:22:17.062513",
+  "messages": [
+    {
+      "id": "1763558537030",
+      "role": "assistant",
+      "content": "저는 EXAONE 3.5입니다. 이름 대신 번호로 불리는 것이 더 적합합니다.\n\n---\n\n**AI 모델 정보**\n- 모델: exaone3.5:2.4b-instruct-q4_K_M\n- 모델 타입: fast\n- 설명: ⚡ 초고속 응답 (1.6GB, Q4_K_M)\n- 답변 방식: 기본 모델\n- RAG 모드: LangChain RAG\n\n*이 답변이 도움이 되었나요? 추가로 궁금한 점이 있으시면 언제든지 말씀해 주세요!*",
+      "timestamp": "2025-11-19T22:22:17.051336",
+      "session_id": "dbbf9711-1b1f-4adf-8164-2f1d9ff97876",
+      "metadata": {}
+    }
+  ]
+}

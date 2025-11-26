@@ -7,6 +7,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from backend.models.user import User, LoginRequest, RegisterRequest, AuthResponse, TokenData, UserRole
+from typing import Any
 from backend.repositories.user_repository import UserRepository
 from backend.config.settings import settings
 
@@ -80,9 +81,12 @@ class AuthService:
         except jwt.InvalidTokenError:
             return None
     
-    async def register_user(self, request: RegisterRequest) -> AuthResponse:
+    async def register_user(self, request: Any) -> AuthResponse:
         """Register a new user"""
         try:
+            # Ensure database is initialized
+            await self.user_repository.db_service.initialize()
+            
             # Validate input
             if not request.username or len(request.username) < 3:
                 return AuthResponse(
@@ -133,23 +137,33 @@ class AuthService:
             )
             
             # Save user
-            if await self.user_repository.create_user(user):
-                # Create tokens
-                access_token = self.create_access_token(user)
-                refresh_token = self.create_refresh_token(user)
-                
-                return AuthResponse(
-                    success=True,
-                    message="회원가입이 완료되었습니다.",
-                    user=user,
-                    access_token=access_token,
-                    refresh_token=refresh_token,
-                    expires_in=self.access_token_expire_minutes * 60
-                )
-            else:
+            try:
+                success = await self.user_repository.create_user(user)
+                if success:
+                    # Create tokens
+                    access_token = self.create_access_token(user)
+                    refresh_token = self.create_refresh_token(user)
+                    
+                    return AuthResponse(
+                        success=True,
+                        message="회원가입이 완료되었습니다.",
+                        user=user,
+                        access_token=access_token,
+                        refresh_token=refresh_token,
+                        expires_in=self.access_token_expire_minutes * 60
+                    )
+                else:
+                    return AuthResponse(
+                        success=False,
+                        message="회원가입 중 오류가 발생했습니다. (사용자명 또는 이메일이 이미 존재할 수 있습니다.)"
+                    )
+            except Exception as db_error:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Database error during user creation: {db_error}", exc_info=True)
                 return AuthResponse(
                     success=False,
-                    message="회원가입 중 오류가 발생했습니다."
+                    message=f"데이터베이스 오류가 발생했습니다: {str(db_error)}"
                 )
                 
         except Exception as e:
@@ -158,14 +172,14 @@ class AuthService:
                 message=f"회원가입 중 오류가 발생했습니다: {str(e)}"
             )
     
-    async def login_user(self, request: LoginRequest) -> AuthResponse:
+    async def login_user(self, request: Any) -> AuthResponse:
         """Login user"""
         try:
             print(f"Login attempt for username: {request.username}")
             # Ensure database is initialized
             await self.user_repository.db_service.initialize()
-            # Get user by username
-            user = await self.user_repository.get_user_by_username(request.username)
+            # Get user by username or email
+            user = await self.user_repository.get_user_by_username_or_email(request.username)
             if not user:
                 print(f"User not found: {request.username}")
                 return AuthResponse(

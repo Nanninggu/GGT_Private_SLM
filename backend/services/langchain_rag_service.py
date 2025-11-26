@@ -59,19 +59,22 @@ class LangChainRagService:
             logger.error(f"Failed to initialize LangChain RAG service: {e}")
             raise
     
-    async def set_collection(self, collection_name: str) -> bool:
+    async def set_collection(self, collection_name: str, user_id: str = None) -> bool:
         """Change the active collection for RAG queries"""
         try:
-            # Check if collection exists
-            collections = await self.get_collections()
+            # Check if collection exists and user has access to it
+            collections = await self.get_collections(user_id)
             collection_exists = any(c["name"] == collection_name for c in collections)
             
             if not collection_exists:
-                logger.error(f"Collection '{collection_name}' does not exist")
+                logger.error(f"Collection '{collection_name}' does not exist or user does not have access")
                 return False
             
             # Update the vector service to use the new collection
-            await langchain_vector_service.set_collection(collection_name)
+            success = await langchain_vector_service.set_collection(collection_name)
+            if not success:
+                logger.error(f"Failed to set vector service collection to '{collection_name}'")
+                return False
             
             # Update our documents reference
             self.documents = langchain_vector_service.documents
@@ -168,7 +171,7 @@ class LangChainRagService:
             logger.error(f"Failed to check collection ownership: {e}")
             return False
     
-    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None) -> str:
         """Add document to knowledge base"""
         try:
             logger.info(f"Starting document addition to knowledge base: {len(content)} characters")
@@ -178,9 +181,9 @@ class LangChainRagService:
             cleaned_content = self._preprocess_content(content)
             logger.info(f"Content preprocessed: {len(cleaned_content)} characters")
             
-            # Add to vector store
-            logger.info("Adding document to vector store...")
-            doc_ids = await langchain_vector_service.add_document(cleaned_content, metadata)
+            # Add to vector store with collection_name
+            logger.info(f"Adding document to vector store (collection: {collection_name or 'current'})...")
+            doc_ids = await langchain_vector_service.add_document(cleaned_content, metadata, collection_name)
             
             logger.info(f"Document successfully added to knowledge base: {len(doc_ids)} chunks")
             return f"Added {len(doc_ids)} document chunks"

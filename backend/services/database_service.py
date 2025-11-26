@@ -58,7 +58,13 @@ class DatabaseService:
             )
             
             # Initialize pgvector extension and create tables
-            await self._initialize_pgvector()
+            # pgvector extension is optional - continue even if it fails
+            try:
+                await self._initialize_pgvector()
+            except Exception as e:
+                logger.warning(f"Failed to initialize pgvector extension (continuing without it): {e}")
+                logger.warning("Vector search features may not be available. To enable, install pgvector extension in PostgreSQL.")
+            
             await self._create_tables()
             
             # Create users table
@@ -130,12 +136,25 @@ class DatabaseService:
                 logger.info("Database tables created successfully")
             else:
                 # Check if existing table has correct schema
-                result = await conn.execute(text("""
-                    SELECT column_name, data_type 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'documents' AND column_name = 'id'
-                """))
-                id_column = result.fetchone()
+                # Use a separate connection to avoid "transaction aborted" errors
+                try:
+                    result = await conn.execute(text("""
+                        SELECT column_name, data_type 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'documents' AND column_name = 'id'
+                    """))
+                    id_column = result.fetchone()
+                except Exception as e:
+                    # If transaction is aborted, use a separate connection
+                    logger.warning(f"Transaction error during schema check: {e}. Using separate connection.")
+                    async with self.async_engine.connect() as separate_conn:
+                        result = await separate_conn.execute(text("""
+                            SELECT column_name, data_type 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'documents' AND column_name = 'id'
+                        """))
+                        id_column = result.fetchone()
+                        await separate_conn.commit()
                 
                 if id_column and id_column[1] != 'uuid':
                     logger.warning(f"Existing documents table has incorrect id column type: {id_column[1]}. Recreating table...")
@@ -158,13 +177,114 @@ class DatabaseService:
                     """))
                     logger.info("Documents table recreated with correct schema")
                 else:
-                    # Check if collection_name column exists
+                    # Check embedding dimension
                     result = await conn.execute(text("""
-                        SELECT column_name 
+                        SELECT udt_name, numeric_precision 
                         FROM information_schema.columns 
-                        WHERE table_name = 'documents' AND column_name = 'collection_name'
+                        WHERE table_name = 'documents' AND column_name = 'embedding'
                     """))
-                    collection_column = result.fetchone()
+                    embedding_column = result.fetchone()
+                    
+                    if embedding_column:
+                        # Check if dimension needs to be updated
+                        # First, check if there are any existing embeddings
+                        try:
+                            count_result = await conn.execute(text("""
+                                SELECT COUNT(*) FROM documents WHERE embedding IS NOT NULL
+                            """))
+                            embedding_count = count_result.scalar()
+                            
+                            if embedding_count > 0:
+                                # If there are existing embeddings, we need to drop the index first
+                                logger.warning(f"Found {embedding_count} existing embeddings. Dropping index and updating dimension...")
+                                try:
+                                    # Drop the index first
+                                    await conn.execute(text("DROP INDEX IF EXISTS documents_embedding_idx"))
+                                    logger.info("Dropped existing embedding index")
+                                except Exception as idx_error:
+                                    logger.warning(f"Could not drop index: {idx_error}")
+                                
+                                # Delete existing embeddings (they're incompatible with new dimension)
+                                logger.warning("Deleting existing embeddings with incompatible dimensions...")
+                                await conn.execute(text("""
+                                    UPDATE documents SET embedding = NULL WHERE embedding IS NOT NULL
+                                """))
+                                logger.info(f"Cleared {embedding_count} incompatible embeddings")
+                            
+                            # Now alter the column type
+                            await conn.execute(text(f"""
+                                ALTER TABLE documents 
+                                ALTER COLUMN embedding TYPE vector({settings.OLLAMA_EMBEDDING_DIMENSION})
+                            """))
+                            logger.info(f"Updated embedding dimension to {settings.OLLAMA_EMBEDDING_DIMENSION}")
+                            
+                            # Recreate the index
+                            try:
+                                await conn.execute(text("""
+                                    CREATE INDEX IF NOT EXISTS documents_embedding_idx 
+                                    ON documents USING hnsw (embedding vector_cosine_ops)
+                                    WITH (m = 12, ef_construction = 100)
+                                """))
+                                logger.info(f"Recreated embedding index with {settings.OLLAMA_EMBEDDING_DIMENSION} dimensions")
+                            except Exception as idx_error:
+                                logger.warning(f"Could not recreate index: {idx_error}")
+                                
+                        except Exception as e:
+                            error_msg = str(e).lower()
+                            if "expected" in error_msg and "dimensions" in error_msg:
+                                # This means the column is still 1024, try to fix it
+                                logger.warning(f"Embedding dimension mismatch detected: {e}")
+                                try:
+                                    # Drop index and clear embeddings
+                                    await conn.execute(text("DROP INDEX IF EXISTS documents_embedding_idx"))
+                                    await conn.execute(text("UPDATE documents SET embedding = NULL WHERE embedding IS NOT NULL"))
+                                    await conn.execute(text(f"ALTER TABLE documents ALTER COLUMN embedding TYPE vector({settings.OLLAMA_EMBEDDING_DIMENSION})"))
+                                    await conn.execute(text("""
+                                        CREATE INDEX IF NOT EXISTS documents_embedding_idx 
+                                        ON documents USING hnsw (embedding vector_cosine_ops)
+                                        WITH (m = 12, ef_construction = 100)
+                                    """))
+                                    logger.info(f"Fixed embedding dimension to {settings.OLLAMA_EMBEDDING_DIMENSION}")
+                                except Exception as fix_error:
+                                    logger.error(f"Failed to fix embedding dimension: {fix_error}")
+                            elif "cannot be cast" in error_msg or "dimension" in error_msg:
+                                logger.warning(f"Could not alter embedding dimension: {e}. Trying to fix with data cleanup...")
+                                try:
+                                    # Last resort: drop and recreate the column
+                                    await conn.execute(text("DROP INDEX IF EXISTS documents_embedding_idx"))
+                                    await conn.execute(text("ALTER TABLE documents DROP COLUMN IF EXISTS embedding"))
+                                    await conn.execute(text(f"ALTER TABLE documents ADD COLUMN embedding vector({settings.OLLAMA_EMBEDDING_DIMENSION})"))
+                                    await conn.execute(text("""
+                                        CREATE INDEX IF NOT EXISTS documents_embedding_idx 
+                                        ON documents USING hnsw (embedding vector_cosine_ops)
+                                        WITH (m = 12, ef_construction = 100)
+                                    """))
+                                    logger.info(f"Recreated embedding column with {settings.OLLAMA_EMBEDDING_DIMENSION} dimensions")
+                                except Exception as recreate_error:
+                                    logger.error(f"Failed to recreate embedding column: {recreate_error}")
+                            else:
+                                logger.info(f"Embedding dimension check completed: {e}")
+                    
+                    # Check if collection_name column exists
+                    # Use a separate connection to avoid transaction issues
+                    try:
+                        result = await conn.execute(text("""
+                            SELECT column_name 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'documents' AND column_name = 'collection_name'
+                        """))
+                        collection_column = result.fetchone()
+                    except Exception as e:
+                        # If transaction is aborted, use a separate connection
+                        logger.warning(f"Transaction error during collection_name check: {e}. Using separate connection.")
+                        async with self.async_engine.connect() as separate_conn:
+                            result = await separate_conn.execute(text("""
+                                SELECT column_name 
+                                FROM information_schema.columns 
+                                WHERE table_name = 'documents' AND column_name = 'collection_name'
+                            """))
+                            collection_column = result.fetchone()
+                            await separate_conn.commit()
                     
                     if not collection_column:
                         # Add collection_name column to existing table
@@ -185,29 +305,94 @@ class DatabaseService:
                         logger.info("Added collection_name column to existing documents table")
                     else:
                         logger.info("Using existing documents table with correct schema")
+                    
+                    # Check if user_id column exists (for upload history tracking)
+                    try:
+                        result = await conn.execute(text("""
+                            SELECT column_name 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'documents' AND column_name = 'user_id'
+                        """))
+                        user_id_column = result.fetchone()
+                    except Exception as e:
+                        logger.warning(f"Transaction error during user_id check: {e}. Using separate connection.")
+                        async with self.async_engine.connect() as separate_conn:
+                            result = await separate_conn.execute(text("""
+                                SELECT column_name 
+                                FROM information_schema.columns 
+                                WHERE table_name = 'documents' AND column_name = 'user_id'
+                            """))
+                            user_id_column = result.fetchone()
+                            await separate_conn.commit()
+                    
+                    if not user_id_column:
+                        # Add user_id column to existing table (NULL allowed for backward compatibility)
+                        await conn.execute(text("""
+                            ALTER TABLE documents 
+                            ADD COLUMN user_id UUID
+                        """))
+                        
+                        # Create index for user_id
+                        await conn.execute(text("""
+                            CREATE INDEX IF NOT EXISTS documents_user_id_idx 
+                            ON documents (user_id)
+                        """))
+                        
+                        logger.info("Added user_id column to existing documents table for upload history tracking")
+                    else:
+                        logger.info("user_id column already exists in documents table")
             
-            # Create chat sessions table
-            await conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS chat_sessions (
-                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    session_id VARCHAR(255) UNIQUE NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """))
+            # Create chat sessions table (use separate transaction to avoid conflicts)
+            try:
+                await conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS chat_sessions (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        session_id VARCHAR(255) UNIQUE NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+            except Exception as e:
+                logger.warning(f"Error creating chat_sessions table: {e}. Using separate connection.")
+                async with self.async_engine.connect() as separate_conn:
+                    await separate_conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS chat_sessions (
+                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            session_id VARCHAR(255) UNIQUE NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """))
+                    await separate_conn.commit()
             
-            # Create chat messages table
-            await conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS chat_messages (
-                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    session_id VARCHAR(255) NOT NULL,
-                    role VARCHAR(20) NOT NULL,
-                    content TEXT NOT NULL,
-                    metadata JSONB,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id)
-                )
-            """))
+            # Create chat messages table (use separate transaction to avoid conflicts)
+            try:
+                await conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS chat_messages (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        session_id VARCHAR(255) NOT NULL,
+                        role VARCHAR(20) NOT NULL,
+                        content TEXT NOT NULL,
+                        metadata JSONB,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id)
+                    )
+                """))
+            except Exception as e:
+                logger.warning(f"Error creating chat_messages table: {e}. Using separate connection.")
+                async with self.async_engine.connect() as separate_conn:
+                    await separate_conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS chat_messages (
+                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                            session_id VARCHAR(255) NOT NULL,
+                            role VARCHAR(20) NOT NULL,
+                            content TEXT NOT NULL,
+                            metadata JSONB,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id)
+                        )
+                    """))
+                    await separate_conn.commit()
             
             logger.info("Database tables created successfully")
     
@@ -311,32 +496,58 @@ class DatabaseService:
             logger.info(f"Starting database migrations from directory: {migration_dir}")
             
             # List of migration files in order
+            # Note: 000_fix_chat_sessions_schema.sql should run first to fix existing schema
             migration_files = [
+                "000_fix_chat_sessions_schema.sql",  # Schema fix must run first
+                "create_chat_sessions_table.sql",
+                "update_chat_sessions_table.sql",
+                "add_description_to_chat_sessions.sql",
                 "add_user_id_to_collections.sql",
                 "migrate_shared_collections.sql",
                 "add_unique_constraints.sql"
             ]
             
-            async with self.async_engine.begin() as conn:
-                for migration_file in migration_files:
-                    migration_path = os.path.join(migration_dir, migration_file)
-                    logger.info(f"Processing migration file: {migration_file}")
-                    
-                    if os.path.exists(migration_path):
-                        try:
-                            with open(migration_path, 'r', encoding='utf-8') as f:
-                                migration_sql = f.read()
+            # Execute each migration file
+            for migration_file in migration_files:
+                migration_path = os.path.join(migration_dir, migration_file)
+                logger.info(f"Processing migration file: {migration_file}")
+                
+                if os.path.exists(migration_path):
+                    try:
+                        with open(migration_path, 'r', encoding='utf-8') as f:
+                            migration_sql = f.read()
+                        
+                        logger.info(f"Executing migration: {migration_file}")
+                        # Split SQL into individual statements
+                        statements = [stmt.strip() for stmt in migration_sql.split(';') if stmt.strip()]
+                        
+                        logger.info(f"Executing migration: {migration_file} ({len(statements)} statements)")
+                        
+                        # Execute each statement in its own transaction for schema changes
+                        all_statements_succeeded = True
+                        for i, statement in enumerate(statements, 1):
+                            if statement.startswith('--') or not statement:
+                                continue
                             
-                            logger.info(f"Executing migration: {migration_file}")
-                            # Execute migration
-                            await conn.execute(text(migration_sql))
+                            try:
+                                # Execute statement in its own transaction
+                                async with self.async_engine.begin() as conn:
+                                    await conn.execute(text(statement))
+                            except Exception as stmt_error:
+                                # Log but continue with other statements
+                                logger.debug(f"Statement {i} in {migration_file} skipped: {stmt_error}")
+                                all_statements_succeeded = False
+                        
+                        if all_statements_succeeded:
                             logger.info(f"✅ Migration {migration_file} executed successfully")
-                            
-                        except Exception as e:
-                            logger.warning(f"⚠️ Migration {migration_file} failed or already applied: {e}")
-                            # Continue with other migrations
-                    else:
-                        logger.warning(f"❌ Migration file {migration_file} not found at {migration_path}")
+                        else:
+                            logger.info(f"✅ Migration {migration_file} completed (some statements already applied)")
+                        
+                    except Exception as e:
+                        logger.warning(f"⚠️ Migration {migration_file} failed or already applied: {e}")
+                        # Continue with other migrations
+                else:
+                    logger.warning(f"❌ Migration file {migration_file} not found at {migration_path}")
             
             logger.info("Database migrations completed")
                         

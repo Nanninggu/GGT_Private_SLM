@@ -50,6 +50,7 @@ class ChatSession:
     messages: List[ChatMessage]
     created_at: datetime
     updated_at: datetime
+    user_id: Optional[str] = None
 
     def add_message(self, message: ChatMessage):
         """Add a message to the session"""

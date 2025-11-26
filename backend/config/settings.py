@@ -51,8 +51,9 @@ class Settings:
     OLLAMA_READ_TIMEOUT: int = 60  # seconds (성능 최적화)
     OLLAMA_CONNECTION_TIMEOUT: int = 90  # seconds (성능 최적화)
     OLLAMA_EMBEDDING_TIMEOUT: int = 60  # seconds (임베딩 생성 타임아웃)
-    OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"  # 임베딩 모델
+    OLLAMA_EMBEDDING_MODEL: str = "mxbai-embed-large:latest"  # 임베딩 모델
     OLLAMA_EMBEDDING_NUM_CTX: int = 2048  # 임베딩 컨텍스트 길이
+    OLLAMA_EMBEDDING_DIMENSION: int = 1024  # 임베딩 차원 (mxbai-embed-large는 1024차원)
     
     # Ollama Chat 옵션 - 성능 최적화 (추가 최적화)
     OLLAMA_CHAT_NUM_CTX: int = 2048  # 컨텍스트 길이 (기본값)
@@ -262,6 +263,17 @@ class Settings:
             "repeat_penalty": 1.15,
             "description": "🧠 복잡한 작업 (4.8GB, 7.8B 파라미터)",
             "use_case": "복잡한 추론, 창의적 글쓰기, 전문적 분석"
+        },
+        "tynyllm": {
+            "model": "qwen2:0.5b",
+            "num_ctx": 4096,
+            "num_predict": 2048,
+            "temperature": 0.6,
+            "top_p": 0.9,
+            "top_k": 40,
+            "repeat_penalty": 1.1,
+            "description": "🌍 경량 다국어 모델 (Qwen2 0.5B, 500MB)",
+            "use_case": "한국어 지원 강화, 빠른 응답"
         }
     })
     

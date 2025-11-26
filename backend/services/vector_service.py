@@ -44,28 +44,112 @@ class VectorService:
                 logger.debug("Embedding cache hit")
                 return cached_embedding
             
+            # Truncate text if too long (Ollama has limits)
+            # Use a more conservative limit to avoid 500 errors
+            max_text_length = 4000  # Safe limit for mxbai-embed-large
+            if len(text) > max_text_length:
+                logger.warning(f"Text too long ({len(text)} chars), truncating to {max_text_length}")
+                text = text[:max_text_length]
+            
             # Generate new embedding
-            response = await self.ollama_client.post(
-                "/api/embeddings",
-                json={
-                    "model": settings.OLLAMA_EMBEDDING_MODEL,
-                    "prompt": text,
-                    "options": {
-                        "num_ctx": settings.OLLAMA_EMBEDDING_NUM_CTX
-                    }
-                }
-            )
-            response.raise_for_status()
+            # Note: Ollama embeddings API may not support 'options' parameter for some models
+            # Try without options first (this works for most embedding models)
+            logger.debug(f"Generating embedding for text (length: {len(text)}) using model: {settings.OLLAMA_EMBEDDING_MODEL}")
+            try:
+                response = await self.ollama_client.post(
+                    "/api/embeddings",
+                    json={
+                        "model": settings.OLLAMA_EMBEDDING_MODEL,
+                        "prompt": text
+                    },
+                    timeout=settings.OLLAMA_EMBEDDING_TIMEOUT
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                error_detail = ""
+                try:
+                    error_body = e.response.json() if e.response.content else {}
+                    error_detail = error_body.get("error", {}).get("message", str(e)) if isinstance(error_body, dict) else str(e)
+                except:
+                    error_detail = str(e)
+                
+                logger.warning(f"Embedding request failed (status {e.response.status_code}): {error_detail}")
+                
+                if e.response.status_code == 500:
+                    # If 500 error, try with options (some models might need it, but mxbai-embed-large usually doesn't)
+                    logger.warning("Retrying embedding request with options parameter...")
+                    try:
+                        response = await self.ollama_client.post(
+                            "/api/embeddings",
+                            json={
+                                "model": settings.OLLAMA_EMBEDDING_MODEL,
+                                "prompt": text,
+                                "options": {
+                                    "num_ctx": settings.OLLAMA_EMBEDDING_NUM_CTX
+                                }
+                            },
+                            timeout=settings.OLLAMA_EMBEDDING_TIMEOUT
+                        )
+                        response.raise_for_status()
+                        logger.info("Embedding request succeeded with options parameter")
+                    except httpx.HTTPStatusError as retry_error:
+                        logger.error(f"Embedding request failed even with options: {retry_error.response.status_code}")
+                        # Re-raise with better error message
+                        raise Exception(f"Ollama API error: {retry_error.response.status_code} - {error_detail}") from retry_error
+                else:
+                    # For non-500 errors, re-raise immediately
+                    raise Exception(f"Ollama API error: {e.response.status_code} - {error_detail}") from e
             data = response.json()
+            
+            if "embedding" not in data:
+                raise ValueError(f"Ollama response missing 'embedding' field: {data}")
+            
             embedding = data["embedding"]
+            
+            # Validate embedding dimension
+            expected_dimension = settings.OLLAMA_EMBEDDING_DIMENSION
+            if len(embedding) != expected_dimension:
+                logger.warning(f"Embedding dimension mismatch: expected {expected_dimension}, got {len(embedding)}")
             
             # Cache the embedding
             await cache_service.set_embedding(text, embedding)
             
             return embedding
+        except httpx.HTTPStatusError as e:
+            # Get response body if available for better error details
+            try:
+                error_body = e.response.json() if e.response.content else {}
+                error_message = error_body.get("error", {}).get("message", str(e)) if isinstance(error_body, dict) else str(e)
+            except:
+                error_message = str(e)
+            
+            error_detail = f"Ollama API error: {e.response.status_code}"
+            if e.response.status_code == 500:
+                error_detail += f" - Ollama 서버 내부 오류 (Server error '500 Internal Server Error' for url '{settings.OLLAMA_BASE_URL}/api/embeddings'). 임베딩 모델 '{settings.OLLAMA_EMBEDDING_MODEL}'이 설치되어 있고 로드되었는지 확인하세요. 오류 상세: {error_message}"
+            elif e.response.status_code == 404:
+                error_detail += f" - 임베딩 모델 '{settings.OLLAMA_EMBEDDING_MODEL}'을 찾을 수 없습니다. Ollama에 모델이 설치되어 있는지 확인하세요."
+            else:
+                error_detail += f" - {error_message}"
+            logger.error(f"Failed to generate embedding: {error_detail}")
+            # Include keywords that the upload endpoint checks for
+            raise Exception(f"embedding error: {error_detail}") from e
+        except httpx.TimeoutException as e:
+            error_detail = f"Ollama API timeout after {settings.OLLAMA_EMBEDDING_TIMEOUT}s - embedding generation timed out"
+            logger.error(f"Failed to generate embedding: {error_detail}")
+            raise Exception(f"embedding error: {error_detail}") from e
+        except httpx.RequestError as e:
+            error_detail = f"Ollama connection error: {str(e)} - Ollama 서버({settings.OLLAMA_BASE_URL})에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요."
+            logger.error(f"Failed to generate embedding: {error_detail}")
+            raise Exception(f"embedding error: {error_detail}") from e
         except Exception as e:
-            logger.error(f"Failed to generate embedding: {e}")
-            raise
+            error_msg = str(e)
+            # Preserve embedding-related keywords in error message
+            if "embedding" not in error_msg.lower() and "ollama" not in error_msg.lower():
+                error_detail = f"Failed to generate embedding: {error_msg}"
+            else:
+                error_detail = error_msg
+            logger.error(error_detail)
+            raise Exception(error_detail) from e
     
     async def add_documents_batch(self, documents: List[Dict[str, Any]], 
                                 batch_size: int = None) -> List[str]:
@@ -125,15 +209,125 @@ class VectorService:
             logger.error(f"Failed to add documents in batch: {e}")
             raise
 
-    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None) -> str:
+    async def add_document(self, content: str, metadata: Optional[Dict[str, Any]] = None, collection_name: Optional[str] = None, user_id: Optional[str] = None) -> str:
         """Add document to vector database"""
         try:
             # Ensure service is initialized
             if not self.ollama_client:
                 await self.initialize()
             
+            # For long documents, split into chunks and create multiple document entries
+            # This prevents 500 errors from Ollama when text is too long
+            # mxbai-embed-large can handle longer text, but we use a conservative limit for safety
+            max_single_embedding_length = 3000  # Safe limit for mxbai-embed-large to avoid 500 errors
+            
+            if len(content) > max_single_embedding_length:
+                logger.info(f"Document is too long ({len(content)} chars), splitting into chunks...")
+                # Split into chunks with overlap
+                chunk_size = max_single_embedding_length
+                chunk_overlap = 200
+                chunks = []
+                
+                for i in range(0, len(content), chunk_size - chunk_overlap):
+                    chunk = content[i:i + chunk_size]
+                    if chunk.strip():  # Only add non-empty chunks
+                        chunks.append(chunk)
+                
+                logger.info(f"Split document into {len(chunks)} chunks")
+                
+                # Create embeddings for each chunk and store separately
+                doc_ids = []
+                for idx, chunk in enumerate(chunks):
+                    try:
+                        # Retry embedding generation up to 3 times for each chunk
+                        embedding = None
+                        max_retries = 3
+                        for retry in range(max_retries):
+                            try:
+                                embedding = await self.generate_embedding(chunk)
+                                break
+                            except Exception as embed_retry_error:
+                                if retry < max_retries - 1:
+                                    logger.warning(f"Chunk {idx + 1} embedding failed (attempt {retry + 1}/{max_retries}), retrying...")
+                                    await asyncio.sleep(1)  # Wait 1 second before retry
+                                else:
+                                    raise embed_retry_error
+                        
+                        if not embedding:
+                            raise Exception("Failed to generate embedding after retries")
+                        
+                        # Create metadata for chunk
+                        chunk_metadata = (metadata or {}).copy()
+                        chunk_metadata['chunk_index'] = idx
+                        chunk_metadata['total_chunks'] = len(chunks)
+                        chunk_metadata['is_chunk'] = True
+                        
+                        # Store chunk in database
+                        async with db_service.get_session() as session:
+                            # Check if user_id column exists
+                            try:
+                                user_id_column_check = await session.execute(text("""
+                                    SELECT column_name
+                                    FROM information_schema.columns
+                                    WHERE table_name = 'documents' AND column_name = 'user_id'
+                                """))
+                                has_user_id = user_id_column_check.fetchone() is not None
+                            except:
+                                has_user_id = False
+
+                            if has_user_id:
+                                result = await session.execute(
+                                    text("""
+                                        INSERT INTO documents (id, content, metadata, embedding, collection_name, user_id)
+                                        VALUES (gen_random_uuid(), :content, :metadata, :embedding, :collection_name, :user_id)
+                                        RETURNING id
+                                    """),
+                                    {
+                                        "content": chunk,
+                                        "metadata": json.dumps(chunk_metadata),
+                                        "embedding": str(embedding) if embedding else None,
+                                        "collection_name": collection_name,
+                                        "user_id": user_id
+                                    }
+                                )
+                            else:
+                                result = await session.execute(
+                                    text("""
+                                        INSERT INTO documents (id, content, metadata, embedding, collection_name)
+                                        VALUES (gen_random_uuid(), :content, :metadata, :embedding, :collection_name)
+                                        RETURNING id
+                                    """),
+                                    {
+                                        "content": chunk,
+                                        "metadata": json.dumps(chunk_metadata),
+                                        "embedding": str(embedding) if embedding else None,
+                                        "collection_name": collection_name
+                                    }
+                                )
+                            chunk_doc_id = result.scalar()
+                            await session.commit()
+                            doc_ids.append(str(chunk_doc_id))
+                            logger.info(f"Chunk {idx + 1}/{len(chunks)} added with ID: {chunk_doc_id}")
+                    except Exception as chunk_error:
+                        logger.error(f"Failed to add chunk {idx + 1}: {chunk_error}")
+                        # Continue with other chunks even if one fails
+                        continue
+                
+                if doc_ids:
+                    logger.info(f"Document split into {len(doc_ids)} chunks and stored successfully")
+                    # Return the first chunk ID as the main document ID
+                    return doc_ids[0]
+                else:
+                    raise Exception("Failed to store any chunks")
+            
+            # For shorter documents, process normally
             # Generate embedding
             embedding = await self.generate_embedding(content)
+            
+            # Validate embedding dimension
+            expected_dimension = settings.OLLAMA_EMBEDDING_DIMENSION
+            if embedding and len(embedding) != expected_dimension:
+                logger.warning(f"Embedding dimension is {len(embedding)}, expected {expected_dimension}. This may cause database errors.")
             
             # Store in database using existing documents table
             if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
@@ -144,24 +338,119 @@ class VectorService:
                     raise Exception("Database not initialized. Please ensure database service is running.")
             
             async with db_service.get_session() as session:
-                result = await session.execute(
-                    text("""
-                        INSERT INTO documents (id, content, metadata, embedding, collection_name)
-                        VALUES (gen_random_uuid(), :content, :metadata, :embedding, :collection_name)
-                        RETURNING id
-                    """),
-                    {
-                        "content": content,
-                        "metadata": json.dumps(metadata or {}),
-                        "embedding": str(embedding),
-                        "collection_name": collection_name
-                    }
-                )
-                doc_id = result.scalar()
-                await session.commit()
-                
-                logger.info(f"Document added with ID: {doc_id} to collection: {collection_name}")
-                return str(doc_id)
+                try:
+                    # Check if user_id column exists
+                    try:
+                        user_id_column_check = await session.execute(text("""
+                            SELECT column_name
+                            FROM information_schema.columns
+                            WHERE table_name = 'documents' AND column_name = 'user_id'
+                        """))
+                        has_user_id = user_id_column_check.fetchone() is not None
+                    except:
+                        has_user_id = False
+
+                    if has_user_id:
+                        result = await session.execute(
+                            text("""
+                                INSERT INTO documents (id, content, metadata, embedding, collection_name, user_id)
+                                VALUES (gen_random_uuid(), :content, :metadata, :embedding, :collection_name, :user_id)
+                                RETURNING id
+                            """),
+                            {
+                                "content": content,
+                                "metadata": json.dumps(metadata or {}),
+                                "embedding": str(embedding) if embedding else None,
+                                "collection_name": collection_name,
+                                "user_id": user_id
+                            }
+                        )
+                    else:
+                        result = await session.execute(
+                            text("""
+                                INSERT INTO documents (id, content, metadata, embedding, collection_name)
+                                VALUES (gen_random_uuid(), :content, :metadata, :embedding, :collection_name)
+                                RETURNING id
+                            """),
+                            {
+                                "content": content,
+                                "metadata": json.dumps(metadata or {}),
+                                "embedding": str(embedding) if embedding else None,
+                                "collection_name": collection_name
+                            }
+                        )
+                    doc_id = result.scalar()
+                    await session.commit()
+                    
+                    if embedding:
+                        logger.info(f"Document added with ID: {doc_id} to collection: {collection_name} (with embedding)")
+                    else:
+                        logger.info(f"Document added with ID: {doc_id} to collection: {collection_name} (without embedding)")
+                    return str(doc_id)
+                except Exception as db_error:
+                    error_msg = str(db_error).lower()
+                    # Check if it's a dimension mismatch error
+                    expected_dimension = settings.OLLAMA_EMBEDDING_DIMENSION
+                    if "expected" in error_msg and "dimensions" in error_msg:
+                        logger.error(f"Embedding dimension mismatch: Database expects different dimension. Error: {db_error}")
+                        # Try to fix the database schema
+                        logger.warning("Attempting to fix database schema...")
+                        try:
+                            async with db_service.get_session() as fix_session:
+                                # Drop index, clear embeddings, and alter column
+                                await fix_session.execute(text("DROP INDEX IF EXISTS documents_embedding_idx"))
+                                await fix_session.execute(text("UPDATE documents SET embedding = NULL WHERE embedding IS NOT NULL"))
+                                await fix_session.execute(text(f"ALTER TABLE documents ALTER COLUMN embedding TYPE vector({expected_dimension})"))
+                                await fix_session.execute(text("""
+                                    CREATE INDEX IF NOT EXISTS documents_embedding_idx 
+                                    ON documents USING hnsw (embedding vector_cosine_ops)
+                                    WITH (m = 12, ef_construction = 100)
+                                """))
+                                await fix_session.commit()
+                                logger.info("Fixed database schema. Retrying document insertion...")
+                                
+                                # Retry the insert
+                                retry_result = await fix_session.execute(
+                                    text("""
+                                        INSERT INTO documents (id, content, metadata, embedding, collection_name)
+                                        VALUES (gen_random_uuid(), :content, :metadata, :embedding, :collection_name)
+                                        RETURNING id
+                                    """),
+                                    {
+                                        "content": content,
+                                        "metadata": json.dumps(metadata or {}),
+                                        "embedding": str(embedding) if embedding else None,
+                                        "collection_name": collection_name
+                                    }
+                                )
+                                doc_id = retry_result.scalar()
+                                await fix_session.commit()
+                                logger.info(f"Document added with ID: {doc_id} after schema fix")
+                                return str(doc_id)
+                        except Exception as fix_error:
+                            logger.error(f"Failed to fix schema: {fix_error}")
+                            # Save without embedding as fallback
+                            logger.warning("Saving document without embedding due to dimension mismatch")
+                            async with db_service.get_session() as fallback_session:
+                                fallback_result = await fallback_session.execute(
+                                    text("""
+                                        INSERT INTO documents (id, content, metadata, embedding, collection_name)
+                                        VALUES (gen_random_uuid(), :content, :metadata, NULL, :collection_name)
+                                        RETURNING id
+                                    """),
+                                    {
+                                        "content": content,
+                                        "metadata": json.dumps(metadata or {}),
+                                        "collection_name": collection_name
+                                    }
+                                )
+                                doc_id = fallback_result.scalar()
+                                await fallback_session.commit()
+                                logger.info(f"Document saved without embedding (ID: {doc_id})")
+                                return str(doc_id)
+                    else:
+                        # Re-raise if it's not a dimension error
+                        raise
                 
         except Exception as e:
             logger.error(f"Failed to add document: {e}")
@@ -448,6 +737,10 @@ class VectorService:
     async def delete_collection(self, collection_name: str) -> bool:
         """Delete a collection and all its documents"""
         try:
+            # Prevent deletion of default collections
+            if collection_name == "documents":
+                raise ValueError("Cannot delete the default 'documents' collection")
+            
             # Ensure database service is initialized
             if not hasattr(db_service, 'async_session_factory') or not db_service.async_session_factory:
                 await db_service.initialize()
@@ -819,6 +1112,9 @@ class VectorService:
         except Exception as e:
             logger.error(f"Failed to apply diversity filtering: {e}")
             return documents
+    
+    # Alias for list_collections to maintain compatibility
+    get_collections = list_collections
 
     async def close(self):
         """Close vector service"""

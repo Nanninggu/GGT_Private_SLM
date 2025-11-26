@@ -18,7 +18,7 @@ HTTP 스트리밍에서 WebSocket 스트림으로 업그레이드된 실시간 �
 ## 🏗️ 아키텍처
 
 ```
-Frontend (Streamlit)          Backend (FastAPI)
+Frontend (Vue.js)             Backend (FastAPI)
 ┌─────────────────┐          ┌─────────────────┐
 │ WebSocket Client│◄────────►│ WebSocket Server│
 │                 │          │                 │
@@ -36,8 +36,8 @@ python main.py
 
 ### 2. 프론트엔드 시작
 ```bash
-cd frontend/streamlit
-streamlit run main.py
+cd vue-frontend
+npm run dev
 ```
 
 ### 3. 웹소켓 테스트
@@ -56,7 +56,7 @@ python test_websocket_chat.py
 - **연결 관리자**: `ConnectionManager` 클래스로 WebSocket 연결 관리
 - **실시간 스트리밍**: 청크 단위로 응답을 실시간 전송
 
-### 프론트엔드 (Streamlit)
+### 프론트엔드 (Vue.js)
 - **WebSocket 서비스**: `WebSocketService` 클래스로 연결 관리
 - **WebSocket 컨트롤러**: `WebSocketChatController`로 채팅 처리
 - **연결 상태 UI**: 사이드바에 실시간 연결 상태 표시

@@ -40,14 +40,16 @@ class DBChatRepository:
                 # Insert or update session
                 await db_session.execute(
                     text("""
-                        INSERT INTO chat_sessions (session_id, created_at, updated_at)
-                        VALUES (:session_id, :created_at, :updated_at)
+                        INSERT INTO chat_sessions (session_id, user_id, created_at, updated_at)
+                        VALUES (:session_id, :user_id, :created_at, :updated_at)
                         ON CONFLICT (session_id) 
                         DO UPDATE SET 
-                            updated_at = :updated_at
+                            updated_at = :updated_at,
+                            user_id = :user_id
                     """),
                     {
                         "session_id": session.id,
+                        "user_id": session.user_id,
                         "created_at": session.created_at,
                         "updated_at": session.updated_at
                     }
@@ -62,7 +64,26 @@ class DBChatRepository:
                 # Insert all messages
                 for message in session.messages:
                     import json
-                    metadata_json = json.dumps(message.metadata or {})
+                    # sources와 accuracy를 metadata에 포함시켜 저장
+                    full_metadata = {
+                        **(message.metadata or {}),
+                        "sources": [
+                            {
+                                "filename": s.filename,
+                                "similarity_score": s.similarity_score,
+                                "content_preview": s.content_preview,
+                                "document_id": s.document_id
+                            }
+                            for s in (message.sources or [])
+                        ] if message.sources else [],
+                        "accuracy": {
+                            "confidence_score": message.accuracy.confidence_score,
+                            "context_count": message.accuracy.context_count,
+                            "avg_similarity": message.accuracy.avg_similarity,
+                            "fallback_used": message.accuracy.fallback_used
+                        } if message.accuracy else None
+                    }
+                    metadata_json = json.dumps(full_metadata)
                     await db_session.execute(
                         text("""
                             INSERT INTO chat_messages 
@@ -115,6 +136,8 @@ class DBChatRepository:
                 messages = []
                 for row in messages_result:
                     import json
+                    from backend.models.chat import SourceInfo, AccuracyInfo
+                    
                     metadata = {}
                     if row.metadata:
                         try:
@@ -122,13 +145,41 @@ class DBChatRepository:
                         except:
                             metadata = {}
                     
+                    # metadata에서 sources와 accuracy 복원
+                    sources = []
+                    if metadata.get("sources"):
+                        sources = [
+                            SourceInfo(
+                                filename=s.get("filename", ""),
+                                similarity_score=s.get("similarity_score", 0.0),
+                                content_preview=s.get("content_preview", ""),
+                                document_id=s.get("document_id", "")
+                            )
+                            for s in metadata["sources"]
+                        ]
+                    
+                    accuracy = None
+                    if metadata.get("accuracy"):
+                        acc_data = metadata["accuracy"]
+                        accuracy = AccuracyInfo(
+                            confidence_score=acc_data.get("confidence_score", 0.0),
+                            context_count=acc_data.get("context_count", 0),
+                            avg_similarity=acc_data.get("avg_similarity", 0.0),
+                            fallback_used=acc_data.get("fallback_used", False)
+                        )
+                    
+                    # sources와 accuracy를 제거한 순수 metadata만 저장
+                    clean_metadata = {k: v for k, v in metadata.items() if k not in ["sources", "accuracy"]}
+                    
                     message = ChatMessage(
                         id=row.id,
                         role=MessageRole(row.role),
                         content=row.content,
                         timestamp=row.created_at,
                         session_id=session_id,
-                        metadata=metadata
+                        sources=sources,
+                        accuracy=accuracy,
+                        metadata=clean_metadata
                     )
                     messages.append(message)
 
@@ -143,13 +194,18 @@ class DBChatRepository:
             logger.error(f"Error loading session {session_id}: {e}")
             return None
 
-    async def get_all_sessions(self) -> List[str]:
+    async def get_all_sessions(self, user_id: Optional[str] = None) -> List[str]:
         """Get all session IDs from database"""
         try:
             async with self.db_service.get_session() as db_session:
-                result = await db_session.execute(
-                    text("SELECT session_id FROM chat_sessions ORDER BY created_at DESC")
-                )
+                if user_id:
+                    query = text("SELECT session_id FROM chat_sessions WHERE user_id = :user_id ORDER BY created_at DESC")
+                    params = {"user_id": user_id}
+                else:
+                    query = text("SELECT session_id FROM chat_sessions ORDER BY created_at DESC")
+                    params = {}
+
+                result = await db_session.execute(query, params)
                 return [row.session_id for row in result]
         except Exception as e:
             logger.error(f"Error getting all sessions: {e}")
@@ -304,9 +360,18 @@ class DBChatRepository:
                 else:
                     result = await db_session.execute(text(query))
                 
-                # Fetch all results
+                # Commit for INSERT/UPDATE/DELETE queries
+                query_upper = query.strip().upper()
+                if any(query_upper.startswith(cmd) for cmd in ['INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER', 'DROP']):
+                    await db_session.commit()
+                    # For modification queries, return success indicator
+                    return True
+
+                # Fetch all results for SELECT queries
                 rows = result.fetchall()
                 return [row for row in rows]
         except Exception as e:
             logger.error(f"Error executing query: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
